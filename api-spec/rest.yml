@@ -1,0 +1,268 @@
+openapi: '3.0.2'
+info:
+  title: Transcendence backend REST API
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+components:
+  schemas:
+    GeneralError:
+      type: object
+      properties:
+        code:
+          type: integer
+          minimum: 100
+          maximum: 600
+        message:
+          type: string
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: string
+    UserCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        avatar:
+          type: string
+        password:
+          type: string
+      required:
+        - "name"
+        - "password"
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        avatar:
+          type: string
+        password:
+          type: string
+    GameCreate:
+      type: object
+      properties:
+        user_id:
+          type: integer
+      required:
+       - "user_id"
+    Game:
+      type: object
+      properties:
+        game_id:
+          type: integer
+        active:
+          type: boolean
+        users:
+          type: array
+          items:
+            type: object
+            properties:
+              user_id:
+                type: integer
+              score:
+                type: integer
+
+        
+  parameters:    
+    skipParam:
+      name: skip
+      in: query
+      description: number of items to skip
+      required: true
+      schema:
+        type: integer
+        format: int32
+    limitParam:
+      name: limit
+      in: query
+      description: max records to return
+      required: true
+      schema:
+        type: integer
+        format: int32
+    activeParam:
+      name: active
+      in: query
+      description: active games
+      required: false
+      schema:
+        type: boolean
+  responses:
+    GeneralError:
+      description: General Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+    OK:
+      description: OK
+      content:
+        text/plain:
+          schema:
+            type: string
+  securitySchemes:
+    auth:
+      type: oauth2
+      flows: 
+        implicit:
+          authorizationUrl: https://example.org/api/oauth/dialog
+          scopes:
+            write:users: modify users
+            read:users: read users
+paths:
+  /healthcheck:
+    get:
+      responses:
+        '200':
+          $ref: '#/components/responses/OK'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /users:
+    get:
+      parameters:
+        - name: skip
+          in: query
+          description: 'Skip'
+          required: false
+          schema:
+            $ref: '#/components/parameters/skipParam'
+        - name: limit
+          in: query
+          description: 'Limit'
+          required: false
+          schema:
+            $ref: '#/components/parameters/limitParam'
+      responses:
+        '200':
+          description: "Successful users"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+             $ref: '#/components/schemas/UserCreate'
+
+      responses:
+        '201':
+          description: "Successful user creation"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+      
+  /users/{id}:
+    get:
+      description: "Retrieval of user by ID"
+      responses:
+        '200':
+          description: "Successful retrieval of user by ID"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+    put:
+      description: "Retrieval of user by ID"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              $ref: '#/components/schemas/UserUpdate'
+
+      responses:
+        '202':
+          description: "Successful retrieval of user by ID"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+    delete:
+      description: "Deletion of user by ID"
+      responses:
+        '202':
+          description: "Successful deletion of user by ID"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /games:
+    post:
+      description: 'Adds new game with userID as playerOne'
+
+      responses:
+        '201':
+          description: "Game set up, waiting for player 2"
+          content:
+            'application/json':
+              schema:
+                $ref: "#/components/schemas/Game"
+        default:
+          $ref: "#/components/responses/GeneralError"
+
+    get:
+      parameters:
+        - name: skip
+          in: query
+          description: 'Skip'
+          required: false
+          schema:
+            $ref: '#/components/parameters/skipParam'
+        - name: limit
+          in: query
+          description: 'Limit'
+          required: false
+          schema:
+            $ref: '#/components/parameters/limitParam'
+        - name: active
+          in: query
+          description: 'Active'
+          required: false
+          schema:
+            $ref: '#/components/parameters/activeParam'
+      responses:
+        '201':
+          description: "Successful games"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+  /games/{game_id}/join:
+    put:  
+      description: "User Me join game_id"
+      responses:
+        '202':
+          description: "Join game {id}"
+          content:
+            'application/json':
+              schema:
+                type: object
+                items:
+                  $ref: '#/components/schemas/Game'
