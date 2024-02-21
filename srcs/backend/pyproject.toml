@@ -1,14 +1,17 @@
 [tool.poetry]
-name = "app"
+name = "transcendence-backend"
 version = "0.1.0"
-description = "Transcendece Backend API"
-authors = ["valmpanis <vasilisampanis@gmail.com>"]
+description = "Backend API for ft_transcendence"
+authors = ["valmpani <vasilisalmpanis@gmail.com>"]
+readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10"
-django = "^5.0.2"
-fastapi = "^0.109.2"
-uvicorn = "^0.27.1"
+python = "^3.11"
+Django = "^5.0.2"
+daphne = "^4.1.0"
+channels = "^4.0.0"
+django-environ = "^0.11.2"
+psycopg2 = "^2.9.9"
 
 
 [build-system]
