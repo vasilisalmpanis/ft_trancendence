@@ -8,170 +8,71 @@ document.addEventListener("DOMContentLoaded", function(event) {
     
     let ballX = field.clientWidth / 2 + field.offsetLeft;
     let ballY = field.offsetTop + 5;
-    ball.style.left = `${ballX}px`;
-    ball.style.top = `${ballY}px`;
     
     let platformY_1 = field.clientHeight / 2 - 100;
     let platformY_2 = field.clientHeight / 2  - 100;
-    platform_1.style.top = `${platformY_1}px`;
-    platform_2.style.top = `${platformY_2}px`;
     
     let score_1 = 10;
     let score_2 = 10;
+    let me = 'left';
     function updateScoreBoard() {
         scoreboard.textContent = `${score_1}:${score_2}`;
     }
     updateScoreBoard();
 
-    let angle = 45;
-    let platformDirection_1 = '';
-    let platformDirection_2 = '';
-
-    function moveBall() {
-        ballX += 20 * Math.cos(angle);
-        ballY += 20 * Math.sin(angle);
-        ball.style.left = `${ballX}px`;
-        ball.style.top = `${ballY}px`;
-    }
-
-    function movePlatform_1() {
-        if (!platformDirection_1)
-            return ;
-        let newPlatformY;
-        if (platformDirection_1 === 'up')
-            newPlatformY = platformY_1 - 40;
-        else if (platformDirection_1 === 'down')
-            newPlatformY = platformY_1 + 40;
-        if (newPlatformY < field.offsetTop)
-            newPlatformY = field.offsetTop + 2;
-        else if (newPlatformY + 200 >= field.clientHeight + field.offsetTop)
-            newPlatformY = field.clientHeight + field.offsetTop - 198;
-        platformY_1 = newPlatformY;
-        platform_1.style.top = `${platformY_1}px`;
-    }
-
-    function movePlatform_2() {
-        if (!platformDirection_2)
-            return ;
-        let newPlatformY;
-        if (platformDirection_2 === 'up')
-            newPlatformY = platformY_2 - 40;
-        else if (platformDirection_2 === 'down')
-            newPlatformY = platformY_2 + 40;
-        if (newPlatformY < field.offsetTop)
-            newPlatformY = field.offsetTop + 2;
-        else if (newPlatformY + 200 >= field.clientHeight + field.offsetTop)
-            newPlatformY = field.clientHeight + field.offsetTop - 198;
-        platformY_2 = newPlatformY;
-        platform_2.style.top = `${platformY_2}px`;
-    }
+    let platformDirection = '';
 
     function handleKeyPress(event) {
         switch (event.key) {
             case 'ArrowUp':
-                ws.send(JSON.stringify({"message": "up"}));
-                platformDirection_2 = 'up';
+                ws.send(JSON.stringify({"message": "up", "d": me}));
+                platformDirection = 'up';
                 break;
             case 'ArrowDown':
-                ws.send(JSON.stringify({"message": "down"}));
-                platformDirection_2 = 'down';
-                break;
-            case 'w':
-                platformDirection_1 = 'up';
-                break;
-            case 's':
-                platformDirection_1 = 'down';
+                ws.send(JSON.stringify({"message": "down", "d": me}));
+                platformDirection = 'down';
                 break;
         }
     }
 
     function handleKeyRelease(event) {
-        switch (event.key) {
-            case 'ArrowUp':
-                if (platformDirection_2 === 'up')
-                    platformDirection_2 = '';
-                break;
-            case 'ArrowDown':
-                if (platformDirection_2 === 'down')
-                    platformDirection_2 = '';
-                break;
-            case 'w':
-                if (platformDirection_1 === 'up')
-                    platformDirection_1 = '';
-                break;
-            case 's':
-                if (platformDirection_1 === 'down')
-                    platformDirection_1 = '';
-                break;
-        }
-    }
-
-    function checkCollision() {
-		const ballRect = ball.getBoundingClientRect();
-        const platformRect_1 = platform_1.getBoundingClientRect();
-        const platformRect_2 = platform_2.getBoundingClientRect();
-        if (
-            platformRect_1.top < ballRect.top
-            && platformRect_1.bottom > ballRect.bottom
-            && platformRect_1.right >= ballRect.left
-        )
+        if (event.key === 'ArrowUp' && platformDirection === 'up')
         {
-            angle = angle - 180;
-            score_1++;
-            updateScoreBoard();
+            ws.send(JSON.stringify({"message": "stop", "d": me}));
+            platformDirection = '';
         }
-        else if (
-            platformRect_2.top < ballRect.top
-            && platformRect_2.bottom > ballRect.bottom
-            && platformRect_2.left <= ballRect.right
-        )
+        else if (event.key === 'ArrowDown' && platformDirection === 'down')
         {
-            angle = angle - 180;
-            score_2++;
-            updateScoreBoard();
+            ws.send(JSON.stringify({"message": "stop", "d": me}));
+            platformDirection = '';
         }
-		else if (ballRect.left <= field.offsetLeft)
-        {
-            ballX = field.clientWidth + field.offsetLeft - 10;
-            score_1--;
-            updateScoreBoard();
-        }
-        else if (ballRect.right >= (field.clientWidth + field.offsetLeft))
-        {
-            ballX = field.offsetLeft + 10;
-            score_2--;
-            updateScoreBoard();
-        }
-		else if (
-            ballRect.top <= field.offsetTop
-            || ballRect.bottom >= (field.clientHeight + field.offsetTop)
-        )
-            angle = -angle;
     }
 
     function gameLoop() {
-        //movePlatform_1();
-        //movePlatform_2();
-        //moveBall();
-        //checkCollision();
+        ball.style.left = `${ballX - 10}px`;
+        ball.style.top = `${ballY - 10}px`;
+        platform_1.style.top = `${platformY_1 + 2}px`;
+        platform_2.style.top = `${platformY_2 + 2}px`;
         requestAnimationFrame(gameLoop);
     }
-    const dx = field.clientWidth / 100;
-    const dy = field.clientHeight / 100;
-    ws.addEventListener('message', (ev)=>{
+    let dx = field.clientWidth / 100;
+    let dy = field.clientHeight / 100;
+    platform_1.style.height = `${dy * 20}px`;
+    platform_2.style.height = `${dy * 20}px`;
+    addEventListener("resize", (event) => {
+        dx = field.clientWidth / 100;
+        dy = field.clientHeight / 100;
+        platform_1.style.height = `${dy * 20}px`;
+        platform_2.style.height = `${dy * 20}px`;
+    });
+    ws.addEventListener('message', ev => {
         const data = JSON.parse(ev.data);
-        const x = data.x;
-        const y = data.y;
-        const p1 = data.p1;
-        const p2 = data.p2;
-        
-        ballX = field.offsetLeft + dx * x;
-        ballY = field.offsetTop + dy * y;
-        ball.style.left = `${ballX}px`;
-        ball.style.top = `${ballY}px`;
-
-        platformY_2 = field.offsetTop + dy * p2;
-        platform_2.style.top = `${platformY_2}px`;
+        if (data.side === 'right')
+            me = 'right'
+        ballX = field.offsetLeft + dx * data.x;
+        ballY = field.offsetTop + dy * data.y;
+        platformY_1 = field.offsetTop + dy * data.p1;
+        platformY_2 = field.offsetTop + dy * data.p2;
     })
     gameLoop();
 	
