@@ -26,6 +26,12 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY transcendence_backend transcendence_backend
 COPY README.md .
+COPY entrypoint.sh .
 
 WORKDIR /transcendence_backend
-ENTRYPOINT ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+
+ENTRYPOINT [ "../entrypoint.sh" ]
+
+# CMD [ "python", "manage.py", "migrate"]
+
+# ENTRYPOINT ["python3", "manage.py", "runserver", "0.0.0.0:8000"]

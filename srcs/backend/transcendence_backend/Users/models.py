@@ -6,6 +6,6 @@ class User(models.Model):
     name = models.CharField(max_length=80)
     password = models.CharField(max_length=80)
     email = models.EmailField()
-    avatart = models.CharField(max_length=120)
+    avatar = models.CharField(max_length=120)
     token = models.CharField(max_length=80)
     creation_date = models.DateTimeField()
