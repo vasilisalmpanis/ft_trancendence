@@ -50,9 +50,19 @@ services:
       - .env
     depends_on: 
       - db
+      - redis
     restart: always
     volumes:
       - $PWD:/data
+
+  redis:
+    container_name: redis
+    image: redis
+    networks:
+      - backend
+    expose:
+      - 6379:6379
+    restart: always
 
 volumes:
   pgdata:

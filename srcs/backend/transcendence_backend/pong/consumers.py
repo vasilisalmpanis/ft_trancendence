@@ -2,7 +2,7 @@ import json
 import asyncio
 import math
 from logging import Logger
-from typing import Literal
+from typing import Literal, Dict, List
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
@@ -12,9 +12,29 @@ logger = Logger(__name__)
 dir_left: Literal["up", "down", "stop"] = 'stop'
 dir_right: Literal["up", "down", "stop"] = 'stop'
 
+group_id = '1'
+groups: Dict[str, List[str]] = {}
+tasks: Dict[str, asyncio.Task] = {}
 
+class GroupsManager():
+	group_id = '1'
+	groups: Dict[str, List[str]] = {}
+	tasks: Dict[str, asyncio.Task] = {}
+ 
+	def add_channel(channel_name: str):
+		pass
+
+	def get_group(channel_name: str) -> str:
+		pass
+
+	def set_left_state(channel_name: str, state: str):
+		pass
+
+	def set_right_state(channel_name: str, state: str):
+		pass
+
+manager = GroupsManager()
 class PongConsumer(AsyncWebsocketConsumer):
-	task: asyncio.Task | None = None
 	x = 50
 	y = 50
 	angle = 45
@@ -25,20 +45,28 @@ class PongConsumer(AsyncWebsocketConsumer):
 	p1_change = False
 	p2_change = False
 	score_change = False
+	game_id = '1'
+ 
+	def __init__(self):
+		logger.warn("INIT")
+		super().__init__(self)
 
 	async def connect(self):
-		if len(self.channel_layer.groups.get('game', {}).keys()) < 2:
-			await self.channel_layer.group_add('game', self.channel_name)
+		global group_id
+		if len(groups.get(group_id, [])) < 2:
+			await self.channel_layer.group_add(self.game_id, self.channel_name)
+			groups.setdefault(group_id, [])
+			groups[group_id].append(self.channel_name)
 			await self.accept()
-		if len(self.channel_layer.groups.get('game', {}).keys()) == 2:
+		logger.warn(f'game: {self.game_id}, users: {len(groups.get(group_id, []))}, channel: {self.channel_name}')
+		if len(groups.get(group_id, [])) == 2:
 			await self.send(json.dumps({'side':'right'}))
-			self.task = asyncio.ensure_future(self.send_updates())
+			tasks.setdefault(group_id, [])
+			tasks[group_id] = asyncio.ensure_future(self.send_updates())
+			group_id = str(int(group_id) + 1)
 
 	async def disconnect(self, close_code):
-		await self.channel_layer.group_discard('game', self.channel_name)
-		if (self.task):
-			self.task.cancel()
-			self.task = None
+		await self.channel_layer.group_discard(self.game_id, self.channel_name)
 
 	async def receive(self, text_data):
 		global dir_left, dir_right
@@ -112,8 +140,13 @@ class PongConsumer(AsyncWebsocketConsumer):
 					's1': self.score_1,
 					's2': self.score_2,
 				})
+			gid = ''
+			for k, v in groups.items():
+				if self.channel_name in v:
+					gid = k
+					break ;
 			await self.channel_layer.group_send(
-				'game',
+				gid,
        			{
               		"type": "game.update",
               		"text": json.dumps(data)
