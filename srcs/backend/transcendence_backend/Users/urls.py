@@ -13,6 +13,7 @@ urlpatterns = [
     path("users/delete", views.delete_user, name="delete_user"),
     path("users/me", views.get_current_user, name="get_current_user"),
     path("login", views.login_user, name="login_user"),
+    path("logout", views.logout_user, name="logout_user"),
 ]       
 
 # TODO Create class view for User Model
