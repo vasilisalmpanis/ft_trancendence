@@ -53,7 +53,7 @@ services:
       - redis
     restart: always
     volumes:
-      - $PWD:/data
+      - pwd:/data
 
   redis:
     container_name: redis
@@ -63,11 +63,31 @@ services:
     expose:
       - 6379:6379
     restart: always
+  
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend_dev
+    networks:
+      - backend
+    restart: always
+    volumes:
+      - pwd:/data
 
 volumes:
   pgdata:
     driver: local
-      
+  pwd:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: $PWD
+
 networks:
   backend:
     driver: bridge

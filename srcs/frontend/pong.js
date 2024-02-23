@@ -4,7 +4,8 @@ function runGame() {
     const platform_1 = document.getElementById('platform_1');
     const platform_2 = document.getElementById('platform_2');
     const scoreboard = document.getElementById('scoreboard');
-    const ws = new WebSocket('ws://localhost:8000/ws');
+    const hostname = window.location.hostname;
+    const ws = new WebSocket(`ws://${hostname}:8000/ws`);
     
     let ballX = 50;
     let ballY = 50;
