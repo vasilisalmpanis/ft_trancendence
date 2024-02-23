@@ -1,70 +1,80 @@
-from django.http                    import JsonResponse, QueryDict
-from django.core                    import serializers
+from django.http                    import JsonResponse
 from django.views.decorators.csrf   import csrf_exempt
 from django.views.decorators.http   import require_http_methods
-from django.contrib.auth            import authenticate, login, get_user_model, logout
+from django.contrib.auth            import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from pkg_resources                  import require
 from .models                        import User
-from .                              import forms
 from logging                        import Logger
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http   import require_http_methods
-from django.http                    import JsonResponse
-import email
-import json
-import re
+from typing                         import Any
+import email , json
+
 
 logger = Logger(__name__)
 
-@require_http_methods(["GET"])
-@login_required
-def all_users_view(request):
-    skip = int(request.GET.get("skip", 0))
-    limit = int(request.GET.get("limit", 10))
-    users = User.objects.all()[skip:skip+limit]
-    data = [
-        {
-            "name": user.username,
-            "id": user.id,
-            "avatar": user.avatar
-        }
-        for user in users
-    ]
-    return JsonResponse(data, status=200, safe=False)
+@require_http_methods(["GET", "POST"])
+def handle_users(request) -> JsonResponse:
+    """
+    GET: Get all users with pagination
+    POST: Create a new user
+    """
+    if request.method == "GET":
+        if not request.user.is_authenticated:
+            return JsonResponse({"status": "Not authenticated"}, status=401)
+        skip = int(request.GET.get("skip", 0))
+        limit = int(request.GET.get("limit", 10))
+        users = User.objects.all()[skip:skip+limit]
+        data = [
+            {
+                "name": user.username,
+                "id": user.id,
+                "avatar": user.avatar
+            }
+            for user in users
+        ]
+        return JsonResponse(data, status=200, safe=False)
+    if request.method == "POST":
+        data = json.loads(request.body)
+        username = data.get("username")
+        password = data.get("password")
+        email1 = data.get("email")
+        isstaff =  data.get("is_staff", False)
+        issuper = data.get("is_superuser", False)
+        if not username or not password or not email:
+            return JsonResponse({"status": "error"}, status=400)
+        try:
+            User.objects.create_user(username=username, 
+                                     password=password, 
+                                     email=email1, 
+                                     is_staff=isstaff, 
+                                     is_superuser=issuper
+                                     )
+            return JsonResponse({"status": "User Created"}, status=201)
+        except Exception:
+            return JsonResponse({"status": "error"}, status=400)
     ## TODO pagination
 
 @csrf_exempt
 @require_http_methods(["POST"])
-@login_required
-def logout_user(request):
+def logout_user(request) -> JsonResponse:
+    """
+    Logs out the user
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": "Not authenticated"}, status=401)
     logout(request)
     return JsonResponse({"status": "Logged Out"}, status=200)
 
 @csrf_exempt
-@require_http_methods(["POST"])
-def create_user(request):
-    username = request.POST.get("username")
-    password = request.POST.get("password")
-    email1 = request.POST.get("email")
-    isstaff = request.POST.get("is_staff", False)
-    issuper = request.POST.get("is_superuser", False)
-    if not username or not password or not email:
-        return JsonResponse({"status": "error"}, status=400)
-    try:
-        User.objects.create_user(username=username, password=password, email=email1, is_staff=isstaff, is_superuser=issuper)
-        return JsonResponse({"status": "User Created"}, status=201)
-    except Exception:
-        return JsonResponse({"status": "error"}, status=400)
-    
-
-@csrf_exempt
 @require_http_methods(["GET", "POST"])
-def login_user(request):
+def login_user(request) -> JsonResponse:
+    """
+    Authenticates the user
+    """
     if request.method == "GET":
         return JsonResponse({"Login": "Create A Form"}, status=200)
-    username = request.POST.get("username")
-    password = request.POST.get("password")
+    data = json.loads(request.body)
+    username = data.get("username", None)
+    password = data.get("password", None)
     user = authenticate(username=username, password=password)
     if user is not None:
         login(request, user)
@@ -75,58 +85,47 @@ def login_user(request):
 
 @csrf_exempt
 @login_required
-@require_http_methods(["POST"])
-def update_user_name(request):
-    username = forms.UpdateUserNameForm(request.POST, instance=request.user)
-    if not username.is_valid():
-        return JsonResponse({"status": "error"}, status=400)
-    username.save()
+@require_http_methods(["PUT"])
+def update_user(request) -> JsonResponse:
+    """
+    Updates user username, password, email, and avatar
+    """
+    user = request.user
+    data = json.loads(request.body)
+    if "username" in data:
+        user.username = data["username"]
+    if "password" in data:
+        user.set_password(data["password"])
+    if "email" in data:
+        user.email = data["email"]
+    if "avatar" in data:
+        user.avatar = data["avatar"]
+    user.save()
     return JsonResponse({"status": "User Updated"}, status=200)
 
-@csrf_exempt
-@login_required
-@require_http_methods(["POST"])
-def update_user_password(request):
-    password = forms.UpdateUserPasswordForm(request.POST, instance=request.user)
-    if not password.is_valid():
-        return JsonResponse({"status": "error"}, status=400)
-    new_password = password.cleaned_data.get("password")
-    request.user.set_password(new_password)
-    request.user.save()
-    return JsonResponse({"status": "User Updated"}, status=200)
 
-@csrf_exempt
-@login_required
-@require_http_methods(["POST"])
-def update_user_email(request):
-    email = forms.UpdateUserEmailForm(request.POST, instance=request.user)
-    if not email.is_valid():
-        return JsonResponse({"status": "error"}, status=400)
-    email.save()
-    return JsonResponse({"status": "User Updated"}, status=200)
-
-@csrf_exempt
-@login_required
-@require_http_methods(["POST"])
-def update_user_avatar(request):
-    avatar = forms.UpdateUserAvatarForm(request.POST, instance=request.user)
-    if not avatar.is_valid():
-        return JsonResponse({"status": "error"}, status=400)
-    avatar.save()
-    return JsonResponse({"status": "User Updated"}, status=200)
+from Chat.models import Chat  # Import the Chat model
 
 @csrf_exempt
 @login_required
 @require_http_methods(["DELETE"])
-def delete_user(request):
+def delete_user(request) -> JsonResponse:
+    """
+    Deletes currently logged in user
+    """
     user = request.user
+    # Delete the user from Chat participants
+    Chat.objects.filter(participants=user).delete()
     user.delete()
     return JsonResponse({"status": "User Deleted"}, status=200)
 
     
 @login_required
 @require_http_methods(["GET"])
-def get_current_user(request):
+def get_current_user(request) -> JsonResponse:
+    """
+    Returns currently logged in user data
+    """
     if request.user.is_authenticated:
         data = {
             "username": request.user.username,
@@ -139,7 +138,11 @@ def get_current_user(request):
 
 @require_http_methods(["GET"])
 @login_required
-def user_by_id_view(request, id):
+def user_by_id_view(request, id) -> JsonResponse:
+    """
+    Returns user data by id
+    User must be authenticated to receive data
+    """
     try:
         user = User.objects.get(id=id)
     except User.DoesNotExist:
@@ -152,7 +155,10 @@ def user_by_id_view(request, id):
     return JsonResponse(data, safe=False)
     
     
-def health_check(request):
+def health_check(request) -> JsonResponse:
+    """
+    Health check for the server
+    """
     health_check = {"health-check": "alive"}
     return JsonResponse(health_check, status=200)
 
