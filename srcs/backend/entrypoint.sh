@@ -2,6 +2,10 @@
 
 set -e 
 
+poetry install --no-root
+source .venv/bin/activate
+cd transcendence_backend
+
 echo "${0}: running migrations."
 python manage.py makemigrations --merge
 python manage.py migrate --noinput
