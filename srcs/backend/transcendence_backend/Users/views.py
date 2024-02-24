@@ -1,6 +1,8 @@
 from django.http                    import JsonResponse
+from django.views                   import View
 from django.views.decorators.csrf   import csrf_exempt
 from django.views.decorators.http   import require_http_methods
+from django.utils.decorators        import method_decorator
 from django.contrib.auth            import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models                        import User
@@ -81,60 +83,8 @@ def login_user(request) -> JsonResponse:
         return JsonResponse({"status": "Logged In"}, status=200)
     else:
         return JsonResponse({"status": "error"}, status=401)
-    
-
-@csrf_exempt
-@login_required
-@require_http_methods(["PUT"])
-def update_user(request) -> JsonResponse:
-    """
-    Updates user username, password, email, and avatar
-    """
-    user = request.user
-    data = json.loads(request.body)
-    if "username" in data:
-        user.username = data["username"]
-    if "password" in data:
-        user.set_password(data["password"])
-    if "email" in data:
-        user.email = data["email"]
-    if "avatar" in data:
-        user.avatar = data["avatar"]
-    user.save()
-    return JsonResponse({"status": "User Updated"}, status=200)
-
 
 from Chat.models import Chat  # Import the Chat model
-
-@csrf_exempt
-@login_required
-@require_http_methods(["DELETE"])
-def delete_user(request) -> JsonResponse:
-    """
-    Deletes currently logged in user
-    """
-    user = request.user
-    # Delete the user from Chat participants
-    Chat.objects.filter(participants=user).delete()
-    user.delete()
-    return JsonResponse({"status": "User Deleted"}, status=200)
-
-    
-@login_required
-@require_http_methods(["GET"])
-def get_current_user(request) -> JsonResponse:
-    """
-    Returns currently logged in user data
-    """
-    if request.user.is_authenticated:
-        data = {
-            "username": request.user.username,
-            "id": request.user.id,
-            "avatar": request.user.avatar
-        }
-        return JsonResponse(data, status=200)
-    return JsonResponse({}, status=401)
-
 
 @require_http_methods(["GET"])
 @login_required
@@ -162,3 +112,45 @@ def health_check(request) -> JsonResponse:
     health_check = {"health-check": "alive"}
     return JsonResponse(health_check, status=200)
 
+@method_decorator(login_required, name="dispatch")
+class CurrentUserView(View):
+            
+    def get(self, request) -> JsonResponse:
+        """
+        Returns currently logged in user data
+        """
+        if request.user.is_authenticated:
+            data = {
+                "username": request.user.username,
+                "id": request.user.id,
+                "avatar": request.user.avatar
+            }
+            return JsonResponse(data, status=200)
+        return JsonResponse({}, status=401)
+    
+    def delete(self, request) -> JsonResponse:
+        """
+        Deletes currently logged in user
+        """
+        user = request.user
+        # Delete the user from Chat participants
+        Chat.objects.filter(participants=user).delete()
+        user.delete()
+        return JsonResponse({"status": "User Deleted"}, status=200)
+    
+    def post(self, request) -> JsonResponse:
+        """
+        Updates user username, password, email, and avatar
+        """
+        user = request.user
+        data = json.loads(request.body)
+        if "username" in data:
+            user.username = data["username"]
+        if "password" in data:
+            user.set_password(data["password"])
+        if "email" in data:
+            user.email = data["email"]
+        if "avatar" in data:
+            user.avatar = data["avatar"]
+        user.save()
+        return JsonResponse({"status": "User Updated"}, status=200)

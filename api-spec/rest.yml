@@ -179,7 +179,7 @@ paths:
         default:
           $ref: '#/components/responses/GeneralError'
 
-  /users/all:
+  /users:
     get:
       security:
         - bearerAuth: [ ]
@@ -206,6 +206,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
+    post:
+      security:
+        - bearerAuth: [ ]
+      description: "Username update endpoint"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '202':
+          description: "Successful Update of Username"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
 
   /users/me:
     get:
@@ -220,14 +239,12 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/User'
-  /users/new:
     post:
       requestBody:
         content:
           'application/json':
             schema:
               $ref: '#/components/schemas/UserCreate'
-
       responses:
         '201':
           description: "Successful user creation"
@@ -239,6 +256,17 @@ paths:
                   $ref: '#/components/schemas/User'
         default:
           $ref: '#/components/responses/GeneralError'
+    
+    delete:
+      security:
+        - bearerAuth: [ ]
+      description: "Deletion of user currently logged in user"
+      responses:
+        '204':
+          description: "Successful deletion of currently logged in user"
+        default:
+          $ref: '#/components/responses/GeneralError'
+        
       
   /users/{id}:
     get:
@@ -256,113 +284,6 @@ paths:
         default:
           $ref: '#/components/responses/GeneralError'
 
-  /users/update/username:
-    post:
-      security:
-        - bearerAuth: [ ]
-      description: "Username update endpoint"
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              type: object
-              properties:
-                username:
-                  type: string
-      responses:
-        '202':
-          description: "Successful Update of Username"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
-
-  /users/update/password:
-    post:
-      security:
-        - bearerAuth: [ ]
-      description: "Password update endpoint"
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              type: object
-              properties:
-                password:
-                  type: string
-      responses:
-        '202':
-          description: "Successful Update of Password"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
-
-  /users/update/email:
-    post:
-      security:
-        - bearerAuth: [ ]
-      description: "Email update endpoint"
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              type: object
-              properties:
-                email:
-                  type: string
-      responses:
-        '202':
-          description: "Successful Update of Email"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
-
-
-  /users/update/avatar:
-    post:
-      security:
-        - bearerAuth: [ ]
-      description: "Avatar update endpoint"
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              type: object
-              properties:
-                avatar:
-                  type: string
-      responses:
-        '202':
-          description: "Successful Update of Avatar"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
-
-  /users/delete:
-    delete:
-      security:
-        - bearerAuth: [ ]
-      description: "Deletion of user currently logged in user"
-      responses:
-        '204':
-          description: "Successful deletion of currently logged in user"
-        default:
-          $ref: '#/components/responses/GeneralError'
   /games:
     post:
       description: 'Adds new game with userID as playerOne'
