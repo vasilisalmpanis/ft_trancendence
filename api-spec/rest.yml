@@ -33,9 +33,18 @@ components:
           type: string
         password:
           type: string
+        email:
+          type: string
+        is_staff:
+          type: boolean
+          default: false
+        is_superuser:
+          type: boolean
+          default: false
       required:
         - "name"
         - "password"
+        - "email"
     UserUpdate:
       type: object
       properties:
@@ -124,8 +133,57 @@ paths:
           $ref: '#/components/responses/OK'
         default:
           $ref: '#/components/responses/GeneralError'
+
+  /login:
+    post:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: "Successful login"
+          headers:
+            Set-Cookie:
+              description: "Session ID cookie"
+              schema:
+                type: string
+            Location:
+              description: "Redirect location"
+              schema:
+                type: string
+              example: "/users/me"
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /logout:
+    post:
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: "Successful logout of user"
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "Logged out"
+        default:
+          $ref: '#/components/responses/GeneralError'
+
   /users:
     get:
+      security:
+        - bearerAuth: [ ]
+      
       parameters:
         - name: skip
           in: query
@@ -149,12 +207,44 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
     post:
+      security:
+        - bearerAuth: [ ]
+      description: "Username update endpoint"
       requestBody:
         content:
           'application/json':
             schema:
-             $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '202':
+          description: "Successful Update of Username"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
 
+  /users/me:
+    get:
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: "Currently logged in user"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/UserCreate'
       responses:
         '201':
           description: "Successful user creation"
@@ -166,9 +256,22 @@ paths:
                   $ref: '#/components/schemas/User'
         default:
           $ref: '#/components/responses/GeneralError'
+    
+    delete:
+      security:
+        - bearerAuth: [ ]
+      description: "Deletion of user currently logged in user"
+      responses:
+        '204':
+          description: "Successful deletion of currently logged in user"
+        default:
+          $ref: '#/components/responses/GeneralError'
+        
       
   /users/{id}:
     get:
+      security:
+        - bearerAuth: [ ]
       description: "Retrieval of user by ID"
       responses:
         '200':
@@ -180,37 +283,7 @@ paths:
                 $ref: '#/components/schemas/User'
         default:
           $ref: '#/components/responses/GeneralError'
-    put:
-      description: "Retrieval of user by ID"
-      requestBody:
-        content:
-          'application/json':
-            schema:
-              type: object
-              $ref: '#/components/schemas/UserUpdate'
 
-      responses:
-        '202':
-          description: "Successful retrieval of user by ID"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
-    delete:
-      description: "Deletion of user by ID"
-      responses:
-        '202':
-          description: "Successful deletion of user by ID"
-          content:
-            'application/json':
-              schema:
-                type: object
-                $ref: '#/components/schemas/User'
-        default:
-          $ref: '#/components/responses/GeneralError'
   /games:
     post:
       description: 'Adds new game with userID as playerOne'
