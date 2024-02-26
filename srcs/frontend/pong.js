@@ -63,6 +63,11 @@ function runGame() {
     });
     ws.addEventListener('message', ev => {
         const data = JSON.parse(ev.data);
+        if (data.start)
+        {
+            console.log(data.start);
+            return ;
+        }
         if (data.side === 'right')
             me = 'right'
         ballX = data.x;
