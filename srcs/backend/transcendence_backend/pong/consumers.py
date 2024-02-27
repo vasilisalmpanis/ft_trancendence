@@ -1,19 +1,20 @@
+import math
 import json
 import asyncio
-import math
-from logging import Logger
 from threading import Lock
-from typing import Literal, Dict, List
+from logging import Logger
+from typing import Literal, Dict, List, TypeVar, TypedDict, NotRequired
 
 from channels.generic.websocket import AsyncWebsocketConsumer, AsyncConsumer
 
 logger = Logger(__name__)
 
+T = TypeVar('T')
 class SingletonMeta(type):
-    _instances = {}
+    _instances: Dict[type[T], T] = {}
     _lock: Lock = Lock()
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls: type[T], *args, **kwargs) -> T:
         with cls._lock:
             if cls not in cls._instances:
                 instance = super().__call__(*args, **kwargs)
@@ -21,9 +22,11 @@ class SingletonMeta(type):
         return cls._instances[cls]
 
 class GroupsManager(metaclass=SingletonMeta):
+	'''Singleton to manage groups of connection channels'''
+
 	group_id = '1'
 	groups: Dict[str, List[str]] = {}
- 
+
 	def add_channel(self, channel_name: str, group_size: int = 2) -> str:
 		if len(self.groups.get(self.group_id, [])) >= group_size:
 			self.group_id = str(int(self.group_id) + 1)
@@ -39,7 +42,34 @@ class GroupsManager(metaclass=SingletonMeta):
 	def group_full(self, group_size: int = 2) -> bool:
 		return len(self.groups[self.group_id]) == group_size
 
+class MovePlatform(TypedDict):
+    d: str
+    message: str
+    
+class PongStateDict(TypedDict):
+    x: float
+    y: float
+    p1: NotRequired[int]
+    p2: NotRequired[int]
+    s1: NotRequired[int]
+    s2: NotRequired[int]
+    
+class ControlMsg(TypedDict):
+    gid: str
+    data: NotRequired[str]
 class PongState:
+	'''
+	Pong game states generator\n
+	Generates next values of ball and platform positions, and score:\n
+	{
+		x: float,
+		y: float,
+		p1: int,
+		p2: int,
+		s1: int,
+		s2: int
+	}
+	'''
 
 	def __init__(self) -> None:
 		self.pl_s: Literal["up", "down", "stop"] = 'stop'
@@ -58,7 +88,7 @@ class PongState:
 	def __iter__(self) -> 'PongState':
 		return self
 
-	def __next__(self) -> Dict[str, float]:
+	def __next__(self) -> PongStateDict:
 		self._check_collisions()
 		self._move()
 		data = {
@@ -76,7 +106,8 @@ class PongState:
 			})
 		return data
 
-	def move_platform(self, data: Dict[str, str]) -> None:
+	def move_platform(self, data: MovePlatform) -> None:
+		'''Moves platforms in pong game'''
 		if 'd' not in data or 'message' not in data:
 			return
 		if data['d'] == 'left':
@@ -84,7 +115,7 @@ class PongState:
 		else:
 			self.pr_s = data['message']
 
-	def _move(self):
+	def _move(self) -> None:
 		self._x += math.cos(self._angle)
 		self._y += math.sin(self._angle)
 		if self.pl_s == 'up' and self._pl > 0:
@@ -100,7 +131,7 @@ class PongState:
 			self._pr += 2
 			self._pr_c = True
 
-	def _check_collisions(self):
+	def _check_collisions(self) -> None:
 		if self._x <= 1:
 			if self._pl - 1 < self._y < self._pl + 21:
 				self._angle = self._angle - 180
@@ -121,29 +152,32 @@ class PongState:
 			self._angle = -self._angle
 
 class PongRunner(AsyncConsumer):
+	'''Runs pong games as a background task'''
+
 	alias = 'pong_runner'
-	games: Dict[str, PongState] = {}
-	tasks: Dict[str, asyncio.Task] = {}
+	_games: Dict[str, PongState] = {}
+	_tasks: Dict[str, asyncio.Task] = {}
   
-	async def start_game(self, message):
+	async def start_game(self, message: ControlMsg) -> None:
 		logger.warn("starting game " + str(message))
 		gid = message['gid']
-		self.games[gid] = PongState()
-		self.tasks[gid] = asyncio.ensure_future(self.run(gid))
+		self._games[gid] = PongState()
+		self._tasks[gid] = asyncio.ensure_future(self._run(gid))
   
-	async def stop_game(self, message):
+	async def stop_game(self, message: ControlMsg) -> None:
 		logger.warn("stopping game " + str(message))
 		gid = message['gid']
-		if gid in self.tasks:
-			self.tasks[gid].cancel()
-			del self.tasks[gid]
-			del self.games[gid]
+		if gid in self._tasks:
+			self._tasks[gid].cancel()
+			del self._tasks[gid]
+			del self._games[gid]
 
-	async def update_platform(self, data):
-		self.games[data['gid']].move_platform(json.loads(data['data']))
+	async def update_platform(self, data: ControlMsg) -> None:
+		'''Moves platforms in game'''
+		self._games[data['gid']].move_platform(json.loads(data['data']))
 
-	async def run(self, gid: str):
-		for state in self.games[gid]:
+	async def _run(self, gid: str):
+		for state in self._games[gid]:
 			await self.channel_layer.group_send(
 	       		gid,
 	        	{
@@ -154,10 +188,12 @@ class PongRunner(AsyncConsumer):
 			await asyncio.sleep(0.01)
 
 class PongConsumer(AsyncWebsocketConsumer):
+	'''Communicates with clients through websockets'''
+ 
 	alias = 'pong_connector'
 	_groups = GroupsManager()
  
-	async def connect(self):
+	async def connect(self) -> None:
 		gid = self._groups.add_channel(self.channel_name)
 		await self.channel_layer.group_add(gid, self.channel_name)
 		await self.accept()
@@ -171,10 +207,10 @@ class PongConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-	async def update_game_state(self, message):
+	async def update_game_state(self, message: Dict[str, str]) -> None:
 		await self.send(message['text'])
 
-	async def disconnect(self, close_code):
+	async def disconnect(self, close_code) -> None:
 		gid = self._groups.get_group_name(self.channel_name)
 		await self.channel_layer.send(
        		'pong_runner',
@@ -186,7 +222,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_discard(gid, self.channel_name)
 		await self.close()
 
-	async def receive(self, text_data):
+	async def receive(self, text_data: str) -> None:
 		await self.channel_layer.send(
       		'pong_runner',
         	{
