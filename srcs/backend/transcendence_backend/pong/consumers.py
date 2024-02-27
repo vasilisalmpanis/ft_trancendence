@@ -57,6 +57,7 @@ class PongStateDict(TypedDict):
 class ControlMsg(TypedDict):
     gid: str
     data: NotRequired[str]
+
 class PongState:
 	'''
 	Pong game states generator\n
@@ -135,6 +136,7 @@ class PongState:
 		if self._x <= 1:
 			if self._pl - 1 < self._y < self._pl + 21:
 				self._angle = self._angle - 180
+				self._x = 2
 				self._score_l += 1
 			else:
 				self._x = 97
@@ -143,13 +145,18 @@ class PongState:
 		elif self._x >= 99:
 			if self._pr - 1 < self._y < self._pr + 21:
 				self._angle = self._angle - 180
+				self._x = 98
 				self._score_r += 1
 			else:
 				self._x = 3
 				self._score_r -= 1
 			self._score_c = True
-		elif self._y <= 1 or self._y >= 99:
+		elif self._y <= 1:
 			self._angle = -self._angle
+			self._y = 2
+		elif self._y >= 99:
+			self._angle = -self._angle
+			self._y = 98
 
 class PongRunner(AsyncConsumer):
 	'''Runs pong games as a background task'''
