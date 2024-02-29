@@ -1,0 +1,3 @@
+{
+	"presets": ["@babel/plugin-transform-react-jsx", "@babel/preset-react"]
+}
