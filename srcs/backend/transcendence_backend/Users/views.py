@@ -87,12 +87,13 @@ def login_user(request) -> JsonResponse:
 from Chat.models import Chat  # Import the Chat model
 
 @require_http_methods(["GET"])
-@login_required
 def user_by_id_view(request, id) -> JsonResponse:
     """
     Returns user data by id
     User must be authenticated to receive data
     """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "not authenticated"}, status=401)
     try:
         user = User.objects.get(id=id)
     except User.DoesNotExist:
@@ -126,7 +127,7 @@ class CurrentUserView(View):
                 "avatar": request.user.avatar
             }
             return JsonResponse(data, status=200)
-        return JsonResponse({}, status=401)
+        return JsonResponse({"Error": "not authenticated"}, status=401)
     
     def delete(self, request) -> JsonResponse:
         """

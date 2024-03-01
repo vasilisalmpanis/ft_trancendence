@@ -1,43 +1,97 @@
-
-
+/**
+ * Represents an API client for making HTTP requests.
+ * @class
+ */
 class ApiClient {
-    constructor(baseUrl)
-    {
-        this.baseUrl = baseUrl;
-        this.resources = {};
+  constructor (baseUrl) {
+    this.baseUrl = new URL(baseUrl);
+    this.headers = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    };
+
+    // dev only
+    if (typeof localStorage !== 'undefined') {
+      this.headers = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Cookie: localStorage.getItem('sessionid'),
+      };
     }
+  }
 
-    createResource(resourceName)
-    {
-        let path = this.baseUrl + "/" + resourceName;
-        let resource = {
-            get: function() {
-                return client.get(path);
-            },
-            post: function(data) {
-                return client.post(path, data);
-            },
-            put: function(data) {
-                return client.put(path, data);
-            },
-            delete: function(data) {
-                return client.delete(path, data);
-            }
-        };
-        return resource;
+  async checkStatus (response) {
+    if (!response.ok) {
+      const errorData = await response;
+      let errorMessage = `Error: ${response.status} ${response.statusText}`;
+      if (errorData.message) {
+        errorMessage += ` - ${errorData.message}`;
+      }
+      throw new Error(errorMessage);
     }
+  }
 
-    registerResource(resourceName, resource)
-    {
-        this.resources[resourceName] = this.createResource(resourceName);
+  async sendRequest (path, method, body, query) {
+    /* Makes request and returns reponse object with all its fields */
+    const url = new URL(path, this.baseUrl);
+    const params = {
+      method,
+      headers: this.headers,
+    };
+    if (body) {
+      params.body = JSON.stringify(body);
     }
+    if (query) {
+      Object.entries(query).forEach(([key, value]) => {
+        url.searchParams.append(key, value);
+      });
+    }
+    const response = await fetch(url, params);
+    await this.checkStatus(response);
+    return response;
+  }
 
-    
+  async get (path, query) {
+    const url = new URL(path, this.baseUrl);
+    return await this.sendRequest(url, 'GET', null, query);
+  }
 
-    // TODO : GET POST PUT DELETE 
-    // TODO : Authorize. takes resource name json. Can be valid response or json
+  async post (path, body, query) {
+    const url = new URL(path, this.baseUrl);
+    return await this.sendRequest(url, 'POST', body, query);
+  }
+
+  async put (path, body, query) {
+    const url = new URL(path, this.baseUrl);
+    return await this.sendRequest(url, 'PUT', body, query);
+  }
+
+  async delete (path, query) {
+    const url = new URL(path, this.baseUrl);
+    return await this.sendRequest(url, 'DELETE', null, query);
+  }
+
+  async authorize (body, query = null) {
+    const response = await this.sendRequest('login', 'POST', body, query);
+    const cookie = response.headers.get('set-cookie');
+
+    // dev only
+    if (typeof localStorage === 'undefined') {
+      this.headers.Cookie = cookie;
+      return response;
+    }
+    localStorage.setItem('sessionid', cookie);
+    return response;
+  }
+
+  async logout () {
+    const response = await this.sendRequest('logout', 'POST', null, null);
+    // dev only
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('sessionid');
+    }
+    return response;
+  }
 };
 
-client = new ApiClient("localhost:8000");
-client.registerResource("users");
-console.log(client.baseUrl);
+export default ApiClient;
