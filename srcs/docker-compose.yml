@@ -65,9 +65,29 @@ services:
     networks:
       - backend
     restart: always
+  grafana:
+    container_name: grafana
+    image: grafana/grafana-oss
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+    restart: always
+    volumes:
+      - grafana_data:/var/lib/grafana
+    user: "0:0"
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: postgres
+      GF_DATABASE_USER: postgres
+      GF_DATABASE_PASSWORD: postgres
+      GF_DATABASE_SSL_MODE: disable
 
 volumes:
   pgdata:
+    driver: local
+  grafana_data:
     driver: local
       
 networks:

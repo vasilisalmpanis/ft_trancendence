@@ -1,5 +1,6 @@
 /**
- * Represents an API client for making HTTP requests.
+ * Represents an API client for making HTTP requests
+ * to the backend server pong.
  * @class
  */
 class ApiClient {

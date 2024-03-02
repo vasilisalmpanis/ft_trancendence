@@ -6,6 +6,8 @@ from django.utils.decorators        import method_decorator
 from django.contrib.auth            import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from .models                        import User
+from chat.models                    import Chat  # Import the Chat model
+from stats.models                   import Stats
 from logging                        import Logger
 from typing                         import Any
 import email , json
@@ -50,6 +52,7 @@ def handle_users(request) -> JsonResponse:
                                      is_staff=isstaff, 
                                      is_superuser=issuper
                                      )
+            Stats.objects.create(user=User.objects.get(username=username))
             return JsonResponse({"status": "User Created"}, status=201)
         except Exception:
             return JsonResponse({"status": "error"}, status=400)
@@ -84,7 +87,6 @@ def login_user(request) -> JsonResponse:
     else:
         return JsonResponse({"status": "error"}, status=401)
 
-from Chat.models import Chat  # Import the Chat model
 
 @require_http_methods(["GET"])
 def user_by_id_view(request, id) -> JsonResponse:
