@@ -1,7 +1,4 @@
-from email                      import message
-from email.policy               import default
 from typing                     import Any
-from urllib                     import request
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils               import timezone
@@ -59,16 +56,17 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_perm(self, perm, obj=None):
         return self.is_staff
     
+    def get_friends(self, skip : int = 0, limit : int = 10) -> list:
+        friends = self.friends.all()[skip:skip+limit]
+        return [
+            {
+                "id": friend.id,
+                "username": friend.username,
+                "avatar": friend.avatar
+            }
+            for friend in friends
+        ]
+    
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
-
-
-class FriendRequest(models.Model):
-    id = models.AutoField(primary_key=True)
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sender")
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receiver")
-    message = models.CharField(max_length=255, null=True, blank=True)
-    class Meta:
-        verbose_name = 'Friend Request'
-        verbose_name_plural = 'Friend Requests'

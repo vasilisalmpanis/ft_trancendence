@@ -1,11 +1,11 @@
-from ast import mod
-from email.policy import default
-from http import server
-from statistics import mode
+from ast                        import mod
+from email.policy               import default
+from http                       import server
+from statistics                 import mode
 from django.db                  import models
-from users.models               import User
+from users.models.users         import User
 from django.utils               import timezone
-from django.db.models import Q
+from django.db.models           import Q
 
 # Create your models here.
 

@@ -1,5 +1,5 @@
-from django.db import models
-from users.models import User
+from django.db          import models
+from users.models       import User
 
 class Stats(models.Model):
     id = models.AutoField(primary_key=True)

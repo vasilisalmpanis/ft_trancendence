@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     # Add new apps here from (appname.apps.AppnameConfig)
 ]
 
+APPEND_SLASH=False
+
 AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [

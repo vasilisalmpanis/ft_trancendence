@@ -5,15 +5,11 @@ from django.views.decorators.http   import require_http_methods
 from django.utils.decorators        import method_decorator
 from django.contrib.auth            import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .models                        import User
+from ..models                        import User
 from chat.models                    import Chat  # Import the Chat model
 from stats.models                   import Stats
-from logging                        import Logger
-from typing                         import Any
-import email , json
 
-
-logger = Logger(__name__)
+import json
 
 @require_http_methods(["GET", "POST"])
 def handle_users(request) -> JsonResponse:
@@ -40,7 +36,7 @@ def handle_users(request) -> JsonResponse:
         data = json.loads(request.body)
         username = data.get("username")
         password = data.get("password")
-        email1 = data.get("email")
+        email = data.get("email")
         isstaff =  data.get("is_staff", False)
         issuper = data.get("is_superuser", False)
         if not username or not password or not email:
@@ -48,7 +44,7 @@ def handle_users(request) -> JsonResponse:
         try:
             User.objects.create_user(username=username, 
                                      password=password, 
-                                     email=email1, 
+                                     email=email, 
                                      is_staff=isstaff, 
                                      is_superuser=issuper
                                      )
@@ -56,9 +52,7 @@ def handle_users(request) -> JsonResponse:
             return JsonResponse({"status": "User Created"}, status=201)
         except Exception:
             return JsonResponse({"status": "error"}, status=400)
-    ## TODO pagination
 
-@csrf_exempt
 @require_http_methods(["POST"])
 def logout_user(request) -> JsonResponse:
     """
@@ -69,7 +63,6 @@ def logout_user(request) -> JsonResponse:
     logout(request)
     return JsonResponse({"status": "Logged Out"}, status=200)
 
-@csrf_exempt
 @require_http_methods(["GET", "POST"])
 def login_user(request) -> JsonResponse:
     """
@@ -86,7 +79,6 @@ def login_user(request) -> JsonResponse:
         return JsonResponse({"status": "Logged In"}, status=200)
     else:
         return JsonResponse({"status": "error"}, status=401)
-
 
 @require_http_methods(["GET"])
 def user_by_id_view(request, id) -> JsonResponse:
@@ -138,6 +130,7 @@ class CurrentUserView(View):
         user = request.user
         # Delete the user from Chat participants
         Chat.objects.filter(participants=user).delete()
+        Stats.objects.get(user=user).delete()
         user.delete()
         return JsonResponse({"status": "User Deleted"}, status=200)
     
@@ -157,3 +150,21 @@ class CurrentUserView(View):
             user.avatar = data["avatar"]
         user.save()
         return JsonResponse({"status": "User Updated"}, status=200)
+    
+def get_friends(request) -> JsonResponse:
+    """
+    Get all friends of currently logged in user
+    """
+    if request.method != "GET":
+        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": "Not authenticated"}, status=401)
+    try:
+        skip = int(request.GET.get("skip", 0))
+        limit = int(request.GET.get("limit", 10))
+        friends = request.user.get_friends(skip, limit)
+        if not friends:
+            return JsonResponse({"status": "No friends"}, status=200)
+        return JsonResponse(friends, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"status": f"{e}"}, status=400)
