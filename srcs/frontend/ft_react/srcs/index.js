@@ -1,9 +1,7 @@
-let vDom = null;
 let hookIndex = null;
 let nextUnitOfWork = null;
 let currentRoot = null;
-let vRoot = null;
-let deletions = null;
+let deletions = [];
 
 
 class FiberNode {
@@ -11,7 +9,7 @@ class FiberNode {
 	 * 
 	 * @param {string} type 
 	 * @param {object} props 
-	 */
+	*/
 	constructor(type, props) {
 		this.type = type;		// string: "TEXT_ELEMENT", "function"
 		this.props = props;		// {children: FiberNode[], ...} - params of HTML element in case of HTML node.
@@ -27,9 +25,12 @@ class FiberNode {
 		this.dom = null;		// HTMLElement | Text
 		/** @type {string | null} */
 		this.effectTag = null;	// string: "PLACEMENT", "UPDATE", "DELETION"
-		this.hooks = null;		// 
+		this.hooks = [];		// 
 	}
 }
+
+let vDom = new FiberNode("", {});
+let vRoot = new FiberNode("", {});
 
 /**
  * @param {string} type
@@ -176,10 +177,10 @@ const commitRoot = () => {
 	vRoot = null;
 };
 
-const reconcileChildren = (wipFiber, elements) => {
+const reconcileChildren = (vDom, elements) => {
 	let index = 0;
 	let oldFiber =
-		wipFiber.alternate && wipFiber.alternate.child;
+		vDom.alternate && vDom.alternate.child;
 	let prevSibling = null;
 
 	while (index < elements.length || oldFiber != null) {
@@ -192,24 +193,34 @@ const reconcileChildren = (wipFiber, elements) => {
 			element.type == oldFiber.type;
 
 		if (sameType) {
-			newFiber = {
-				type: oldFiber.type,
-				props: element.props,
-				dom: oldFiber.dom,
-				parent: wipFiber,
-				alternate: oldFiber,
-				effectTag: "UPDATE",
-			};
+			newFiber = new FiberNode(oldFiber.type, element.props);
+			newFiber.dom = oldFiber.dom;
+			newFiber.parent = vDom;
+			newFiber.alternate = oldFiber;
+			newFiber.effectTag = "UPDATE";
+			//newFiber = {
+			//	type: oldFiber.type,
+			//	props: element.props,
+			//	dom: oldFiber.dom,
+			//	parent: vDom,
+			//	alternate: oldFiber,
+			//	effectTag: "UPDATE",
+			//};
 		}
 		if (element && !sameType) {
-			newFiber = {
-				type: element.type,
-				props: element.props,
-				dom: null,
-				parent: wipFiber,
-				alternate: null,
-				effectTag: "PLACEMENT",
-			};
+			newFiber = new FiberNode(element.type, element.props);
+			newFiber.dom = null;
+			newFiber.parent = vDom;
+			newFiber.alternate = null;
+			newFiber.effectTag = "PLACEMENT";
+			//newFiber = {
+			//	type: element.type,
+			//	props: element.props,
+			//	dom: null,
+			//	parent: vDom,
+			//	alternate: null,
+			//	effectTag: "PLACEMENT",
+			//};
 		}
 		if (oldFiber && !sameType) {
 			oldFiber.effectTag = "DELETION";
@@ -221,7 +232,7 @@ const reconcileChildren = (wipFiber, elements) => {
 		}
 
 		if (index === 0) {
-			wipFiber.child = newFiber;
+			vDom.child = newFiber;
 		} else if (element) {
 			prevSibling.sibling = newFiber;
 		}
@@ -281,14 +292,22 @@ const workLoop = (deadline) => {
 	requestIdleCallback(workLoop);
 };
 
+/**
+ * 
+ * @param {FiberNode} element 
+ * @param {HTMLElement} container 
+ */
 const render = (element, container) => {
-	vRoot =  {
-		dom: container,
-		props: {
-			children: [element],
-		},
-		alternate: currentRoot,
-	};
+	vRoot = new FiberNode("", {children: [element]});
+	vRoot.dom = container;
+	vRoot.alternate = currentRoot; 
+	//vRoot = {
+	//	dom: container,
+	//	props: {
+	//		children: [element],
+	//	},
+	//	alternate: currentRoot,
+	//};
 	deletions = [];
 	nextUnitOfWork = vRoot;
 };
@@ -309,12 +328,16 @@ const useState = (initial) => {
 	});
 
 	const setState = action => {
+		console.log("Set state", vDom, currentRoot);
 		hook.queue.push(action);
-		vRoot = {
-			dom: currentRoot.dom,
-			props: currentRoot.props,
-			alternate: currentRoot,
-		};
+		vRoot = new FiberNode("", currentRoot.props);
+		vRoot.dom = currentRoot.dom;
+		vRoot.alternate = currentRoot;
+		//vRoot = {
+		//	dom: currentRoot.dom,
+		//	props: currentRoot.props,
+		//	alternate: currentRoot,
+		//};
 		nextUnitOfWork = vRoot;
 		deletions = [];
 	};
@@ -324,11 +347,12 @@ const useState = (initial) => {
 	return [hook.state, setState];
 };
 
+requestIdleCallback(workLoop);
+
 const ftReact = {
 	createElement,
 	render,
 	useState,
 };
 
-requestIdleCallback(workLoop);
 export default ftReact;
