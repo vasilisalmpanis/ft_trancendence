@@ -18,7 +18,9 @@ urlpatterns = [
     path("friendrequests/accept", friends_views.accept_friend_request, name="accept_friend_request"),
     path("friendrequests/decline", friends_views.decline_friend_request, name="decline_friend_request"),
 
+    path("unfriend", friends_views.unfriend, name="unfriend"),
 
+    # /friends (GET)
     # /friendrequest/incoming
     # /friendrequest (GET)
     # /friendrequest (POST) -> BODY {receiver_id, message}

@@ -12,7 +12,7 @@ logger = Logger(__name__)
 
 def get_chats(request) -> JsonResponse:
     """
-    Get all chats for a user by id  
+    Get all chats for a user by user_id  
     """
     if not request.user.is_authenticated:
         return JsonResponse({"status": "Not authenticated"}, status=401)
@@ -52,7 +52,7 @@ class ChatView(View):
     #         return JsonResponse({"chat_id": chat}, status=200)
     #     except Exception:
     #         return JsonResponse({"status": "Chat not found"}, status=404)
-    def post(self, request, id : int) -> JsonResponse:
+    def post(self, request) -> JsonResponse:
         """
         Creates a new chat between two authenticated
         users if it doesnt already exist.
@@ -60,14 +60,16 @@ class ChatView(View):
         if not request.user.is_authenticated:
             return JsonResponse({"status": "Not authenticated"}, status=401)
         try:
+            id = int(json.loads(request.body).get("receiver_id", None))
+            if not id:
+                return JsonResponse({"status": "Receiver ID not found"}, status=400)
             chat = Chat.get_chat_id(request.user.id, id)
             if chat:
                 return JsonResponse({"status": "Chat already exists"}, status=400)
-            # if (request.body):
-            #     name = json.loads(request.body).get("name", None)
-            # else:
-            name = None
+            name = json.loads(request.body).get("name", None)
             chat = Chat.create_chat(request.user.id, id, name)
+            if not chat:
+                return JsonResponse({"status": "Chat not created"}, status=400)
             return JsonResponse({"status": "Chat created"}, status=201)
         except Exception as e:
             logger.warn(f"Exception: {str(e)}")

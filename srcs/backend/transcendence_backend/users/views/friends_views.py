@@ -2,7 +2,11 @@ from django.http                    import JsonResponse
 from django.utils.decorators        import method_decorator
 from users.models                   import User, FriendRequest
 from django.views                   import View
+from django.forms.models            import model_to_dict
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_incoming_friend_requests(request) -> JsonResponse:
     """
@@ -44,13 +48,18 @@ class FriendsView(View):
         if not request.user.is_authenticated:
             return JsonResponse({"status": "Not authenticated"}, status=401)
         data = json.loads(request.body)
-        receiver_id = data.get("receiver_id")
+        receiver_id = int(data.get("receiver_id"))
+        logger.warning(f"Receiver ID: {receiver_id}")
         message = data.get("message")
         if not receiver_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            if FriendRequest.create_friend_request(request.user.id, receiver_id, message):
-                return JsonResponse({"status": "Friend request created"}, status=201)
+            friend_request = FriendRequest.create_friend_request(sender_id=request.user.id,
+                                                                 receiver_id=receiver_id,
+                                                                 message=message
+                                                                 )
+            if friend_request:
+                return JsonResponse(model_to_dict(friend_request), status=201)
             return JsonResponse({"status": "Friend request not created"}, status=400)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -87,5 +96,21 @@ def decline_friend_request(request) -> JsonResponse:
         if FriendRequest.decline_friend_request(request_id, request.user):
             return JsonResponse({"status": "Friend request declined"}, status=200)
         return JsonResponse({"status": "Friend request declined"}, status=400)
+    except Exception as e:
+        return JsonResponse({"status": f"{e}"}, status=400)
+    
+def unfriend(request) -> JsonResponse:
+    if request.method != "POST":
+        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+    if not request.user.is_authenticated:
+        return JsonResponse({"status": "Not authenticated"}, status=401)
+    data = json.loads(request.body)
+    friend_id = data.get("friend_id")
+    if not friend_id:
+        return JsonResponse({"Error": "Friend ID not provided"}, status=400)
+    try:
+        if User.unfriend(request.user.id, friend_id):
+            return JsonResponse({"status": "Friend removed"}, status=200)
+        return JsonResponse({"status": "Friend not removed"}, status=400)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)

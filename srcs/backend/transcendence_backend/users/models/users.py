@@ -67,6 +67,15 @@ class User(AbstractBaseUser, PermissionsMixin):
             for friend in friends
         ]
     
+    def unfriend(user_id, friend_id : int) -> bool:
+        user = User.objects.get(id=user_id)
+        friend = User.objects.get(id=friend_id)
+        if not user.friends.filter(id=friend_id).exists():
+            raise Exception("You are not friends with this user")
+        user.friends.remove(friend)
+        friend.friends.remove(user)
+        return True
+        
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'

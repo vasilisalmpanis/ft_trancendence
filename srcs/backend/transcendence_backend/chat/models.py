@@ -27,18 +27,20 @@ class Chat(models.Model):
             return None
         
 
-    def create_chat(user1, user2, name=None):
-        if user1 == user2:
+    def create_chat(user1_id, user2_id, name=None):
+        if user1_id == user2_id:
             return None
-        if not User.objects.filter(id=user1).exists():
+        if not User.objects.filter(id=user1_id).exists():
             return None
-        elif not User.objects.filter(id=user2).exists():
+        elif not User.objects.filter(id=user2_id).exists():
+            return None
+        if not User.objects.get(id=user1_id).friends.filter(id=user2_id).exists():
             return None
         if not name:
-            name = f"{User.objects.get(id=user1).username} and {User.objects.get(id=user2).username} chat"
+            name = f"{User.objects.get(id=user1_id).username} and {User.objects.get(id=user2_id).username} chat"
         chat = Chat.objects.create(name=name)
-        chat.participants.add(user1)
-        chat.participants.add(user2)   
+        chat.participants.add(user1_id)
+        chat.participants.add(user2_id)   
         return chat
     
     def delete_chat(chat_id) -> bool:
