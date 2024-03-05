@@ -20,6 +20,8 @@ urlpatterns = [
 
     path("unfriend", friends_views.unfriend, name="unfriend"),
 
+    path("block", user_views.BlockedUsersView.as_view(), name="block_user"),
+
     # /friends (GET)
     # /friendrequest/incoming
     # /friendrequest (GET)

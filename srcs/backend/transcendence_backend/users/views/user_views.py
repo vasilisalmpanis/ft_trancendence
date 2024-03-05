@@ -5,7 +5,7 @@ from django.views.decorators.http   import require_http_methods
 from django.utils.decorators        import method_decorator
 from django.contrib.auth            import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from ..models                        import User
+from ..models                        import User, FriendRequest
 from chat.models                    import Chat  # Import the Chat model
 from stats.models                   import Stats
 
@@ -22,7 +22,11 @@ def handle_users(request) -> JsonResponse:
             return JsonResponse({"status": "Not authenticated"}, status=401)
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
-        users = User.objects.all()[skip:skip+limit]
+        users_not_blocked_by_me = User.objects.exclude(blocked=request.user)
+        users_not_blocked_me = User.objects.exclude(blocked_me=request.user)
+
+        # Intersection of users who haven't blocked me and users whom I haven't blocked
+        users = users_not_blocked_by_me.intersection(users_not_blocked_me)
         data = [
             {
                 "name": user.username,
@@ -168,3 +172,58 @@ def get_friends(request) -> JsonResponse:
         return JsonResponse(friends, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
+    
+class BlockedUsersView(View):
+    def get(self, request) -> JsonResponse:
+        """
+        Get all blocked users of currently logged in user
+        """
+        if request.method != "GET":
+            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        if not request.user.is_authenticated:
+            return JsonResponse({"status": "Not authenticated"}, status=401)
+        try:
+            blocked_users = request.user.get_blocked_users()
+            if not blocked_users:
+                return JsonResponse({"status": "No blocked users"}, status=200)
+            return JsonResponse(blocked_users, status=200, safe=False)
+        except Exception as e:
+            return JsonResponse({"status": f"{e}"}, status=400)
+    
+    def post(self, request) -> JsonResponse:
+        """
+        Blocks a user by user_id
+        Deletes pending friend requests between the two users
+        """
+        if request.method != "POST":
+            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        if not request.user.is_authenticated:
+            return JsonResponse({"status": "Not authenticated"}, status=401)
+        data = json.loads(request.body)
+        user_id = data.get("user_id")
+        if not user_id:
+            return JsonResponse({"status": "error"}, status=400)
+        try:
+            if request.user.block(user_id):
+                FriendRequest.objects.filter(sender_id=user_id, receiver_id=request.user.id).delete()
+            return JsonResponse({"status": "User Blocked"}, status=200)
+        except Exception as e:
+            return JsonResponse({"status": f"{e}"}, status=400)
+        
+    def put(self, request) -> JsonResponse:
+        """
+        Unblocks a user by user_id
+        """
+        if request.method != "PUT":
+            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        if not request.user.is_authenticated:
+            return JsonResponse({"status": "Not authenticated"}, status=401)
+        data = json.loads(request.body)
+        user_id = data.get("user_id")
+        if not user_id:
+            return JsonResponse({"status": "error"}, status=400)
+        try:
+            request.user.unblock(user_id)
+            return JsonResponse({"status": "User Unblocked"}, status=200)
+        except Exception as e:
+            return JsonResponse({"status": f"{e}"}, status=400)

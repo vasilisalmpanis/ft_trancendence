@@ -8,7 +8,7 @@ from django.contrib.auth            import authenticate, login, logout
 
 
 
-# Create your views here.
+## TODO Do we display blocked users or users who blocked us int the leaderboard?
 
 def getStatistics(request, id : int) -> JsonResponse:
     """
@@ -33,6 +33,11 @@ def getStatistics(request, id : int) -> JsonResponse:
     return JsonResponse({"Error": "Wrong Request Method"}, status=400)
     
 def leaderBoard(request) -> JsonResponse:
+    """
+    Get all users statistics with pagination
+    skip : int
+    limit : int
+    """
     if request.method is not 'GET':
         if not request.user.is_authenticated:
             return JsonResponse({"status": "Not authenticated"}, status=401)

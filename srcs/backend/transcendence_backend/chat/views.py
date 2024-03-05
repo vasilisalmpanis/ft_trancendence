@@ -1,14 +1,16 @@
-import json
-from os import name
-from venv import logger
+from venv               import logger
 from django.shortcuts   import render
 from django.http        import JsonResponse
 from .models            import Chat, Message
 from django.views       import View
+from logging            import Logger
+import json
 
-from logging import Logger
 
 logger = Logger(__name__)
+
+
+## TODO: See what happens with chats between blocked users and their messages
 
 def get_chats(request) -> JsonResponse:
     """

@@ -75,6 +75,39 @@ class User(AbstractBaseUser, PermissionsMixin):
         user.friends.remove(friend)
         friend.friends.remove(user)
         return True
+    
+    def block(self, user_id : int):
+        user = User.objects.get(id=user_id)
+        if not user:
+            raise Exception("User not found")
+        if user in self.friends.all():
+            self.friends.remove(user)
+        if user in self.blocked.all():
+            raise Exception("User is already blocked")
+        if self.id == user.id:
+            raise Exception("You cannot block yourself")
+        self.blocked.add(user)
+        return True
+    
+    def unblock(self, user_id : int):
+        user = User.objects.get(id=user_id)
+        if not user:
+            raise Exception("User not found")
+        if user not in self.blocked.all():
+            raise Exception("User is not blocked")
+        if self.id == user.id:
+            raise Exception("You cannot unblock yourself")
+        self.blocked.remove(user)
+        return True
+    
+    def get_blocked_users(self, skip : int = 0, limit : int = 10) -> list:
+        blocked_users = self.blocked.all()[skip:skip+limit]
+        return [{
+            "id": user.id,
+            "username": user.username,
+            "avatar": user.avatar
+        }
+        for user in blocked_users]
         
     class Meta:
         verbose_name = 'User'

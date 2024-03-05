@@ -46,6 +46,8 @@ class FriendRequest(models.Model):
             raise Exception("You are already friends")
         if FriendRequest.objects.filter(sender_id=sender_id, receiver_id=receiver_id).exists():
             raise Exception("You already sent a friend request to this user")
+        if User.objects.get(id=receiver_id).blocked.filter(id=sender_id).exists():
+            raise Exception("Blocked")
         friend_request = FriendRequest.objects.create(
             sender_id=sender_id,
             receiver_id=receiver_id,
@@ -61,6 +63,10 @@ class FriendRequest(models.Model):
             raise Exception("Friend request is not pending")
         sender = friend_request.sender
         receiver = friend_request.receiver
+        if sender.blocked.filter(id=receiver.id).exists():
+            raise Exception("Receiver Blocked")
+        if receiver.blocked.filter(id=sender.id).exists():
+            raise Exception("Sender Blocked")
         sender.friends.add(receiver)
         receiver.friends.add(sender)
         friend_request.status = "ACCEPTED"
