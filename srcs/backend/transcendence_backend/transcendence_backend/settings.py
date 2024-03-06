@@ -10,20 +10,26 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+from math import log
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 import environ
 
 env = environ.Env()
 environ.Env.read_env()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+# logger.warn(env.str("JWT_SECRET"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env("DJANGO_SECRET_KEY")
+JWT_SECRET = env("JWT_SECRET")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -44,6 +50,8 @@ INSTALLED_APPS = [
     'users',
     'chat',
     'stats',
+    'authorize',
+    # 'auth',
     # Add new apps here from (appname.apps.AppnameConfig)
 ]
 

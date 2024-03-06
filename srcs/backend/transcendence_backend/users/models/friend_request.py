@@ -7,7 +7,7 @@ from django.utils               import timezone
 from .                          import User
 import logging
 
-logger = logging.getLogger(__name__)    
+logger = logging.getLogger(__name__)
 
 
 class FriendRequest(models.Model):
@@ -71,6 +71,7 @@ class FriendRequest(models.Model):
         receiver.friends.add(sender)
         friend_request.status = "ACCEPTED"
         friend_request.save()
+        friend_request.delete() 
         return True
     
     def decline_friend_request(request_id : int, user) -> bool:
@@ -81,6 +82,7 @@ class FriendRequest(models.Model):
             raise Exception("Friend request is not pending")
         friend_request.status = "DECLINED"
         friend_request.save()
+        friend_request.delete()
         return True
         
     def delete_friend_request(request_id : int) -> bool:

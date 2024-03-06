@@ -1,6 +1,6 @@
 from django.http                    import JsonResponse
 from django.utils.decorators        import method_decorator
-from users.models                   import User, FriendRequest
+from users.models                   import User, FriendRequest, user_model_to_dict
 from django.views                   import View
 from django.forms.models            import model_to_dict
 import json
@@ -76,7 +76,6 @@ def accept_friend_request(request) -> JsonResponse:
         return JsonResponse({"status": "error"}, status=400)
     try:
         if FriendRequest.accept_friend_request(request_id, request.user):
-            FriendRequest.delete_friend_request(request_id)
             return JsonResponse({"status": "Friend request accepted"}, status=200)
         return JsonResponse({"status": "Friend request declined"}, status=400)
     except Exception as e:
@@ -109,8 +108,9 @@ def unfriend(request) -> JsonResponse:
     if not friend_id:
         return JsonResponse({"Error": "Friend ID not provided"}, status=400)
     try:
-        if User.unfriend(request.user.id, friend_id):
-            return JsonResponse({"status": "Friend removed"}, status=200)
+        removed_friend = request.user.unfriend(friend_id)
+        if removed_friend:
+            return JsonResponse(user_model_to_dict(removed_friend), status=200)
         return JsonResponse({"status": "Friend not removed"}, status=400)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)

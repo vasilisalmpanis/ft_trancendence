@@ -1,3 +1,4 @@
+from curses.ascii import US
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
@@ -36,6 +37,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=255, blank=False)
     avatar = models.CharField(max_length=255, null=True, blank=True)
     token = models.CharField(max_length=255, null=True, blank=True)
+    otp_secret = models.CharField(max_length=255, null=True, blank=True)
+    is_2fa_enabled = models.BooleanField(default=False)
+    is_user_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
     
 
@@ -56,7 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def has_perm(self, perm, obj=None):
         return self.is_staff
     
-    def get_friends(self, skip : int = 0, limit : int = 10) -> list:
+    def get_friends(self, skip : int = 0, limit : int = 10) -> list["User"]:
         friends = self.friends.all()[skip:skip+limit]
         return [
             {
@@ -67,16 +71,15 @@ class User(AbstractBaseUser, PermissionsMixin):
             for friend in friends
         ]
     
-    def unfriend(user_id, friend_id : int) -> bool:
-        user = User.objects.get(id=user_id)
+    def unfriend(self, friend_id : int) -> "User" :
         friend = User.objects.get(id=friend_id)
-        if not user.friends.filter(id=friend_id).exists():
+        if not self.friends.filter(id=friend_id).exists():
             raise Exception("You are not friends with this user")
-        user.friends.remove(friend)
-        friend.friends.remove(user)
-        return True
+        self.friends.remove(friend)
+        friend.friends.remove(self)
+        return friend
     
-    def block(self, user_id : int):
+    def block(self, user_id : int) -> "User":
         user = User.objects.get(id=user_id)
         if not user:
             raise Exception("User not found")
@@ -84,12 +87,14 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.friends.remove(user)
         if user in self.blocked.all():
             raise Exception("User is already blocked")
+        if user.blocked.filter(id=self.id).exists():
+            raise Exception("User has already blocked you")
         if self.id == user.id:
             raise Exception("You cannot block yourself")
         self.blocked.add(user)
-        return True
+        return user
     
-    def unblock(self, user_id : int):
+    def unblock(self, user_id : int) -> "User":
         user = User.objects.get(id=user_id)
         if not user:
             raise Exception("User not found")
@@ -98,9 +103,9 @@ class User(AbstractBaseUser, PermissionsMixin):
         if self.id == user.id:
             raise Exception("You cannot unblock yourself")
         self.blocked.remove(user)
-        return True
+        return user
     
-    def get_blocked_users(self, skip : int = 0, limit : int = 10) -> list:
+    def get_blocked_users(self, skip : int = 0, limit : int = 10) -> list["User"]:
         blocked_users = self.blocked.all()[skip:skip+limit]
         return [{
             "id": user.id,
@@ -112,3 +117,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
+
+def user_model_to_dict(user : "User") -> dict[str, Any]:
+    if not user:
+        return {}
+    return {
+        "id": user.id,
+        "username": user.username,
+        "avatar": user.avatar
+    }

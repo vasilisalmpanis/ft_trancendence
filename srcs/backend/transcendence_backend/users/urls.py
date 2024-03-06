@@ -4,10 +4,7 @@ from users.views import user_views, friends_views
 urlpatterns = [
     path("healthcheck", user_views.health_check, name="health_check"),
 
-    path("login", user_views.login_user, name="login_user"),
-    path("logout", user_views.logout_user, name="logout_user"),
-
-    path("users", user_views.handle_users, name="users"),
+    path("users", user_views.UserView.as_view(), name="users"),
     path("users/<int:id>", user_views.user_by_id_view, name="user_by_id"),
     path("users/me", user_views.CurrentUserView.as_view(), name="get_current_user"),
 

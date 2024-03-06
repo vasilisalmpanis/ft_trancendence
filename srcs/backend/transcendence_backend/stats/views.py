@@ -38,7 +38,7 @@ def leaderBoard(request) -> JsonResponse:
     skip : int
     limit : int
     """
-    if request.method is not 'GET':
+    if request.method == 'GET':
         if not request.user.is_authenticated:
             return JsonResponse({"status": "Not authenticated"}, status=401)
         skip = int(request.GET.get("skip", 0))
