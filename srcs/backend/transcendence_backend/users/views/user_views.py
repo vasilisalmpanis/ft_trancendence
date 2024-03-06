@@ -17,6 +17,13 @@ from django.conf                        import settings
 import json
 
 
+def health_check(request) -> JsonResponse:
+    """
+    Health check for the server
+    """
+    health_check = {"health-check": "alive"}
+    return JsonResponse(health_check, status=200)
+
 class UserView(View):
 
     @jwt_auth_required
@@ -75,20 +82,13 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     try:
         user = User.objects.get(id=id)
     except User.DoesNotExist:
-        return JsonResponse({}, status=404)
+        return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
     data = {
         "user id" : user.id,
         "username": user.username,
         "avatar": user.avatar,
     }
     return JsonResponse(data, safe=False)
-
-def health_check(request) -> JsonResponse:
-    """
-    Health check for the server
-    """
-    health_check = {"health-check": "alive"}
-    return JsonResponse(health_check, status=200)
 
 @method_decorator(jwt_auth_required, name="dispatch")
 class CurrentUserView(View):
@@ -104,22 +104,20 @@ class CurrentUserView(View):
         }
         return JsonResponse(data, status=200)
     
-    def delete(self, request) -> JsonResponse:
+    def delete(self, request, user: User) -> JsonResponse:
         """
         Deletes currently logged in user
         """
-        user = request.user
         # Delete the user from Chat participants
         Chat.objects.filter(participants=user).delete()
         Stats.objects.get(user=user).delete()
         user.delete()
         return JsonResponse({"status": "User Deleted"}, status=200)
     
-    def post(self, request) -> JsonResponse:
+    def post(self, request, user : User) -> JsonResponse:
         """
         Updates user username, password, email, and avatar
         """
-        user = request.user
         data = json.loads(request.body)
         if "username" in data:
             user.username = data["username"]
@@ -131,76 +129,71 @@ class CurrentUserView(View):
             user.avatar = data["avatar"]
         user.save()
         return JsonResponse({"status": "User Updated"}, status=200)
-    
-def get_friends(request) -> JsonResponse:
+
+@jwt_auth_required 
+def get_friends(request, user : User) -> JsonResponse:
     """
     Get all friends of currently logged in user
     """
     if request.method != "GET":
         return JsonResponse({"Error": "Wrong Request Method"}, status=400)
-    if not request.user.is_authenticated:
-        return JsonResponse({"status": "Not authenticated"}, status=401)
+
     try:
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
-        friends = request.user.get_friends(skip, limit)
+        friends = user.get_friends(skip, limit)
         if not friends:
             return JsonResponse({"status": "No friends"}, status=200)
         return JsonResponse(friends, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
-    
+
+@method_decorator(jwt_auth_required, name="dispatch")    
 class BlockedUsersView(View):
-    def get(self, request) -> JsonResponse:
+    def get(self, request, user : User) -> JsonResponse:
         """
         Get all blocked users of currently logged in user
         """
         if request.method != "GET":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
         try:
-            blocked_users = request.user.get_blocked_users()
+            blocked_users = user.get_blocked_users()
             if not blocked_users:
                 return JsonResponse({"status": "No blocked users"}, status=200)
             return JsonResponse(blocked_users, status=200, safe=False)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
     
-    def post(self, request) -> JsonResponse:
+    def post(self, request, user : User) -> JsonResponse:
         """
         Blocks a user by user_id
         Deletes pending friend requests between the two users
         """
         if request.method != "POST":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
         data = json.loads(request.body)
         user_id = data.get("user_id")
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            if request.user.block(user_id):
-                FriendRequest.objects.filter(sender_id=user_id, receiver_id=request.user.id).delete()
+            if user.block(user_id):
+                FriendRequest.objects.filter(sender_id=user_id, receiver_id=user.id).delete()
             return JsonResponse({"status": "User Blocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
         
-    def put(self, request) -> JsonResponse:
+    def put(self, request, user : User) -> JsonResponse:
         """
         Unblocks a user by user_id
         """
         if request.method != "PUT":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
         data = json.loads(request.body)
         user_id = data.get("user_id")
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            request.user.unblock(user_id)
+            user.unblock(user_id)
             return JsonResponse({"status": "User Unblocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)

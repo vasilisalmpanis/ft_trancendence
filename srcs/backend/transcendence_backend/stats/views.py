@@ -1,22 +1,19 @@
-from urllib.parse import uses_relative
-from django.shortcuts               import render
-from django.http                    import JsonResponse
-from .models                        import Stats
-from users.models                   import User
-from django.views                   import View
-from django.contrib.auth            import authenticate, login, logout
+from django.shortcuts                   import render
+from django.http                        import JsonResponse
+from .models                            import Stats
+from users.models                       import User
+from django.views                       import View
+from transcendence_backend.decorators   import jwt_auth_required
 
 
 
 ## TODO Do we display blocked users or users who blocked us int the leaderboard?
-
-def getStatistics(request, id : int) -> JsonResponse:
+@jwt_auth_required
+def getStatistics(request, user : User, id : int) -> JsonResponse:
     """
     Get statistics for a user by id
     """
     if request.method == "GET":
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
         try:
             user = User.objects.get(id=id)
             stats = Stats.objects.get(user=user)
@@ -31,16 +28,16 @@ def getStatistics(request, id : int) -> JsonResponse:
         except Exception:
             return JsonResponse({"Error": "User Not Found"}, status=400)
     return JsonResponse({"Error": "Wrong Request Method"}, status=400)
-    
-def leaderBoard(request) -> JsonResponse:
+
+@jwt_auth_required
+def leaderBoard(request, user : User) -> JsonResponse:
     """
     Get all users statistics with pagination
     skip : int
     limit : int
     """
     if request.method == 'GET':
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
+        
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
         if (limit > 100):
