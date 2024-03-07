@@ -1,20 +1,15 @@
 from django.http                        import JsonResponse
 from django.views                       import View
-from django.views.decorators.csrf       import csrf_exempt
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
-from django.contrib.auth                import authenticate, login, logout
-from django.contrib.auth.decorators     import login_required
 from transcendence_backend.decorators   import jwt_auth_required
-from datetime                           import datetime, timedelta
-from time                               import strftime
 from ..models                           import User, FriendRequest
 from transcendence_backend.decorators   import jwt_auth_required
 from chat.models                        import Chat
 from stats.models                       import Stats
-from jwt                                import JWT
 from django.conf                        import settings
 import json
+import urllib.parse
 
 
 def health_check(request) -> JsonResponse:
@@ -197,3 +192,70 @@ class BlockedUsersView(View):
             return JsonResponse({"status": "User Unblocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
+        
+
+def generate_2fa_qr_uri(username, secret, issuer_name="localhost"):
+    # Encode issuer name and username
+    issuer_name_encoded = urllib.parse.quote(issuer_name)
+    username_encoded = urllib.parse.quote(username)
+
+    # Format the URI
+    uri = f"otpauth://totp/{issuer_name_encoded}:{username_encoded}?secret={secret}&issuer={issuer_name_encoded}"
+
+    return uri
+
+
+@method_decorator(jwt_auth_required, name="dispatch")
+class TOPTView(View):
+    def get(self, request, user : User) -> JsonResponse:
+        """
+        GET 2FA secret key
+        :param request: Request object
+        :param user: User object
+        :return: JsonResponse
+        """
+        if not user.is_2fa_enabled:
+            return JsonResponse({"status": "2FA is not enabled"}, status=400)
+        return JsonResponse({"status": user.otp_secret}, status=200)
+        # return JsonResponse({"status": generate_2fa_qr_uri(user.username, user.otp_secret)}, status=200)
+        
+    
+    def post(self, request, user : User) -> JsonResponse:
+        """
+        POST: Enable 2FA for the user
+        :param request: Request object
+        :param user: User object
+        :return: JsonResponse with TOTP Secret Key
+        """
+        if user.is_2fa_enabled:
+            return JsonResponse({"status": "2FA is already enabled"}, status=400)
+        secret = user.enable_2fa()
+        return JsonResponse({"status": "2FA enabled", "secret": secret}, status=200)
+    
+    def put(self, request, user : User) -> JsonResponse:
+        """
+        PUT: Refreshes the clients secret
+        :param request: Request object
+        :param user: User object
+        :return: JsonResponse with new TOTP Secret Key
+        """
+        if not user.is_2fa_enabled:
+            return JsonResponse({"status": "2FA is not enabled"}, status=400)
+        secret = user.enable_2fa()
+        return JsonResponse({"status": "2FA refreshed", "secret": secret}, status=200)
+    
+    def delete(self, request, user : User) -> JsonResponse:
+        """
+        DELETE Disables 2FA for the user
+        :param request: Request object
+        :param user: User object
+        :return: JsonResponse
+        """
+        if not user.is_2fa_enabled:
+            return JsonResponse({"status": "2FA is not enabled"}, status=400)
+        if user.disable_2fa():
+            return JsonResponse({"status": "2FA disabled"}, status=200)
+        else:
+            return JsonResponse({"status": "error"}, status=400)
+        
+    

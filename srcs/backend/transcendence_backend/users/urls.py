@@ -8,6 +8,8 @@ urlpatterns = [
     path("users/<int:id>", user_views.user_by_id_view, name="user_by_id"),
     path("users/me", user_views.CurrentUserView.as_view(), name="get_current_user"),
 
+    path("2fa", user_views.TOPTView.as_view(), name="2fa"),
+
     path("friends", user_views.get_friends, name="get_friends"), # Could be changed to /users/me/friends
 
     path("friendrequests/incoming", friends_views.get_incoming_friend_requests, name="get_pending_friend_requests"),

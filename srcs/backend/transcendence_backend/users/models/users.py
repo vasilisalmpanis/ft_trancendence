@@ -1,8 +1,13 @@
-from curses.ascii import US
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils               import timezone
+from transcendence_backend.totp import get_totp_token
+import base64
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserManager(BaseUserManager):
     def create_user(self, username : str = None,
@@ -113,6 +118,26 @@ class User(AbstractBaseUser, PermissionsMixin):
             "avatar": user.avatar
         }
         for user in blocked_users]
+    
+    def enable_2fa(self) -> str:
+        random = os.urandom(20).hex()
+        self.otp_secret = base64.b32encode(random.encode()).decode()
+        self.is_2fa_enabled = True
+        self.save()
+        return self.otp_secret
+    
+    def disable_2fa(self) -> bool:
+        self.otp_secret = None
+        self.is_2fa_enabled = False
+        self.save()
+        return True
+    
+    def verify_2fa(self, auth_code : str) -> bool:
+        code = get_totp_token(self.otp_secret.replace('=', ''))
+        if code != auth_code:
+            raise Exception("Invalid 2fa code")
+        return True
+
         
     class Meta:
         verbose_name = 'User'

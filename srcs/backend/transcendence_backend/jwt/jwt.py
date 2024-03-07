@@ -2,6 +2,7 @@ import base64
 import json
 import hmac
 import hashlib
+from math import sin
 
 class JWT:
     def __init__(self, secret):
@@ -48,4 +49,14 @@ class JWT:
         """
         segments = jwt.split('.')
         payload = segments[1]
+        signature = segments[2]
+        signing_input = ('.'.join(segments[:-1])).encode()
+        key = self.secret.encode()
+        expected_signature = hmac.new(key,
+                                      signing_input,
+                                      hashlib.sha256
+                                      ).digest()
+        expected_signature = self.base64url_encode(expected_signature)
+        if expected_signature != signature:
+            raise Exception("Invalid signature")
         return json.loads(base64.b64decode(payload + '=' * (4 - len(payload) % 4)).decode('utf-8'))
