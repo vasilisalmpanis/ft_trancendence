@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'chat',
     'stats',
     'authorize',
+    'NotFrontend',
+    'oauth2',
     # 'auth',
     # Add new apps here from (appname.apps.AppnameConfig)
 ]

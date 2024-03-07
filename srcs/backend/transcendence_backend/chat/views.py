@@ -88,3 +88,11 @@ class ChatView(View):
             return JsonResponse({"status": "Chat not found"}, status=404)
         except Exception:
             return JsonResponse({"status": "Chat not found"}, status=404)
+
+#mt someone has to render something!
+def index(request):
+	return render(request, "chat/index.html")
+
+
+def room(request, room_name):
+	return render(request, "chat/room.html", {"room_name": room_name})
