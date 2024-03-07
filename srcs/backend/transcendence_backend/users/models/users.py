@@ -1,11 +1,15 @@
+import re
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils               import timezone
 from transcendence_backend.totp import get_totp_token
+from django.conf                import settings
 import base64
 import os
 import logging
+import hmac
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -119,13 +123,18 @@ class User(AbstractBaseUser, PermissionsMixin):
         }
         for user in blocked_users]
     
-    def enable_2fa(self) -> str:
+
+    def create_otp_secret(self) -> str:
         random = os.urandom(20).hex()
         self.otp_secret = base64.b32encode(random.encode()).decode()
-        self.is_2fa_enabled = True
         self.save()
         return self.otp_secret
     
+    def enable_2fa(self) -> str:
+        self.is_2fa_enabled = True
+        # self.save()
+        return True
+
     def disable_2fa(self) -> bool:
         self.otp_secret = None
         self.is_2fa_enabled = False

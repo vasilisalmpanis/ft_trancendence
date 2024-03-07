@@ -9,6 +9,7 @@ urlpatterns = [
     path("users/me", user_views.CurrentUserView.as_view(), name="get_current_user"),
 
     path("2fa", user_views.TOPTView.as_view(), name="2fa"),
+    path("2fa/verify", user_views.verify_2fa_code, name="verify_2fa"),
 
     path("friends", user_views.get_friends, name="get_friends"), # Could be changed to /users/me/friends
 

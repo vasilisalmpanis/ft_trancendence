@@ -29,7 +29,7 @@ def get_chats(request, user : User) -> JsonResponse:
             return JsonResponse({"status": "No chats found"}, status=200)
         return JsonResponse(data, status=200, safe=False)
     
-
+@jwt_auth_required
 def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
     if not request.method == "GET":
         return JsonResponse({"status": "Wrong Request Method"}, status=400)

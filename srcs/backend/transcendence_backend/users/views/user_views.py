@@ -2,12 +2,15 @@ from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
-from transcendence_backend.decorators   import jwt_auth_required
+from transcendence_backend.decorators   import jwt_auth_required, jwt_2fa_required
 from ..models                           import User, FriendRequest
 from transcendence_backend.decorators   import jwt_auth_required
+from jwt                                import JWT
 from chat.models                        import Chat
 from stats.models                       import Stats
 from django.conf                        import settings
+from datetime                           import datetime, timedelta
+import authorize.views
 import json
 import urllib.parse
 
@@ -204,6 +207,33 @@ def generate_2fa_qr_uri(username, secret, issuer_name="localhost"):
 
     return uri
 
+@jwt_2fa_required
+def verify_2fa_code(request, user : User) -> JsonResponse:
+    """
+    Verifies the 2fa code for the user
+    :param request: Request object
+    :param user: User object
+    :return: JsonResponse
+    """
+    if request.method != 'POST':
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
+    data = json.loads(request.body)
+    code = str(data.get("2fa_code", None))
+    if code == None:
+        return JsonResponse({"Error": "No code in request body"}, status=400)
+    if user.verify_2fa(code):
+        user.enable_2fa()
+        jwt = JWT(settings.JWT_SECRET)
+        access_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=user.is_2fa_enabled)
+        refresh_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=user.is_2fa_enabled)
+        return JsonResponse({
+                                "status": "2FA Verified",
+                                "access_token": access_token,
+                                "refresh_token" : refresh_token }, status=200
+                            )
+    else:
+        return JsonResponse({"status": "2FA Not Verified"}, status=400)
+
 
 @method_decorator(jwt_auth_required, name="dispatch")
 class TOPTView(View):
@@ -229,7 +259,7 @@ class TOPTView(View):
         """
         if user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is already enabled"}, status=400)
-        secret = user.enable_2fa()
+        secret = user.create_otp_secret()     
         return JsonResponse({"status": "2FA enabled", "secret": secret}, status=200)
     
     def put(self, request, user : User) -> JsonResponse:
