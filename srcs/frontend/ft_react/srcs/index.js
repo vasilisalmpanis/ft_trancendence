@@ -178,6 +178,7 @@ const commitRoot = () => {
 };
 
 const reconcileChildren = (vDom, elements) => {
+	console.log("RECONCILE: ", vDom, elements);
 	let index = 0;
 	let oldFiber =
 		vDom.alternate && vDom.alternate.child;
@@ -239,6 +240,7 @@ const reconcileChildren = (vDom, elements) => {
 
 		prevSibling = newFiber;
 		index++;
+		console.log("NEW NODE: ", newFiber);
 	}
 };
 

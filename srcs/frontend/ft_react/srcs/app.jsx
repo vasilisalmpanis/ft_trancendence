@@ -1,4 +1,20 @@
-import ftReact from "./index.js";
+import ftReact from "./ft_react.js";
+
+const Component = (props) => {
+	const [value, setValue] = ftReact.useState("text");
+	return (
+		<div style="
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding-top: 10px;
+		">
+			<input onInput ={ev=>setValue(ev.target.value)}/>
+			<br/>
+			<span>{value}</span>
+		</div>
+	);
+};
 
 const App = (props) => {
 
@@ -23,12 +39,15 @@ const App = (props) => {
 			">
 				{counter}
 			</span>
+			<Component updateVal={(val)=>setCounter(val)}/>
 		</div>
 	);
 };
 
+const el = <App name="test"/>;
+
 const container = document.getElementById("root");
 ftReact.render(
-	App({name: "test"}), 
+	el, 
 	container
 );
