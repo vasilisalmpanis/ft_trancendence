@@ -122,5 +122,4 @@ def verify_2fa(request, user : User) -> JsonResponse:
         return JsonResponse({"access_token": access_token, "refresh_token" : refresh_token}, status=200)
     else:
         return JsonResponse({"status": "incorrect code"}, status=401)
-    return JsonResponse({"status": "2FA Verified"}, status=200)
     
