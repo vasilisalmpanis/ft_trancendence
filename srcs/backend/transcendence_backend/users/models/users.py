@@ -43,14 +43,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255, unique=True, blank=False)
     email = models.EmailField(max_length=255, unique=True, blank=True)
-    password = models.CharField(max_length=255, blank=False)
+    password = models.CharField(max_length=255, null=True, blank=True)
     avatar = models.CharField(max_length=255, null=True, blank=True)
     token = models.CharField(max_length=255, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)
     is_2fa_enabled = models.BooleanField(default=False)
     is_user_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
-    
+
+    ft_intra_id = models.IntegerField(null=True, blank=True)
 
     friends = models.ManyToManyField('self', related_name='friends', blank=True, symmetrical=True)
     blocked = models.ManyToManyField('self', related_name='blocked_me', blank=True, symmetrical=False)
