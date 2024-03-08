@@ -7,11 +7,14 @@ const Component = (props) => {
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			padding-top: 10px;
+			padding: 10px;
+			border: 1px solid black;
 		">
 			<input onInput ={ev=>setValue(ev.target.value)}/>
 			<br/>
 			<span>{value}</span>
+			<br/>
+			<input onInput ={ev=>props.updateVal(Number(ev.target.value))} value={props.val}/>
 		</div>
 	);
 };
@@ -39,7 +42,7 @@ const App = (props) => {
 			">
 				{counter}
 			</span>
-			<Component updateVal={(val)=>setCounter(val)}/>
+			<Component updateVal={(val)=>setCounter(val)} val={counter}/>
 		</div>
 	);
 };

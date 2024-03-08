@@ -3,73 +3,115 @@ const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];
 const isGone = (prev, next) => key => !(key in next);
 
-//let states = new Map();
-//let stateComponents = new Map();
-//let stateId = 0;
-//let stateIndex = 0;
-
-let currentNode = null;
-let stId = null;
-
-class VNode {
+//let currentNode = null;
+class FiberNode {
 	/**
 	 * 
 	 * @param {string | Function} type 
 	 * @param {object} props 
-	 * @param  {...VNode} children
-	 * @returns {VNode}
+	 * @param  {...FiberNode} children
+	 * @returns {FiberNode}
 	 */
 	constructor(type, props) {
 		this.type = type;
-		this.props = props;
-		if (!this.props)
-			this.props = {};
-		if (!this.props.children)
-			this.props.children = [];
+		this.props = props || {};
+		this.props.children = this.props.children || [];
 		this.dom = null;
+		this.key = 0;
 		this.old = null;
 		this.parent = null;
-		this.sibling = null;
 		this.effect = null;
+		this.needsUpdate = true;
 		this.states = [];
+		this.stId = 0;
 	}
 
 	get child() {
-		return (this.props.children && this.props.children[0]) || null;
+		return (
+			this.props.children
+			&& this.props.children[0]
+		) || null;
 	}
 
 	set child(val) {
 		this.props.children[0] = val;
 	}
 
-	parentsSiblings() {
-		if (!this.props || !this.props.children)
-			return ;
-		let prevSibling = null;
-		let child = null;
-		for (child of this.props.children) {
-			child.parentsSiblings();
-			child.parent = this;
-			if (prevSibling)
-				prevSibling.sibling = child;
-			prevSibling = child;
+	get children() {
+		return (
+			this.props
+			&& this.props.children
+		) || null;
+	}
+
+	set children(val) {
+		if (!this.props)
+			this.props = {};
+		this.props.children = val;
+	}
+
+	get sibling() {
+		return (
+			this.parent
+			&& this.parent.children
+			&& this.parent.children[this.key + 1]
+		) || null;
+	}
+
+	set sibling(val) {
+		if (this.parent) {
+			val.key = this.key + 1;
+			this.parent.children[this.key + 1] = val;
 		}
 	}
 
+	setKey(key) {
+		this.key = key;
+		return this;
+	}
+
+	parentsSiblings() {
+		if (!this.props || !this.props.children)
+			return;
+		this.props.children.forEach((child, idx) => {
+			child.parent = this;
+			child.key = idx;
+			child.parentsSiblings();
+		});
+	}
+
+	resolveFunc(ftReact) {
+		this.stId = 0;
+		ftReact._currentNode = this;
+		const children = this.type(this.props);
+		ftReact._currentNode = null;
+		this.props.children = Array.isArray(children) ? children : [children];
+		this.parentsSiblings();
+	}
+
 	clone() {
-		const clonedProps = { ...this.props, children: this.props.children.map(child => child instanceof VNode ? child.clone() : child) };
-		const clonedNode = new VNode(this.type, clonedProps);
+		const clonedProps = {
+			...this.props,
+			children: this.props.children.map(
+				child => child instanceof FiberNode
+					? child.clone()
+					: child
+			)
+		};
+		const clonedNode = new FiberNode(this.type, clonedProps);
 		clonedNode.dom = this.dom;
+		clonedNode.needsUpdate = this.needsUpdate;
 		clonedNode.states = [...this.states];
-		clonedNode.parentsSiblings();
+		clonedNode.key = this.key;
+		clonedNode.parent = this.parent;
 		return clonedNode;
 	}
 
 	/**
-	 * @param {VNode[]} children
+	 * @param {FiberNode[]} children
 	 */
 	reconcile(children, deletions) {
-		console.log("  VNode.reconcile RECONCILE: ", this, children);
+		//console.log("  VNode.reconcile RECONCILE: ", this, children);
 		let prevSibling = null;
 		let oldNode = this.old && this.old.child;
 		let i = 0;
@@ -78,17 +120,17 @@ class VNode {
 			let newNode = null;
 			let sameType = oldNode && el && oldNode.type == el.type;
 			if (sameType) {
-				newNode = new VNode(oldNode.type, el.props);
+				newNode = new FiberNode(oldNode.type, el.props);
 				newNode.dom = oldNode.dom;
 				newNode.parent = this;
 				newNode.old = oldNode;
-				newNode.states = [...el.states];
+				newNode.states = oldNode.states;
 				newNode.effect = "UPDATE";
 			}
-			if (el && !sameType && el.type) {
-				newNode = new VNode(el.type, el.props);
+			if (el && !sameType) {
+				newNode = new FiberNode(el.type, el.props);
 				newNode.parent = this;
-				newNode.states = [...el.states];
+				newNode.states = el.states;
 				newNode.effect = "PLACEMENT";
 			}
 			if (oldNode && !sameType) {
@@ -105,12 +147,11 @@ class VNode {
 			}
 			prevSibling = newNode;
 			i++;
-			console.log("                  NEW NODE: ", newNode);
 		}
 	}
 
 	commit() {
-		console.log("  VNode.commit ", this);
+		//console.log("  VNode.commit ", this);
 		let domParentNode = this.parent;
 		while (!domParentNode.dom) {
 			domParentNode = domParentNode.parent;
@@ -128,31 +169,24 @@ class VNode {
 	}
 
 	delete(domParent) {
+		console.log("  VNode.delete", this);
 		if (this.dom)
 			domParent.removeChild(this.dom);
 		else
-			this.delete(domParent);
+			this.child && this.child.delete(domParent);
 	}
 
-	update(deletions) {
-		console.log("  VNode.update", this);
-		if (this.type instanceof Function) {
-			//stateIndex = 0;
-			//stateId++;
-			//if (!stateComponents.has(stateId))
-			//	stateComponents[stateId] = this;
-			currentNode = this;
-			stId = 0;
-			this.props.children = [this.type(this.props)];
-			this.parentsSiblings();
-		}
+	update(ftReact) {
+		//console.log("  VNode.update", this);
+		if (this.type instanceof Function)
+			this.resolveFunc(ftReact);
 		else if (!this.dom)
 			this.createDom();
-		this.reconcile(this.props.children, deletions);
+		this.reconcile(this.props.children, ftReact.deletions);
 	}
 
 	createDom() {
-		console.log("  VNode.createDom");
+		//console.log("  VNode.createDom", this);
 		this.dom = this.type == "TEXT_ELEMENT"
 			? document.createTextNode("")
 			: document.createElement(this.type);
@@ -161,7 +195,7 @@ class VNode {
 	}
 
 	updateDom = () => {
-		console.log("  VNode.updateDom");
+		console.log("  VNode.updateDom", this);
 		const oldProps = (this.old && this.old.props) || {};
 		//Remove old or changed event listeners
 		Object.keys(oldProps)
@@ -216,7 +250,7 @@ class VNode {
 class FTReact {
 	constructor() {
 		/** @private */
-		this._root = new VNode("ROOT_ELEMENT", {});
+		this._root = new FiberNode("ROOT_ELEMENT", {});
 		/** @private */
 		this._nextTask = null;
 		/** @private */
@@ -225,24 +259,26 @@ class FTReact {
 		this._renderLoop = this._renderLoop.bind(this);
 		/** @private */
 		this._newChanges = false;
+		/** @private */
+		this._currentNode = null;
 	}
 
 	/** @private */
 	_change() {
-		console.log("FTReact.change NEXT TASK: ", this._nextTask);
-		this._nextTask.update(this._deletions);
+		//console.log("FTReact.change NEXT TASK: ", this._nextTask);
+		this._nextTask.update(this);
 		this._newChanges = true;
 		if (this._nextTask.child) {
 			this._nextTask = this._nextTask.child;
 			return;
 		}
-		let nextFiber = this._nextTask;
-		while (nextFiber) {
-			if (nextFiber.sibling) {
-				this._nextTask = nextFiber.sibling;
+		let nextNode = this._nextTask;
+		while (nextNode) {
+			if (nextNode.sibling) {
+				this._nextTask = nextNode.sibling;
 				return;
 			}
-			nextFiber = nextFiber.parent;
+			nextNode = nextNode.parent;
 		}
 		this._nextTask = null;
 	}
@@ -258,9 +294,7 @@ class FTReact {
 	/** @private */
 	_renderLoop(deadline) {
 		let shouldYield = false;
-		//stateId = 0;
 		while (this._nextTask && !shouldYield) {
-			console.log("FTReact.renderLoop", this);
 			this._change();
 			shouldYield = deadline.timeRemaining() < 1;
 		}
@@ -270,59 +304,71 @@ class FTReact {
 		requestIdleCallback(this._renderLoop);
 	}
 
-	useState(initialValue) {
-		console.log("useState");
-		//const id = stateId;
-		//const stateIdx = stateIndex;
-		//if (states[id] === undefined) {
-		//	states[id] = [];
-		//}
-		//if (states[id][stateIdx] === undefined) {
-		//	states[id][stateIdx] = initialValue;
-		//}
-		const id = stId;
-		const node = currentNode;
-		if (node.states[id] === undefined)
-			node.states[id] = initialValue;
-		const setState = (newValue) => {
-			if (newValue instanceof Function)
-				node.states[id] = newValue(node.states[id]);
-			else
-				node.states[id] = newValue;
-			this._nextTask = node;
-			// states[id][stateIdx] = newValue;
-			// this._changeState(id);
-		};
-		stId++;
-		//stateIndex++;
-		//return [states[id][stateIdx], setState];
-		return [node.states[id], setState];
+	_resolveFuncComponents() {
+		this._root.parentsSiblings();
+		let nextNode = this._root;
+		while (nextNode) {
+			if (nextNode.child)
+				nextNode = nextNode.child;
+			else if (nextNode.sibling)
+				nextNode = nextNode.sibling;
+			else {
+				let parentNode = nextNode.parent;
+				if (!parentNode)
+					return;
+				nextNode = parentNode.sibling;
+				while (!nextNode) {
+					parentNode = parentNode.parent;
+					if (!parentNode)
+						return;
+					nextNode = parentNode.sibling;
+				}
+			}
+			if (nextNode.type instanceof Function)
+				nextNode.resolveFunc();
+		}
 	}
 
-	//_changeState(id) {
-	//	this._nextTask = stateComponents[id];
-	//	console.log("SET STATE ON: ", this._nextTask);
-	//}
+	useState(initialValue) {
+		const node = this._currentNode;
+		const oldHook = node.old && node.old.states[node.stId];
+		const hook = {
+			state: oldHook ? oldHook.state : initialValue,
+			queue: [],
+		};
+		const actions = oldHook ? oldHook.queue : [];
+		actions.forEach(action => {
+			hook.state = action instanceof Function ? action(hook.state) : action;
+		});
+		const setState = (action) => {
+			hook.queue.push(action);
+			this._nextTask = node;
+			console.log(this._nextTask);
+		};
+		node.states[node.stId] = hook;
+		node.stId++;
+		return [hook.state, setState];
+	}
 
 	/**
 	 * 
 	 * @param {string | Function} type 
 	 * @param {object} props 
-	 * @param  {...VNode | string} children
-	 * @returns {VNode}
+	 * @param  {...FiberNode | string} children
+	 * @returns {FiberNode}
 	 */
 	createElement(type, props, ...children) {
-		return new VNode(
+		return new FiberNode(
 			type,
 			{
 				...props,
 				children: children.map(
-					child => typeof child === "object"
-						? child
-						: new VNode(
+					(child, idx) => typeof child === "object"
+						? child.setKey(idx)
+						: new FiberNode(
 							"TEXT_ELEMENT",
 							{ nodeValue: child }
-						)
+						).setKey(idx)
 				)
 			},
 		);
@@ -330,7 +376,7 @@ class FTReact {
 
 	/**
 	 * 
-	 * @param {VNode} element
+	 * @param {FiberNode} element
 	 * @param {HTMLElement} container 
 	 */
 	render(element, container) {
