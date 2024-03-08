@@ -102,7 +102,8 @@ class ApiClient {
     const response = await this.sendRequest('logout', 'POST', null, null);
     // dev only
     if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('sessionid');
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
     }
     return response;
   }
