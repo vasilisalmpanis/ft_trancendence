@@ -6,19 +6,25 @@
 class ApiClient {
   constructor (baseUrl) {
     this.baseUrl = new URL(baseUrl);
+    if (typeof localStorage === 'undefined') {
+      this.headers = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      return ;
+    }
     this.headers = {
       'Content-Type': 'application/json',
       Accept: 'application/json',
     };
-
-    // dev only
-    if (typeof localStorage !== 'undefined') {
-      this.headers = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Cookie: localStorage.getItem('sessionid'),
-      };
+    if (localStorage.getItem('access_token')) {
+      this.headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
     }
+    if (localStorage.getItem('refresh_token')) {
+      this.refresh_token = localStorage.getItem('refresh_token');
+    }
+      
+    // dev only
   }
 
   async checkStatus (response) {
@@ -72,17 +78,24 @@ class ApiClient {
     return await this.sendRequest(url, 'DELETE', null, query);
   }
 
-  async authorize (body, query = null) {
-    const response = await this.sendRequest('login', 'POST', body, query);
-    const cookie = response.headers.get('set-cookie');
-
-    // dev only
-    if (typeof localStorage === 'undefined') {
-      this.headers.Cookie = cookie;
+  async authorize (payload, query = null) {
+    try{
+      const response = await this.sendRequest('auth', 'POST', payload, query);
+      const response_body = await response.json();
+      const access_token = response_body.access_token;
+      const refresh_token = response_body.refresh_token;
+      // dev only
+      if (typeof localStorage === 'undefined') {
+        this.headers['Authorization'] = `Bearer ${access_token}`;
+        return response;
+      }
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
       return response;
     }
-    localStorage.setItem('sessionid', cookie);
-    return response;
+    catch (error) {
+      console.error('Error:', error);
+    }
   }
 
   async logout () {
@@ -93,6 +106,50 @@ class ApiClient {
     }
     return response;
   }
+
+  async refresh ()
+  {
+    if (this.refresh_token === undefined) {
+      return ;
+    }
+    this.headers['Authorization'] = `Bearer ${this.refresh_token}`;
+    const response = await this.sendRequest('auth/refresh', 'POST', null, null);
+    const response_body = await response.json();
+    const access_token = response_body.access_token;
+    // dev only
+    if (typeof localStorage === 'undefined') {
+      this.headers['Authorization'] = `Bearer ${access_token}`;
+      return response;
+    }
+    localStorage.setItem('access_token', access_token);
+    return response;
+  }
+
+  async second_factor (code) {
+    const response = await this.sendRequest('auth/verify', 'POST', { "2fa_code" : code }, null);
+    const response_body = await response.json();
+    const access_token = response_body.access_token;
+    const refresh_token = response_body.refresh_token;
+    // dev only
+    if (typeof localStorage === 'undefined') {
+      this.headers['Authorization'] = `Bearer ${access_token}`;
+      return response;
+    }
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('refresh_token', refresh_token);
+    return response;
+  }
 };
+
+// async function hello(){
+//   api = new ApiClient('http://localhost:8000');
+
+//   await api.authorize({ username: 'admin', password: 'admin' });
+
+//   await api.get('users/me').then(async (response) => {
+//     const response_body = await response.json();
+//     console.log(response_body);
+//   })
+// }
 
 export default ApiClient;
