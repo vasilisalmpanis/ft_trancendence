@@ -5,6 +5,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseU
 from django.utils               import timezone
 from transcendence_backend.totp import get_totp_token
 from django.conf                import settings
+from cryptography.fernet        import Fernet
 import base64
 import os
 import logging
@@ -123,16 +124,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         }
         for user in blocked_users]
     
+    def decrypt_otp_secret(self) -> str:
+        key = settings.FERNET_SECRET.encode()
+        f = Fernet(key)
+        return f.decrypt(self.otp_secret.encode()).decode()
 
     def create_otp_secret(self) -> str:
         random = os.urandom(20).hex()
-        self.otp_secret = base64.b32encode(random.encode()).decode()
+        otp = base64.b32encode(random.encode())
+        key = settings.FERNET_SECRET.encode()
+        f = Fernet(key)
+        self.otp_secret = f.encrypt(otp).decode()
         self.save()
-        return self.otp_secret
+        return otp.decode()
     
     def enable_2fa(self) -> str:
         self.is_2fa_enabled = True
-        # self.save()
+        self.save()
         return True
 
     def disable_2fa(self) -> bool:
@@ -142,7 +150,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         return True
     
     def verify_2fa(self, auth_code : str) -> bool:
-        code = get_totp_token(self.otp_secret.replace('=', ''))
+        key = settings.FERNET_SECRET.encode()
+        f = Fernet(key)
+        otp_secret = f.decrypt(self.otp_secret.encode()).decode()
+        otp_secret = otp_secret.replace("=", "")
+        code = get_totp_token(otp_secret)
+        logger.warn(code)
+        logger.warn(otp_secret)
         if code != auth_code:
             raise Exception("Invalid 2fa code")
         return True
@@ -154,7 +168,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 def user_model_to_dict(user : "User") -> dict[str, Any]:
     if not user:
-        return {}
+        return {}   
     return {
         "id": user.id,
         "username": user.username,

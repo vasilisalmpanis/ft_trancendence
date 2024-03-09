@@ -25,7 +25,7 @@ def health_check(request) -> JsonResponse:
 class UserView(View):
 
     @jwt_auth_required
-    def get(self, request, user : User) -> JsonResponse:
+    def get(self, request, user : User) -> JsonResponse:    
         """
         GET: Get all users with pagination
         """
@@ -217,15 +217,19 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
     """
     if request.method != 'POST':
         return JsonResponse({"status": "Wrong Request Method"}, status=400)
+    if user.is_2fa_enabled:
+        return JsonResponse({"status": "2FA is already enabled"}, status=400)
     data = json.loads(request.body)
     code = str(data.get("2fa_code", None))
     if code == None:
         return JsonResponse({"Error": "No code in request body"}, status=400)
     if user.verify_2fa(code):
         user.enable_2fa()
+        user.last_login = datetime.now()
+        user.save()
         jwt = JWT(settings.JWT_SECRET)
-        access_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=user.is_2fa_enabled)
-        refresh_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=user.is_2fa_enabled)
+        access_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=False)
+        refresh_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=False)
         return JsonResponse({
                                 "status": "2FA Verified",
                                 "access_token": access_token,
@@ -246,7 +250,7 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        return JsonResponse({"status": user.otp_secret}, status=200)
+        return JsonResponse({"status": user.decrypt_otp_secret()}, status=200)
         # return JsonResponse({"status": generate_2fa_qr_uri(user.username, user.otp_secret)}, status=200)
         
     
@@ -260,7 +264,7 @@ class TOPTView(View):
         if user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is already enabled"}, status=400)
         secret = user.create_otp_secret()     
-        return JsonResponse({"status": "2FA enabled", "secret": secret}, status=200)
+        return JsonResponse({"status": "2FA enabled", "secret": user.decrypt_otp_secret(), "secret2" : secret}, status=200)
     
     def put(self, request, user : User) -> JsonResponse:
         """
