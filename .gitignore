@@ -6,7 +6,10 @@ __pycache__/
 
 # C extensions
 *.so
-**/migrations/
+.eslintrc.json
+
+package-lock.json
+node_modules
 # Distribution / packaging
 .Python
 build/

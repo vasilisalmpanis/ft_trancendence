@@ -45,6 +45,7 @@ components:
         - "name"
         - "password"
         - "email"
+
     UserUpdate:
       type: object
       properties:
@@ -54,6 +55,19 @@ components:
           type: string
         password:
           type: string
+
+    FriendRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        sender_id: 
+          type: integer
+        sender_username:
+          type: string
+        message:
+          type: string
+
     GameCreate:
       type: object
       properties:
@@ -61,6 +75,7 @@ components:
           type: integer
       required:
        - "user_id"
+
     Game:
       type: object
       properties:
@@ -281,6 +296,133 @@ paths:
               schema:
                 type: object
                 $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+      # /friends (GET)
+    # /friendrequest/incoming
+    # /friendrequest (GET)
+    # /friendrequest (POST) -> BODY {receiver_id, message}
+    # /friendrequest/accept (POST) -> BODY {request_id}
+    # /friendrequest/decline (POST) -> BODY {request_id}
+
+  /friends:
+    get:
+      security:
+        - bearerAuth: [ ]
+      description: "Retrieval of friends of currently logged in user"
+      responses:
+        '200':
+          description: "Successful retrieval of friends of currently logged in user"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /friendrequest/incoming:
+    get:
+      security:
+        - bearerAuth: [ ]
+      description: "Retrieval of incoming friend requests of currently logged in user"
+      responses:
+        '200':
+          description: "Successful retrieval of incoming friend requests of currently logged in user"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/GeneralError'
+  /friendrequest:
+    get:
+      security:
+        - bearerAuth: [ ]
+      description: "Retrieval of friend requests of currently logged in user"
+      responses:
+        '200':
+          description: "Successful retrieval of friend requests of currently logged in user"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FriendRequest'
+        default:
+          $ref: '#/components/responses/GeneralError'
+    post:
+      security:
+        - bearerAuth: [ ]
+      description: "Send friend request to user"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                receiver_id:
+                  type: integer
+                message:
+                  type: string
+      responses:
+        '202':
+          description: "Successful friend request sent"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/FriendRequest'
+        default:
+          $ref: '#/components/responses/GeneralError'
+
+  /friendrequest/accept:
+    post:
+      security:
+        - bearerAuth: [ ]
+      description: "Accept friend request"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: integer
+      responses:
+        '202':
+          description: "Successful friend request accepted"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/FriendRequest'
+        default:
+          $ref: '#/components/responses/GeneralError'
+
+  /friendrequest/decline:
+    post:
+      security:
+        - bearerAuth: [ ]
+      description: "Decline friend request"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: integer
+      responses:
+        '202':
+          description: "Successful friend request declined"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/FriendRequest'
         default:
           $ref: '#/components/responses/GeneralError'
 
