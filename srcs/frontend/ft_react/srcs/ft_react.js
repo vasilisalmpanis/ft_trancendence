@@ -1,9 +1,11 @@
+/**
+ * Naive implementation of react-like library
+ */
+
 const isEvent = key => key.startsWith("on");
 const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];
 const isGone = (prev, next) => key => !(key in next);
-
-//let currentNode = null;
 class FiberNode {
 	/**
 	 * 
@@ -21,7 +23,6 @@ class FiberNode {
 		this.old = null;
 		this.parent = null;
 		this.effect = null;
-		this.needsUpdate = true;
 		this.states = [];
 		this.stId = 0;
 	}
@@ -71,9 +72,9 @@ class FiberNode {
 	}
 
 	parentsSiblings() {
-		if (!this.props || !this.props.children)
+		if (!this.children)
 			return;
-		this.props.children.forEach((child, idx) => {
+		this.children.forEach((child, idx) => {
 			child.parent = this;
 			child.key = idx;
 			child.parentsSiblings();
@@ -85,14 +86,14 @@ class FiberNode {
 		ftReact._currentNode = this;
 		const children = this.type(this.props);
 		ftReact._currentNode = null;
-		this.props.children = Array.isArray(children) ? children : [children];
+		this.children = Array.isArray(children) ? children : [children];
 		this.parentsSiblings();
 	}
 
 	clone() {
 		const clonedProps = {
 			...this.props,
-			children: this.props.children.map(
+			children: this.children.map(
 				child => child instanceof FiberNode
 					? child.clone()
 					: child
@@ -100,7 +101,6 @@ class FiberNode {
 		};
 		const clonedNode = new FiberNode(this.type, clonedProps);
 		clonedNode.dom = this.dom;
-		clonedNode.needsUpdate = this.needsUpdate;
 		clonedNode.states = [...this.states];
 		clonedNode.key = this.key;
 		clonedNode.parent = this.parent;
@@ -110,7 +110,7 @@ class FiberNode {
 	/**
 	 * @param {FiberNode[]} children
 	 */
-	reconcile(children, deletions) {
+	reconcile(children, ftReact) {
 		//console.log("  VNode.reconcile RECONCILE: ", this, children);
 		let prevSibling = null;
 		let oldNode = this.old && this.old.child;
@@ -135,7 +135,7 @@ class FiberNode {
 			}
 			if (oldNode && !sameType) {
 				oldNode.effect = "DELETION";
-				deletions.push(oldNode);
+				ftReact._deletions.push(oldNode);
 			}
 			if (oldNode) {
 				oldNode = oldNode.sibling;
@@ -147,6 +147,12 @@ class FiberNode {
 			}
 			prevSibling = newNode;
 			i++;
+		}
+		while (oldNode)
+		{
+			oldNode.effect = "DELETION";
+			ftReact._deletions.push(oldNode);
+			oldNode = oldNode.sibling;
 		}
 	}
 
@@ -163,13 +169,14 @@ class FiberNode {
 			this.updateDom();
 		else if (this.effect === "DELETION")
 			this.delete(domParent);
+		this.effect = null;
+		this.old = this.clone();
 		this.child && this.child.commit();
 		this.sibling && this.sibling.commit();
-		this.old = this.clone();
 	}
 
 	delete(domParent) {
-		console.log("  VNode.delete", this);
+		console.log("  VNode.delete", this, domParent);
 		if (this.dom)
 			domParent.removeChild(this.dom);
 		else
@@ -182,7 +189,7 @@ class FiberNode {
 			this.resolveFunc(ftReact);
 		else if (!this.dom)
 			this.createDom();
-		this.reconcile(this.props.children, ftReact.deletions);
+		this.reconcile(this.children, ftReact);
 	}
 
 	createDom() {
@@ -195,20 +202,21 @@ class FiberNode {
 	}
 
 	updateDom = () => {
-		console.log("  VNode.updateDom", this);
+		//console.log("  VNode.updateDom", this);
 		const oldProps = (this.old && this.old.props) || {};
 		//Remove old or changed event listeners
 		Object.keys(oldProps)
 			.filter(isEvent)
 			.filter(
 				key =>
-					!(key in this.props) ||
-					isNew(oldProps, this.props)(key)
+					!(key in this.props)
+					//|| isNew(oldProps, this.props)(key)
 			)
 			.forEach(name => {
 				const eventType = name
 					.toLowerCase()
 					.substring(2);
+				console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
 				this.dom.removeEventListener(
 					eventType,
 					oldProps[name]
@@ -220,6 +228,7 @@ class FiberNode {
 			.filter(isProperty)
 			.filter(isGone(oldProps, this.props))
 			.forEach(name => {
+				console.log("     removeProperties", this.dom.tagName || this.type, name);
 				this.dom[name] = "";
 			});
 
@@ -228,6 +237,7 @@ class FiberNode {
 			.filter(isProperty)
 			.filter(isNew(oldProps, this.props))
 			.forEach(name => {
+				console.log("     setProperties", this.dom.tagName || this.type, name);
 				this.dom[name] = this.props[name];
 			});
 
@@ -239,6 +249,7 @@ class FiberNode {
 				const eventType = name
 					.toLowerCase()
 					.substring(2);
+				console.log("     addEventListener", this.dom.tagName || this.type, name, eventType);
 				this.dom.addEventListener(
 					eventType,
 					this.props[name]
@@ -264,7 +275,7 @@ class FTReact {
 	}
 
 	/** @private */
-	_change() {
+	_update() {
 		//console.log("FTReact.change NEXT TASK: ", this._nextTask);
 		this._nextTask.update(this);
 		this._newChanges = true;
@@ -287,6 +298,7 @@ class FTReact {
 	_commit() {
 		console.log("FTReact.commit");
 		this._deletions.forEach(el => el.commit());
+		this._deletions = [];
 		this._root.child && this._root.child.commit();
 		this._newChanges = false;
 	}
@@ -295,7 +307,7 @@ class FTReact {
 	_renderLoop(deadline) {
 		let shouldYield = false;
 		while (this._nextTask && !shouldYield) {
-			this._change();
+			this._update();
 			shouldYield = deadline.timeRemaining() < 1;
 		}
 		if (!this._nextTask && this._newChanges) {
@@ -343,7 +355,6 @@ class FTReact {
 		const setState = (action) => {
 			hook.queue.push(action);
 			this._nextTask = node;
-			console.log(this._nextTask);
 		};
 		node.states[node.stId] = hook;
 		node.stId++;
@@ -362,7 +373,7 @@ class FTReact {
 			type,
 			{
 				...props,
-				children: children.map(
+				children: children.flat().map(
 					(child, idx) => typeof child === "object"
 						? child.setKey(idx)
 						: new FiberNode(
@@ -382,7 +393,7 @@ class FTReact {
 	render(element, container) {
 		console.log("FTReact.render ", element);
 		this._root.dom = container;
-		this._root.props.children = [element];
+		this._root.children = [element];
 		this._root.parentsSiblings();
 		this._nextTask = this._root;
 		requestIdleCallback(this._renderLoop);
