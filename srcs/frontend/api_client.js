@@ -142,15 +142,11 @@ class ApiClient {
   }
 };
 
-// async function hello(){
-//   api = new ApiClient('http://localhost:8000');
-
-//   await api.authorize({ username: 'admin', password: 'admin' });
-
-//   await api.get('users/me').then(async (response) => {
-//     const response_body = await response.json();
-//     console.log(response_body);
-//   })
-// }
-
 export default ApiClient;
+
+// TODO check expiration date of access token before making request
+// TODO refresh token if access token is expired
+
+
+// Refactor decorators for jwt
+// Move business logic from models to services, managers, etc

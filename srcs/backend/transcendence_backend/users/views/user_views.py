@@ -4,6 +4,7 @@ from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
 from transcendence_backend.decorators   import jwt_auth_required, jwt_2fa_required
 from ..models                           import User, FriendRequest
+from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
 from jwt                                import JWT
 from chat.models                        import Chat
@@ -139,7 +140,7 @@ def get_friends(request, user : User) -> JsonResponse:
     try:
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
-        friends = user.get_friends(skip, limit)
+        friends = UserService.get_friends(user, skip, limit)
         if not friends:
             return JsonResponse({"status": "No friends"}, status=200)
         return JsonResponse(friends, status=200, safe=False)
@@ -155,7 +156,7 @@ class BlockedUsersView(View):
         if request.method != "GET":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
         try:
-            blocked_users = user.get_blocked_users()
+            blocked_users = UserService.get_blocked_users(user)
             if not blocked_users:
                 return JsonResponse({"status": "No blocked users"}, status=200)
             return JsonResponse(blocked_users, status=200, safe=False)
@@ -174,8 +175,7 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            if user.block(user_id):
-                FriendRequest.objects.filter(sender_id=user_id, receiver_id=user.id).delete()
+            UserService.block(user, user_id)
             return JsonResponse({"status": "User Blocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -191,7 +191,7 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            user.unblock(user_id)
+            UserService.unblock(user, user_id)
             return JsonResponse({"status": "User Unblocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -223,11 +223,11 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
     code = str(data.get("2fa_code", None))
     if code == None:
         return JsonResponse({"Error": "No code in request body"}, status=400)
-    if user.verify_2fa(code):
-        user.enable_2fa()
-        user.last_login = datetime.now()
-        user.save()
+    if SecondFactorService.verify_2fa(user, code):
+        SecondFactorService.enable_2fa(user)
+        UserService.update_last_login(user)
         jwt = JWT(settings.JWT_SECRET)
+        ## TODO: Abstract creation of tokens to a separate function
         access_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=False)
         refresh_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=False)
         return JsonResponse({
@@ -250,7 +250,7 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        return JsonResponse({"status": user.decrypt_otp_secret()}, status=200)
+        return JsonResponse({"status": SecondFactorService.decrypt_otp_secret(user)}, status=200)
         # return JsonResponse({"status": generate_2fa_qr_uri(user.username, user.otp_secret)}, status=200)
         
     
@@ -263,8 +263,8 @@ class TOPTView(View):
         """
         if user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is already enabled"}, status=400)
-        secret = user.create_otp_secret()     
-        return JsonResponse({"status": "2FA enabled", "secret": user.decrypt_otp_secret(), "secret2" : secret}, status=200)
+        secret = SecondFactorService.create_otp_secret(user)     
+        return JsonResponse({"status": "2FA enabled", "secret": secret}, status=200)
     
     def put(self, request, user : User) -> JsonResponse:
         """
@@ -275,7 +275,7 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        secret = user.enable_2fa()
+        secret = SecondFactorService.create_otp_secret(user)
         return JsonResponse({"status": "2FA refreshed", "secret": secret}, status=200)
     
     def delete(self, request, user : User) -> JsonResponse:
@@ -287,9 +287,45 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        if user.disable_2fa():
+        if SecondFactorService.disable_2fa(user):
             return JsonResponse({"status": "2FA disabled"}, status=200)
         else:
             return JsonResponse({"status": "error"}, status=400)
         
     
+    # def decrypt_otp_secret(self) -> str:
+    #     key = settings.FERNET_SECRET.encode()
+    #     f = Fernet(key)
+    #     return f.decrypt(self.otp_secret.encode()).decode()
+
+    # def create_otp_secret(self) -> str:
+    #     random = os.urandom(20).hex()
+    #     otp = base64.b32encode(random.encode())
+    #     key = settings.FERNET_SECRET.encode()
+    #     f = Fernet(key)
+    #     self.otp_secret = f.encrypt(otp).decode()
+    #     self.save()
+    #     return otp.decode()
+    
+    # def enable_2fa(self) -> str:
+    #     self.is_2fa_enabled = True
+    #     self.save()
+    #     return True
+
+    # def disable_2fa(self) -> bool:
+    #     self.otp_secret = None
+    #     self.is_2fa_enabled = False
+    #     self.save()
+    #     return True
+    
+    # def verify_2fa(self, auth_code : str) -> bool:
+    #     key = settings.FERNET_SECRET.encode()
+    #     f = Fernet(key)
+    #     otp_secret = f.decrypt(self.otp_secret.encode()).decode()
+    #     otp_secret = otp_secret.replace("=", "")
+    #     code = get_totp_token(otp_secret)
+    #     logger.warn(code)
+    #     logger.warn(otp_secret)
+    #     if code != auth_code:
+    #         raise Exception("Invalid 2fa code")
+    #     return True

@@ -4,6 +4,7 @@ from users.models                       import User, FriendRequest, user_model_t
 from django.views                       import View
 from django.forms.models                import model_to_dict
 from transcendence_backend.decorators   import jwt_auth_required
+from ..services                         import UserService
 import json
 import logging
 
@@ -99,7 +100,7 @@ def unfriend(request, user : User) -> JsonResponse:
     if not friend_id:
         return JsonResponse({"Error": "Friend ID not provided"}, status=400)
     try:
-        removed_friend = user.unfriend(friend_id)
+        removed_friend = UserService.unfriend(user, friend_id)
         if removed_friend:
             return JsonResponse(user_model_to_dict(removed_friend), status=200)
         return JsonResponse({"status": "Friend not removed"}, status=400)
