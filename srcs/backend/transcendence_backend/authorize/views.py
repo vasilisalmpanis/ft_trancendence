@@ -1,6 +1,7 @@
 from venv import logger
 from django.shortcuts                   import render
 from users.models                       import User
+from users.services                     import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required, jwt_refresh_required, jwt_2fa_required
 from django.http                        import JsonResponse
 from jwt                                import JWT
@@ -48,8 +49,7 @@ def login_user(request) -> JsonResponse:
     if user != None:
         jwt = JWT(settings.JWT_SECRET)
         user.is_user_active = True
-        user.last_login = datetime.now()
-        user.save()
+        UserService.update_last_login(user)
         access_token = create_token(jwt=jwt, 
                                     user=user, 
                                     expiration=datetime.now() + timedelta(days=1), 
@@ -91,8 +91,7 @@ def refresh_token(request, user : User) -> JsonResponse:
     if request.method != 'GET':
         return JsonResponse({"status": "Wrong Request Method"}, status=400)
     jwt = JWT(settings.JWT_SECRET)
-    user.last_login = datetime.now()
-    user.save()
+    UserService.update_last_login(user)
     access_token = create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login)
     return JsonResponse({"access_token": access_token}, status=200)
 
@@ -112,16 +111,15 @@ def verify_2fa(request, user : User) -> JsonResponse:
         return JsonResponse({"Error": "No code in request body"}, status=400)
     if user.is_2fa_enabled == False:
         return JsonResponse({"Error": "2FA is not enabled"}, status=400)
-    if user.verify_2fa(code):
+    if SecondFactorService.verify_2fa(user, code):
         jwt = JWT(settings.JWT_SECRET)
         user.is_user_active = True
-        user.last_login = datetime.now()
-        user.save()
+        UserService.update_last_login(user)
         logger.warn(user.last_login)
         access_token = create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=False)
         refresh_token = create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=False)
         return JsonResponse({"access_token": access_token, "refresh_token" : refresh_token}, status=200)
     else:
         return JsonResponse({"status": "incorrect code"}, status=401)
-    return JsonResponse({"status": "2FA Verified"}, status=200)
+    # return JsonResponse({"status": "2FA Verified"}, status=200)
     

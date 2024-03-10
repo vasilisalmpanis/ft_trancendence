@@ -1,10 +1,13 @@
 from datetime                   import datetime
+from venv import logger
 from .models                    import User, FriendRequest, user_model_to_dict
 from django.conf                import settings
 from cryptography.fernet        import Fernet
 from transcendence_backend.totp import get_totp_token
 import os
 import base64
+import logging
+logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
@@ -165,8 +168,8 @@ class SecondFactorService:
         otp_secret = f.decrypt(user.otp_secret.encode()).decode()
         otp_secret = otp_secret.replace("=", "")
         code = get_totp_token(otp_secret)
-        # logger.warn(code)
-        # logger.warn(otp_secret)
+        logger.warn(code)
+        logger.warn(otp_secret)
         if code != auth_code:
             raise Exception("Invalid 2fa code")
         return True
