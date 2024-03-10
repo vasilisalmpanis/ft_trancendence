@@ -1,4 +1,3 @@
-import re
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
@@ -6,13 +5,6 @@ from django.utils               import timezone
 from transcendence_backend.totp import get_totp_token
 from django.conf                import settings
 from cryptography.fernet        import Fernet
-import base64
-import os
-import logging
-import hmac
-import hashlib
-
-logger = logging.getLogger(__name__)
 
 class UserManager(BaseUserManager):
     def create_user(self, username : str = None,

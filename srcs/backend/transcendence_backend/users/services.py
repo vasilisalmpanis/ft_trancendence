@@ -96,9 +96,7 @@ class UserService:
         blocked_users = user.blocked.all()[skip:skip+limit]
         return [
             {
-                "id": user.id,
-                "username": user.username,
-                "avatar": user.avatar
+                user_model_to_dict(user)
             }
             for user in blocked_users
         ]
