@@ -18,7 +18,7 @@ def get_incoming_friend_requests(request, user : User) -> JsonResponse:
     if request.method != "GET":
         return JsonResponse({"Error": "Wrong Request Method"}, status=400)
     try:
-        friend_requests = FriendRequest.get_user_friend_requests(user.id, "incoming")
+        friend_requests = FriendRequestService.get_user_friend_requests(user, "incoming")
         if not friend_requests:
             return JsonResponse({"status": "No friend requests"}, status=200)
         return JsonResponse(friend_requests, status=200, safe=False)
@@ -32,7 +32,7 @@ class FriendsView(View):
         Get all sent friend requests by currently logged in user
         """
         try:
-            friend_requests = FriendRequest.get_user_friend_requests(user.id, "sent")
+            friend_requests = FriendRequestService.get_user_friend_requests(user, "sent")
             if not friend_requests:
                 return JsonResponse({"status": "No friend requests"}, status=200)
             return JsonResponse(friend_requests, status=200, safe=False)
