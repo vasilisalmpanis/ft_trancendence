@@ -50,9 +50,33 @@ services:
       - .env
     depends_on: 
       - db
+      - redis
     restart: always
     volumes:
-      - $PWD:/data
+      - pwd:/data
+
+  redis:
+    container_name: redis
+    image: redis
+    networks:
+      - backend
+    expose:
+      - 6379:6379
+    restart: always
+  
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend_dev
+    networks:
+      - backend
+    restart: always
+    volumes:
+      - pwd:/data
   
   pgAdmin:
     container_name: pgAdmin
@@ -87,6 +111,13 @@ services:
 volumes:
   pgdata:
     driver: local
+  pwd:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: $PWD
+
   grafana_data:
     driver: local
       
