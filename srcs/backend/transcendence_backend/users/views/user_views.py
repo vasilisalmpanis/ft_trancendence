@@ -2,7 +2,7 @@ from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
-from transcendence_backend.decorators   import jwt_auth_required, jwt_2fa_required
+from transcendence_backend.decorators   import jwt_auth_required
 from ..models                           import User, FriendRequest
 from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
@@ -25,7 +25,7 @@ def health_check(request) -> JsonResponse:
 
 class UserView(View):
 
-    @jwt_auth_required
+    @jwt_auth_required()
     def get(self, request, user : User) -> JsonResponse:    
         """
         GET: Get all users with pagination
@@ -89,7 +89,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     }
     return JsonResponse(data, safe=False)
 
-@method_decorator(jwt_auth_required, name="dispatch")
+@method_decorator(jwt_auth_required(), name="dispatch")
 class CurrentUserView(View):
             
     def get(self, request, user : User) -> JsonResponse:
@@ -129,7 +129,7 @@ class CurrentUserView(View):
         user.save()
         return JsonResponse({"status": "User Updated"}, status=200)
 
-@jwt_auth_required 
+@jwt_auth_required()
 def get_friends(request, user : User) -> JsonResponse:
     """
     Get all friends of currently logged in user
@@ -147,7 +147,7 @@ def get_friends(request, user : User) -> JsonResponse:
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
 
-@method_decorator(jwt_auth_required, name="dispatch")    
+@method_decorator(jwt_auth_required(), name="dispatch")    
 class BlockedUsersView(View):
     def get(self, request, user : User) -> JsonResponse:
         """
@@ -207,7 +207,7 @@ def generate_2fa_qr_uri(username, secret, issuer_name="localhost"):
 
     return uri
 
-@jwt_2fa_required
+@jwt_auth_required(second_factor=True)
 def verify_2fa_code(request, user : User) -> JsonResponse:
     """
     Verifies the 2fa code for the user
@@ -239,7 +239,7 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
         return JsonResponse({"status": "2FA Not Verified"}, status=400)
 
 
-@method_decorator(jwt_auth_required, name="dispatch")
+@method_decorator(jwt_auth_required(), name="dispatch")
 class TOPTView(View):
     def get(self, request, user : User) -> JsonResponse:
         """
@@ -276,6 +276,7 @@ class TOPTView(View):
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
         secret = SecondFactorService.create_otp_secret(user)
+        # TODO : check if the code is maches to enable again
         return JsonResponse({"status": "2FA refreshed", "secret": secret}, status=200)
     
     def delete(self, request, user : User) -> JsonResponse:

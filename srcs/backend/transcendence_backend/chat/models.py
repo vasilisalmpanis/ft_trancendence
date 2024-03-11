@@ -69,6 +69,23 @@ class Chat(models.Model):
         verbose_name_plural = 'Chats'
 
 
+def chat_model_to_dict(chat : "Chat") -> dict:
+    """
+    Convert chat model to dict
+    :param chat: Chat instance
+    :return: dict
+    """
+    if not chat:
+        return {}
+    receiver = chat.participants.exclude(id=chat.id).first()
+    return {
+        "id": chat.id,
+        "name": chat.name,
+        "receiver": receiver.username,
+        "avatar": receiver.avatar
+    }
+
+
 class Message(models.Model):
     id = models.AutoField(primary_key=True)
     chat_id = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")

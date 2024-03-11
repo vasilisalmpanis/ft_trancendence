@@ -95,3 +95,17 @@ class FriendRequest(models.Model):
     class Meta:
         verbose_name = 'Friend Request'
         verbose_name_plural = 'Friend Requests'
+
+def friend_request_model_to_dict(friend_request : FriendRequest) -> dict[Any, Any]:
+    """
+    Convert friend request model to dictionary
+    @param friend_request: FriendRequest instance
+    @return: Dictionary
+    """
+    return {
+        "id": friend_request.id,
+        "sender_id": friend_request.sender.id,
+        "receiver_id": friend_request.receiver.id,
+        "message": friend_request.message,
+        "status": friend_request.status
+    }

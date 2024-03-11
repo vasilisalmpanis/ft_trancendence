@@ -14,12 +14,13 @@ def get_totp_token(secret : str) -> str:
     :param secret: The secret to use
     :return: The TOTP token
     """
-    secret = base64.b32decode(secret.upper())
+    secret = base64.b32decode(secret)
     timestamp = int(time.time()) // 30
     timestamp_bytes = struct.pack(">Q", timestamp)
     hmac_hash = hmac.new(secret, timestamp_bytes, hashlib.sha1).digest()
     offset = hmac_hash[-1] & 0x0F
     dynamic_code = hmac_hash[offset:offset+4]
-    dynamic_code_int = struct.unpack(">I", dynamic_code)[0]
-    totp = dynamic_code_int % 10**6
+    code = hmac_hash[offset : offset + 4]
+    dynamic_code = int.from_bytes(code, "big") & 0x7FFFFFFF
+    totp = dynamic_code % 10**6
     return "{:06d}".format(totp)
