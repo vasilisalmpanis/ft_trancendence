@@ -6,6 +6,11 @@ const isEvent = key => key.startsWith("on");
 const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];
 const isGone = (prev, next) => key => !(key in next);
+const camelToCSS = (str) => str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+const objectToCSS = (obj) => Object.entries(obj)
+  .map(([key, value]) => `${camelToCSS(key)}: ${value}`)
+  .join('; ');
+
 class FiberNode {
   /**
    * 
@@ -24,6 +29,7 @@ class FiberNode {
     this.parent = null;
     this.effect = null;
     this.states = [];
+    this.effects = [];
     this.stId = 0;
   }
   get child() {
@@ -57,7 +63,8 @@ class FiberNode {
     this.children.forEach((child, idx) => {
       child.parent = this;
       child.key = idx;
-      child.parentsSiblings();
+      if (child instanceof FiberNode)
+        child.parentsSiblings();
     });
   }
   resolveFunc(ftReact) {
@@ -75,7 +82,7 @@ class FiberNode {
     };
     const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
-    clonedNode.states = [...this.states];
+    clonedNode.states = this.states ? [...this.states] : this.states;
     clonedNode.key = this.key;
     clonedNode.parent = this.parent;
     return clonedNode;
@@ -144,6 +151,7 @@ class FiberNode {
   delete(domParent) {
     console.log("  VNode.delete", this, domParent);
     if (this.dom) domParent.removeChild(this.dom);else this.child && this.child.delete(domParent);
+    if (this.cleanup) this.cleanup();
   }
   update(ftReact) {
     //console.log("  VNode.update", this);
@@ -176,7 +184,11 @@ class FiberNode {
     // Set new or changed properties
     Object.keys(this.props).filter(isProperty).filter(isNew(oldProps, this.props)).forEach(name => {
       console.log("     setProperties", this.dom.tagName || this.type, name);
-      this.dom[name] = this.props[name];
+      if (name === 'style' && typeof this.props[name] === 'object') {
+        this.dom[name] = objectToCSS(this.props[name]);
+      } else {
+        this.dom[name] = this.props[name];
+      }
     });
 
     // Add event listeners
@@ -229,7 +241,38 @@ class FTReact {
     this._deletions.forEach(el => el.commit());
     this._deletions = [];
     this._root.child && this._root.child.commit();
+    this._runEffects();
     this._newChanges = false;
+  }
+
+  /** @private */
+  _runEffects() {
+    let nextNode = this._root;
+    while (nextNode) {
+      if (nextNode.effects) {
+        nextNode.effects.forEach(effect => {
+          if (effect.hasChangedDeps) {
+            if (effect.cleanup) {
+              effect.cleanup(); // Clean up previous effect
+            }
+            effect.cleanup = effect.callback(); // Run effect and store cleanup function
+          }
+        });
+      }
+      nextNode = this._getNextNode(nextNode);
+    }
+  }
+
+  /** @private */
+  _getNextNode(node) {
+    if (node.child)
+      return node.child;
+    while (node) {
+      if (node.sibling)
+        return node.sibling;
+      node = node.parent;
+    }
+    return null;
   }
 
   /** @private */
@@ -279,6 +322,69 @@ class FTReact {
     node.states[node.stId] = hook;
     node.stId++;
     return [hook.state, setState];
+  }
+  useEffect(callback, deps) {
+    const node = this._currentNode;
+    const oldEffect = node.old && node.effects[node.stId];
+    const hasChangedDeps = oldEffect ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
+    const effect = {
+      cleanup: null,
+      deps,
+      callback,
+      hasChangedDeps
+    };
+
+    if (hasChangedDeps) {
+      if (oldEffect && oldEffect.cleanup) {
+        oldEffect.cleanup();
+      }
+      node.effects[node.stId] = effect;
+    }
+    node.stId++;
+  }
+  createContext(defaultValue) {
+    let listeners = [];
+    let value = defaultValue;
+    const subscribe = (listener) => {
+      listeners.push(listener);
+      return () => {
+        listeners = listeners.filter(l => l !== listener);
+      };
+    };
+    const notify = () => {
+      listeners.forEach(listener => listener());
+    };
+    const setValue = (newValue) => {
+      value = newValue;
+      notify();
+    };
+    const context = {
+      _currentValue: defaultValue,
+      get value() {
+        return { value, setValue };
+      },
+      //set value(v) {
+      //  this._currentValue = v;
+      //  notify();
+      //},
+      Provider: null,
+      subscribe,
+    };
+    context.Provider = ({ value, children }) => {
+      setValue(value)
+      console.log("Ctx children: ", children);
+      return children;
+    };
+    return context;
+  }
+  useContext(context) {
+    const node = this._currentNode;
+    const listener = () => {
+      this._nextTask = node;
+    };
+    const unsubscribe = context.subscribe(listener);
+    node.cleanup = () => unsubscribe();
+    return context.value;
   }
 
   /**

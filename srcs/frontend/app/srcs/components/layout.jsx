@@ -6,7 +6,7 @@ const Layout = ({children, ...rest}) => {
 			container-md
 			text-center
 			d-flex
-			flex-row
+			flex-column
 			mb-3
 			justify-content-center
 			align-items-center
