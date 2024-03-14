@@ -21,13 +21,12 @@ def get_chats(request, user : User) -> JsonResponse:
     """
     Get all chats for a user by user_id  
     """
-    if request.method == "GET":
-        skip = int(request.GET.get("skip", 0))
-        limit = int(request.GET.get("limit", 10))
-        data = ChatService.get_chats(user, skip, limit)
-        if len(data) == 0:
-            return JsonResponse({"status": "No chats found"}, status=200)
-        return JsonResponse(data, status=200, safe=False)
+    skip = int(request.GET.get("skip", 0))
+    limit = int(request.GET.get("limit", 10))
+    data = ChatService.get_chats(user, skip, limit)
+    if len(data) == 0:
+        return JsonResponse({"status": "No chats found"}, status=200)
+    return JsonResponse(data, status=200, safe=False)
     
 @jwt_auth_required()
 def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
@@ -50,7 +49,7 @@ class ChatView(View):
         if not request.user.is_authenticated:
             return JsonResponse({"status": "Not authenticated"}, status=401)
         try:
-            chat = Chat.get_chat_id(request.user.id, id)
+            chat = ChatService.get_chat_id(request.user.id, id)
             if not chat:
                 return JsonResponse({"status": "Chat not found"}, status=404)
             return JsonResponse({"chat_id": chat}, status=200)
