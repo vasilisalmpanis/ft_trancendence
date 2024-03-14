@@ -72,7 +72,7 @@ class UserView(View):
             return JsonResponse({"status": "error"}, status=400)
 
 @require_http_methods(["GET"])
-@jwt_auth_required
+@jwt_auth_required()
 def user_by_id_view(request, user : User, id) -> JsonResponse:
     """
     Returns user data by id
