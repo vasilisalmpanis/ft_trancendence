@@ -6,6 +6,8 @@ import Main 			from './pages/main';
 import Login			from "./pages/login";
 import Test 			from './pages/test';
 import { useTheme } 	from './theme/theme';
+import Layout			from './components/layout';
+import Profile			from './pages/profile';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -13,12 +15,13 @@ const App = (props) => {
 	return (
 		<div style={{
 			width: "100vw",
-			height: "100vh",
+			height: "90vh",
 		}}>
 			<Router>
-				<Route path="/" element={<Main/>}/>
-				<Route path="/login" element={<Login/>}/>
-				<Route path="/test" element={<Test/>}/>
+				<Route fallback auth path="/" element={<Main/>}/>
+				<Route login path="/login" element={<Login/>}/>
+				<Route auth path="/test" element={<Test/>}/>
+				<Route auth path="/me" element={<Profile/>}/>
 			</Router>
 		</div>
 	);

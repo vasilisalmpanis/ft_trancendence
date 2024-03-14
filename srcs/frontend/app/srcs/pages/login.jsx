@@ -8,7 +8,10 @@ const Login = (props) => {
 		event.preventDefault();
 		const username = event.target[0].value;
 		const password = event.target[1].value;
-		client.authorize({username: username, password: password});
+		client.authorize({username: username, password: password}).then(resp=>{
+			resp && resp.ok ? props.route("/") : console.log(resp);
+		});
+
 	};
 	return (
 		<Layout>

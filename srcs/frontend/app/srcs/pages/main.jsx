@@ -1,9 +1,9 @@
 import ftReact		from "../ft_react";
-import Layout		from "../components/layout.jsx";
+import BarLayout	from "../components/barlayout.jsx";
 
 const Main = (props) => {
 	return (
-		<Layout>
+		<BarLayout route={props.route}>
 			<div className="mb-3">
 				<h1>Main page</h1>
 			</div>
@@ -15,7 +15,7 @@ const Main = (props) => {
 					Go to login
 				</button>
 			</div>
-		</Layout>
+		</BarLayout>
 	);
 };
 

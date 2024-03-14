@@ -75,8 +75,6 @@ services:
     networks:
       - backend
     restart: always
-    volumes:
-      - pwd:/data
   
   pgAdmin:
     container_name: pgAdmin

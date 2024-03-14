@@ -140,6 +140,9 @@ class ApiClient {
     localStorage.setItem('refresh_token', refresh_token);
     return response;
   }
+  authorized() {
+    return localStorage.getItem('access_token') ? true : false;
+  }
 };
 
 // async function hello(){
@@ -152,5 +155,7 @@ class ApiClient {
 //     console.log(response_body);
 //   })
 // }
+
+export const apiClient = new ApiClient(`http://localhost:8000`);
 
 export default ApiClient;
