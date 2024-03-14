@@ -63,7 +63,7 @@ def jwt_auth_required(second_factor : bool = False, days : int = 1):
                 tokens = token.split(' ')
                 for t in tokens[1:]:
                     if t != "":
-                        token = t 
+                        token = t
             except IndexError:
                 return JsonResponse({'Error': 'Access Token Required'}, status=401)
             jwt = JWT(settings.JWT_SECRET)
