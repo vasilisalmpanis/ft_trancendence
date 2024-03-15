@@ -128,9 +128,29 @@ def authenticate(stdscr, username, password) -> NetworkClient:
     return client
 
 def play_game(stdcsr, client):
-    game = Game(stdsrc=stdcsr, client=client)
+    response = client.request("/games?type=pending", "GET")
+    if response.status != 200:
+        stdcsr.clear()
+        stdcsr.addstr(1, 1, "An error occurred. Return to the main menu")
+        stdcsr.refresh()
+        stdcsr.getch()
+        return
+    games = response.body
+    if len(games) == 0:
+        stdcsr.clear()
+        stdcsr.addstr(1, 1, "No games available. Return to the main menu")
+        stdcsr.refresh()
+        stdcsr.getch()
+        return
+    game_id = games[0]["id"]
+    stdcsr.clear()
+    stdcsr.addstr(1, 1, f"{game_id}")
+    stdcsr.refresh()
+    stdcsr.getch()
+    game = Game(stdsrc=stdcsr, client=client, game_id=game_id)
     while game.running:
         game.run()
+    stdcsr.nodelay(0)
 
 
 def search_users():

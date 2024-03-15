@@ -44,7 +44,7 @@ class NetworkClient:
             if method not in ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]:
                 raise ValueError(f"Invalid method {method}")
 
-        def request(self, path: str, method : str, body : Dict[str, str] = None) -> Response:
+        def request(self, path: str, method : str, body : Dict[Any, Any] = None) -> Response:
             self.validate_method(method)
             if method == "POST" or method == "PUT" or method == "PATCH" and body:
                 self.headers["Content-Type"] = "application/json"
