@@ -36,7 +36,7 @@ class UserView(View):
         users_not_blocked_me = User.objects.exclude(blocked_me=user)
 
         # Intersection of users who haven't blocked me and users whom I haven't blocked
-        users = users_not_blocked_by_me.intersection(users_not_blocked_me)
+        users = users_not_blocked_by_me.intersection(users_not_blocked_me)[skip:skip+limit]
         data = [
             {
                 "name": user.username,
