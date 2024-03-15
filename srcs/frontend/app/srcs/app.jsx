@@ -8,6 +8,7 @@ import { useTheme } 	from './theme/theme';
 import Profile			from './pages/profile';
 import Signup			from './pages/signup';
 import Signin			from './pages/signin';
+import Pong 			from './pages/pong';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -23,6 +24,7 @@ const App = (props) => {
 				<Route path="/signup" element={<Signup/>}/>
 				<Route auth path="/test" element={<Test/>}/>
 				<Route auth path="/me" element={<Profile/>}/>
+				<Route auth path="/pong" element={<Pong/>}/>
 			</Router>
 		</div>
 	);

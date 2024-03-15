@@ -149,7 +149,7 @@ class FiberNode {
     this.sibling && this.sibling.commit();
   }
   delete(domParent) {
-    console.log("  VNode.delete", this, domParent);
+    //console.log("  VNode.delete", this, domParent);
     if (this.dom) domParent.removeChild(this.dom); else this.child && this.child.delete(domParent);
     if (this.cleanup) this.cleanup();
   }
@@ -171,19 +171,19 @@ class FiberNode {
       //|| isNew(oldProps, this.props)(key)
     ).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
-      console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
+      //console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.removeEventListener(eventType, oldProps[name]);
     });
 
     // Remove old properties
     Object.keys(oldProps).filter(isProperty).filter(isGone(oldProps, this.props)).forEach(name => {
-      console.log("     removeProperties", this.dom.tagName || this.type, name);
+      //console.log("     removeProperties", this.dom.tagName || this.type, name);
       this.dom[name] = "";
     });
 
     // Set new or changed properties
     Object.keys(this.props).filter(isProperty).filter(isNew(oldProps, this.props)).forEach(name => {
-      console.log("     setProperties", this.dom.tagName || this.type, name);
+      //console.log("     setProperties", this.dom.tagName || this.type, name);
       if (name === 'style' && typeof this.props[name] === 'object') {
         this.dom[name] = objectToCSS(this.props[name]);
       } else {
@@ -194,7 +194,7 @@ class FiberNode {
     // Add event listeners
     Object.keys(this.props).filter(isEvent).filter(isNew(oldProps, this.props)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
-      console.log("     addEventListener", this.dom.tagName || this.type, name, eventType);
+      //console.log("     addEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.addEventListener(eventType, this.props[name]);
     });
   };
@@ -226,7 +226,7 @@ class FTReact {
 
   /** @private */
   _commit() {
-    console.log("FTReact.commit");
+    //console.log("FTReact.commit");
     this._deletions.forEach(el => el.commit());
     this._deletions = [];
     this._root.child && this._root.child.commit();
