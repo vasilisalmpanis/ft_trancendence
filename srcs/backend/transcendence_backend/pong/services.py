@@ -1,34 +1,36 @@
 from ast import Dict
+from types import NoneType
 from typing import Dict, Any, List
-from .models        import Pong, pong_model_to_dict
+from .models        import Pong, pong_model_to_dict    
 from users.models   import User
 
 
 def join_game(user , game_id : int):
-	'''Joins user to game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'finished':
-		raise ValueError('Game is finished')
-	if user in game.players.all():
-		return
-	if game.players.count() == 2:
-		raise ValueError('Game is full')
-	game.players.add(user)
-	game.save()
+    '''Joins user to game'''
+    game = Pong.objects.get(id=game_id)
+    if game.status == 'finished':
+        return False
+    if user in game.players.all():
+        return True
+    if game.players.count() == 2:
+        return False
+    game.players.add(user)
+    game.save()
+    return True
 
 def pause_game(game_id: int):
-	'''Pauses game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'running':
-		game.status = 'paused'
-		game.save()
+    '''Pauses game'''
+    game = Pong.objects.get(id=game_id)
+    if game.status == 'running':
+        game.status = 'paused'
+        game.save()
 
 def resume_game(game_id: int):
-	'''Resumes game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'paused':
-		game.status = 'running'
-		game.save()
+    '''Resumes game'''
+    game = Pong.objects.get(id=game_id)
+    if game.status == 'paused':
+        game.status = 'running'
+        game.save()
 import logging
 logger = logging.getLogger(__name__)
 def get_side(game_id: int, user: User) -> str:
@@ -128,19 +130,30 @@ class PongService:
     
 
     @staticmethod
-    def finish_game(game_id : int, score_1 : int, score_2 : int) -> Dict[Any, Any]:
+    def finish_game(game_id: int, result: Dict[str,Any] | NoneType = None) -> Dict[Any, Any]:
         """
         Finishes the game
         @param game_id: int
         @return: JsonResponse with game schema
         """
+        if result is not None:
+            score1 = result['s1']
+            score2 = result['s2']
+            left = result['left']
+            right = result['right']
+        else:
+            score1 = 0
+            score2 = 0
+            left = None
+            right = None
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
             raise Exception('Game not found')
-        game.score1 = score_1
-        game.score2 = score_2
+        game.score1 = score1
+        game.score2 = score2
         game.status = 'finished'
         game.save()
+
         return pong_model_to_dict(game)
     
     @staticmethod

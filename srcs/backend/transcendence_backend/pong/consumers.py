@@ -1,18 +1,19 @@
-from cgitb import text
-from ctypes import Union
+from cgitb											import text
+from ctypes											import Union
+from multiprocessing.managers						import ListProxy
+from threading										import Lock
+from logging										import Logger
+from time 											import timezone
+from typing											import Literal, Dict, List, TypeVar, TypedDict, NotRequired, Any
+from asgiref.sync									import sync_to_async
+from .models										import Pong
+from .services										import PongService, join_game, pause_game, resume_game, get_side
+from stats.services									import StatService
+from channels.generic.websocket						import AsyncWebsocketConsumer, AsyncConsumer
+from channels.db									import database_sync_to_async
 import math
 import json
 import asyncio
-from threading		import Lock
-from logging		import Logger
-from time import timezone
-from typing			import Literal, Dict, List, TypeVar, TypedDict, NotRequired
-from asgiref.sync	import sync_to_async
-from .models		import Pong
-from .services		import PongService, join_game, pause_game, resume_game, get_side
-from channels.generic.websocket import AsyncWebsocketConsumer, AsyncConsumer
-from channels.db	import database_sync_to_async
-
 
 logger = Logger(__name__)
 
@@ -53,13 +54,11 @@ class GroupsManager(metaclass=SingletonMeta):
 					self.groups[game_id].append({channel_name : side, 'username': username})
 					return True
 				if 'left' in item.values():
-					self.groups[game_id].append({channel_name : 'right'})
+					self.groups[game_id].append({channel_name : 'right', 'username': username})
 					return True
 				if 'right' in item.values():
-					self.groups[game_id].append({channel_name : 'left'})
+					self.groups[game_id].append({channel_name : 'left', 'username': username})
 					return True
-		for item in self.groups[game_id]:
-			logger.error(item)
 		return True
 
 	def get_group_name(self, channel_name: str) -> str:
@@ -93,6 +92,9 @@ class GroupsManager(metaclass=SingletonMeta):
 					self.groups[key].remove(item)
 					return
 
+	def get_group(self, game_id: str) -> List[Dict[str,str]]:
+		return self.groups.get(game_id, [])
+			
 class MovePlatform(TypedDict):
     d: str	
     message: str
@@ -124,9 +126,11 @@ class PongState:
 	}
 	'''
 
-	def __init__(self) -> None:
+	def __init__(self, left: str, right: str) -> None:
 		self.pl_s: Literal["up", "down", "stop"] = 'stop'
 		self.pr_s: Literal["up", "down", "stop"] = 'stop'
+		self.left = left
+		self.right = right
 		self._x = 50
 		self._y = 50
 		self._pl = 40
@@ -144,11 +148,7 @@ class PongState:
 
 	def __next__(self) -> PongStateDict:
 		if self._paused:
-			return {
-				'x': round(self._x, 2),
-				'y': round(self._y, 2),
-				'paused' : True
-			}
+			return
 		self._check_collisions()
 		self._move()
 		data = {
@@ -168,6 +168,14 @@ class PongState:
 		self._pr_c = False
 		self._score_c = False
 		return data
+	
+	def get_results(self) -> Dict[str, Any]:
+		return {
+			's1': self._score_l,
+			'left': self.left,
+			's2': self._score_r,
+			'right': self.right
+		}
 
 	def move_platform(self, data: MovePlatform) -> None:
 		'''Moves platforms in pong game'''
@@ -233,14 +241,20 @@ class PongRunner(AsyncConsumer):
 	_tasks: Dict[str, asyncio.Task] = {}
   
 	async def start_game(self, message: ControlMsg) -> None:
-		logger.warn("starting game " + str(message))
-		gid = message['gid']
-		if self._games.get(gid, None) is not None:
-			if self._games[gid]._paused:
-				self._games[gid]._resume()
-			return
-		self._games[gid] = PongState()
-		self._tasks[gid] = asyncio.ensure_future(self._run(gid))
+		try:
+			logger.warn("starting game " + str(message))
+			gid = message['gid']
+			data = json.loads(message.get('data', None))
+			left = data[0]['username']
+			right = data[1]['username']
+			if self._games.get(gid, None) is not None:
+				if self._games[gid]._paused:
+					self._games[gid]._resume()
+				return
+			self._games[gid] = PongState(left, right)
+			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
+		except Exception as e:
+			logger.error(f"Error: {e}")
   
 	async def stop_game(self, message: ControlMsg) -> None:
 		logger.warn("stopping game " + str(message))
@@ -249,10 +263,14 @@ class PongRunner(AsyncConsumer):
 		if gid == '':
 			return
 		if gid not in self._games:
-			await sync_to_async(PongService.finish_game)(int(gid), 0, 0)
+			await sync_to_async(PongService.finish_game)(int(gid))
 			return
-		await database_sync_to_async(PongService.finish_game)(int(gid), self._games[gid]._score_l, self._games[gid]._score_r)
-		await sync_to_async(PongService.finish_game)(int(gid), self._games[gid]._score_l, self._games[gid]._score_r)
+		result = self._games[gid].get_results()
+		await database_sync_to_async(PongService.finish_game)(int(gid), result)
+		await database_sync_to_async(StatService.set_stats)(result['left'],
+													  		result['right'],
+															result['s1'],
+																result['s2'])
 		if not status and gid in self._games:
 			await self.channel_layer.group_send(
 							gid,
@@ -278,6 +296,7 @@ class PongRunner(AsyncConsumer):
 		await database_sync_to_async(pause_game)(int(gid))
 		if gid in self._games:
 			self._games[gid]._pause()
+			self.channel_layer.group_send(gid, {'type': 'update.game.state', 'text': json.dumps({"status": "Paused"})})
 
 	async def resume_game(self, message: ControlMsg) -> None:
 		'''Resume game'''
@@ -288,16 +307,19 @@ class PongRunner(AsyncConsumer):
 		
 
 	async def _run(self, gid: str):
+		logger.warn("running game " + gid)
 		for state in self._games[gid]:
-			await self.channel_layer.group_send(
-	       		gid,
-	        	{
-					'type': 'update.game.state',
-	            	'text': json.dumps(state),
-	            }
-	        )
-			if state.get('s1', 0) == 10 or  state.get('s2', 0) == 10:
-				await self.stop_game({'gid': gid})
+			if state:
+				logger.warn("sending state")
+				await self.channel_layer.group_send(
+					gid,
+					{
+						'type': 'update.game.state',
+						'text': json.dumps(state),
+					}
+				)
+				if state.get('s1', 0) == 10 or  state.get('s2', 0) == 10:
+					await self.stop_game({'gid': gid})
 			await asyncio.sleep(0.01)
 
 class PongConsumer(AsyncWebsocketConsumer):
@@ -310,6 +332,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 		await self.accept()
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:
+		logger.warn(f"Sending: {message}")
 		await self.send(message['text'])
 
 	async def disconnect(self, close_code) -> None:
@@ -340,14 +363,18 @@ class PongConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data: str) -> None:
 		try:
 			data = json.loads(text_data)
+			logger.warn(f"Received: {data}")
 			if 'join' in data:
 				game_id = str(data['join'])
-				# side = await database_sync_to_async(get_side)(int(game_id), self.scope['user'])
 				if not self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username):
 					await self.send(json.dumps({'error': 'Game is full'}))
 					self.close()
 					return
-				await sync_to_async(join_game)(self.scope['user'], int(game_id))
+				if not await sync_to_async(join_game)(self.scope['user'], int(game_id)):
+					self._groups.remove_channel(self.channel_name)
+					await self.send(json.dumps({'Problem': 'Connecting to game'}))
+					self.close()
+					return
 				await self.channel_layer.group_add(game_id, self.channel_name)
 				if self._groups.group_full(game_id, self.scope['user'].username):
 					side = self._groups.side(game_id, self.channel_name)
@@ -356,9 +383,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 						'pong_runner',
 						{
 							'type': 'start.game',
-							'gid': game_id
+							'gid': game_id,
+							'data' : json.dumps(self._groups.get_group(game_id))
 						}
 					)
+				else:
+					logger.error("Not full")
 			else:
 				gid = self._groups.get_group_name(self.channel_name)
 				if gid == '':
