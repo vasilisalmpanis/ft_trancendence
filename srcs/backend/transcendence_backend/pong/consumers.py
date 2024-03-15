@@ -1,13 +1,15 @@
+from cgitb import text
 from ctypes import Union
 import math
 import json
 import asyncio
 from threading		import Lock
 from logging		import Logger
+from time import timezone
 from typing			import Literal, Dict, List, TypeVar, TypedDict, NotRequired
 from asgiref.sync	import sync_to_async
 from .models		import Pong
-from .services		import PongService
+from .services		import PongService, join_game, pause_game, resume_game, get_side
 from channels.generic.websocket import AsyncWebsocketConsumer, AsyncConsumer
 from channels.db	import database_sync_to_async
 
@@ -29,25 +31,56 @@ class SingletonMeta(type):
 class GroupsManager(metaclass=SingletonMeta):
 	'''Singleton to manage groups of connection channels'''
 
-	groups: Dict[str, List[str]] = {}
+	groups: Dict[str, List[Dict[str,str]]] = {}
 
-	def add_channel(self, game_id: str, channel_name: str, group_size: int = 2) -> bool:
-		if self.group_full(game_id, group_size):
+	def add_channel(self, game_id: str, channel_name: str, username: str, group_size: int = 2) -> bool:
+		'''
+		Adds channel to the group of the game
+		If the group is full, returns False
+		If the same user recconects through other websockets it replaces channel_name with new channel
+		'''
+		if self.group_full(game_id, username):
 			return False
 		self.groups.setdefault(game_id, [])
-		self.groups[game_id].append(channel_name)
+		if len(self.groups[game_id]) == 0:
+			self.groups[game_id].append({channel_name : 'left', 'username': username})
+		else:
+			data = self.groups[game_id]
+			for item in data:
+				if username in item.values():
+					side = 'left' if 'left' in item.values() else 'right'
+					self.groups[game_id].remove(item)
+					self.groups[game_id].append({channel_name : side, 'username': username})
+					return True
+				if 'left' in item.values():
+					self.groups[game_id].append({channel_name : 'right'})
+					return True
+				if 'right' in item.values():
+					self.groups[game_id].append({channel_name : 'left'})
+					return True
+		for item in self.groups[game_id]:
+			logger.error(item)
 		return True
 
 	def get_group_name(self, channel_name: str) -> str:
 		for key, val in self.groups.items():
-			if channel_name in val:
-				return key
+			for item in val:
+				if channel_name in item:
+					return key
+		return ''
+	
+	def side(self, game_id: str, channel_name: str) -> str:
+		for item in self.groups[game_id]:
+			if channel_name in item:
+				return item[channel_name]
 		return ''
 
-	def group_full(self, game_id: str, group_size: int = 2) -> bool:
+	def group_full(self, game_id: str, username: str, group_size: int = 2) -> bool:
 		if game_id not in self.groups:
 			return False
-		
+		for item in self.groups[game_id]:
+			if username in item.values() and len(self.groups[game_id]) == group_size:
+				return True
 		return len(self.groups[str(game_id)]) == group_size
 	
 	def group_empty(self, game_id: str) -> bool:
@@ -55,8 +88,10 @@ class GroupsManager(metaclass=SingletonMeta):
 	
 	def remove_channel(self, channel_name: str) -> None:
 		for key, val in self.groups.items():
-			if channel_name in val:
-				self.groups[key].remove(channel_name)
+			for item in val:
+				if channel_name in item:
+					self.groups[key].remove(item)
+					return
 
 class MovePlatform(TypedDict):
     d: str	
@@ -210,18 +245,27 @@ class PongRunner(AsyncConsumer):
 	async def stop_game(self, message: ControlMsg) -> None:
 		logger.warn("stopping game " + str(message))
 		gid = message['gid']
+		status = message.get('data', None)
+		if gid == '':
+			return
+		if gid not in self._games:
+			await sync_to_async(PongService.finish_game)(int(gid), 0, 0)
+			return
+		await database_sync_to_async(PongService.finish_game)(int(gid), self._games[gid]._score_l, self._games[gid]._score_r)
 		await sync_to_async(PongService.finish_game)(int(gid), self._games[gid]._score_l, self._games[gid]._score_r)
-		await self.channel_layer.group_send(
-						gid,
-						{
-							'type': 'update.game.state',
-							'text': json.dumps({"status": "Game over"}),
-						}
-					)
-		if gid in self._tasks:
+		if not status and gid in self._games:
+			await self.channel_layer.group_send(
+							gid,
+							{
+								'type': 'update.game.state',
+								'text': json.dumps({"status": "Game over"}),
+							}
+						)
+		if gid in self._games:
 			self._tasks[gid].cancel()
 			del self._tasks[gid]
 			del self._games[gid]
+			self.channel_layer
 
 	async def update_platform(self, data: ControlMsg) -> None:
 		'''Moves platforms in game'''
@@ -232,7 +276,8 @@ class PongRunner(AsyncConsumer):
 		logger.warn("pausing game " + str(message))
 		gid = message['gid']
 		await database_sync_to_async(pause_game)(int(gid))
-		self._games[gid]._pause()
+		if gid in self._games:
+			self._games[gid]._pause()
 
 	async def resume_game(self, message: ControlMsg) -> None:
 		'''Resume game'''
@@ -270,18 +315,18 @@ class PongConsumer(AsyncWebsocketConsumer):
 	async def disconnect(self, close_code) -> None:
 		gid = self._groups.get_group_name(self.channel_name)
 		group_channels = self._groups.groups.get(gid, [])
-		for channel in group_channels:
-			logger.warn(f"Removing {channel} from {gid}")
 		self._groups.remove_channel(self.channel_name)
 		if self._groups.group_empty(gid):
-			await self.channel_layer.group_discard(gid, self.channel_name)
 			await self.channel_layer.send(
 				'pong_runner',
 				{
 					'type': 'stop.game',
-					'gid': gid
+					'gid': gid,
+					'data': 'Both disconnected'
 				}
 			)
+			if self._groups.get_group_name(self.channel_name) != '':
+				await self.channel_layer.group_discard(gid, self.channel_name)
 		else:
 			await self.channel_layer.send(
 				'pong_runner',
@@ -297,14 +342,16 @@ class PongConsumer(AsyncWebsocketConsumer):
 			data = json.loads(text_data)
 			if 'join' in data:
 				game_id = str(data['join'])
-				if not self._groups.add_channel(game_id, self.channel_name):
+				# side = await database_sync_to_async(get_side)(int(game_id), self.scope['user'])
+				if not self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username):
 					await self.send(json.dumps({'error': 'Game is full'}))
 					self.close()
 					return
 				await sync_to_async(join_game)(self.scope['user'], int(game_id))
 				await self.channel_layer.group_add(game_id, self.channel_name)
-				if self._groups.group_full(game_id):
-					await self.send(json.dumps({'side':'right'}))
+				if self._groups.group_full(game_id, self.scope['user'].username):
+					side = self._groups.side(game_id, self.channel_name)
+					await self.send(json.dumps({'side': side}))
 					await self.channel_layer.send(
 						'pong_runner',
 						{
@@ -313,6 +360,12 @@ class PongConsumer(AsyncWebsocketConsumer):
 						}
 					)
 			else:
+				gid = self._groups.get_group_name(self.channel_name)
+				if gid == '':
+					logger.error("No game id")
+					return
+				data['d'] = self._groups.side(gid, self.channel_name)
+				text_data = json.dumps(data)
 				await self.channel_layer.send(
 							'pong_runner',
 							{
@@ -322,31 +375,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 							}
 						)
 		except Exception as e:
+			logger.error(f"Error: {e}")
 			return await self.send(json.dumps({'error': str(e)}))
 		
 
-def join_game(user , game_id : int):
-	'''Joins user to game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'finished':
-		raise ValueError('Game is finished')
-	if user in game.players.all():
-		return
-	if game.players.count() == 2:
-		raise ValueError('Game is full')
-	game.players.add(user)
-	game.save()
-
-def pause_game(game_id: int):
-	'''Pauses game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'running':
-		game.status = 'paused'
-		game.save()
-
-def resume_game(game_id: int):
-	'''Resumes game'''
-	game = Pong.objects.get(id=game_id)
-	if game.status == 'paused':
-		game.status = 'running'
-		game.save()

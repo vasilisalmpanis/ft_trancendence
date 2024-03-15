@@ -4,6 +4,43 @@ from .models        import Pong, pong_model_to_dict
 from users.models   import User
 
 
+def join_game(user , game_id : int):
+	'''Joins user to game'''
+	game = Pong.objects.get(id=game_id)
+	if game.status == 'finished':
+		raise ValueError('Game is finished')
+	if user in game.players.all():
+		return
+	if game.players.count() == 2:
+		raise ValueError('Game is full')
+	game.players.add(user)
+	game.save()
+
+def pause_game(game_id: int):
+	'''Pauses game'''
+	game = Pong.objects.get(id=game_id)
+	if game.status == 'running':
+		game.status = 'paused'
+		game.save()
+
+def resume_game(game_id: int):
+	'''Resumes game'''
+	game = Pong.objects.get(id=game_id)
+	if game.status == 'paused':
+		game.status = 'running'
+		game.save()
+import logging
+logger = logging.getLogger(__name__)
+def get_side(game_id: int, user: User) -> str:
+    '''Returns the side of the user in the game'''
+    game = Pong.objects.get(id=game_id)
+    first_user = game.players.first()
+    if user.username == first_user.username:
+        logging.error(f"{user.username} is left {first_user.username}")
+        return 'left'
+    logging.error(f"{user.username} is right {first_user.username}")
+    return 'right'
+
 
 class PongService:
 
@@ -18,11 +55,13 @@ class PongService:
         @return: JsonResponse with game schema
         """
         if type == 'all':
-            games = Pong.objects.filter(players=user).order_by('-timestamp')[skip:skip+limit]
+            games = Pong.objects.order_by('-timestamp')[skip:skip+limit]
         elif type == 'pending':
-            games = Pong.objects.filter(players=user).filter(status='pending').order_by('-timestamp')[skip:skip+limit]
+            games = Pong.objects.filter(status='pending').order_by('-timestamp')[skip:skip+limit]
         elif type == 'finished':
-            games = Pong.objects.filter(players=user).filter(status='finished').order_by('-timestamp')[skip:skip+limit]
+            games = Pong.objects.filter(status='finished').order_by('-timestamp')[skip:skip+limit]
+        elif type == 'started':
+            games = Pong.objects.filter(status='started').order_by('-timestamp')[skip:skip+limit]
         else:
             raise Exception('Invalid type')
         return [pong_model_to_dict(game) for game in games]
