@@ -10,7 +10,7 @@ const Main = (props) => {
 			<div className="mb-3">
 				<button
 					className="btn btn-primary w-100"
-					onClick={()=>props.route("/login")}
+					onClick={()=>props.route("/signin")}
 				>
 					Go to login
 				</button>
