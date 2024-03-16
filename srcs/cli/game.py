@@ -70,6 +70,8 @@ class Game:
         data = json.loads(self.ws.recv())
         self.stdscr.addstr(1, 1, str(data))
         if 'status' in data:
+            if data['status'] == 'paused':
+                return
             self.ws.close()
             self.running = False
             return
