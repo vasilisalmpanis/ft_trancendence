@@ -19,15 +19,16 @@ logger = Logger(__name__)
 
 T = TypeVar('T')
 class SingletonMeta(type):
-    _instances: Dict[type[T], T] = {}
-    _lock: Lock = Lock()
+	_instances: Dict[type[T], T] = {}
+	_lock: Lock = Lock()
 
-    def __call__(cls: type[T], *args, **kwargs) -> T:
-        with cls._lock:
-            if cls not in cls._instances:
-                instance = super().__call__(*args, **kwargs)
-                cls._instances[cls] = instance
-        return cls._instances[cls]
+	def __call__(cls: type[T], *args, **kwargs) -> T:
+		if cls not in cls._instances:
+			with cls._lock:
+				if cls not in cls._instances:
+					instance = super().__call__(*args, **kwargs)
+					cls._instances[cls] = instance
+		return cls._instances[cls]
 
 class GroupsManager(metaclass=SingletonMeta):
 	'''Singleton to manage groups of connection channels'''
