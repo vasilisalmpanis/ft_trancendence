@@ -1,6 +1,14 @@
 import ftReact		from "../ft_react/index.js";
 import ApiClient	from "../api/api_client.js";
 import Layout		from "../components/layout.jsx";
+import {
+	C_SIGNIN_PASS,
+	C_SIGNIN_USERNAME,
+	C_SIGNUP_BUTTON,
+	C_SIGNUP_EMAIL,
+	C_SIGNUP_HEADER,
+	C_SIGNUP_SIGNIN,
+}					from "../conf/content_en.js";
 
 const Signup = (props) => {
 	const client = new ApiClient("http://localhost:8000");
@@ -16,20 +24,20 @@ const Signup = (props) => {
 	};
 	return (
 		<Layout>
-			<h1>Create account</h1>
+			<h1>{C_SIGNUP_HEADER}</h1>
 			<form
 				onSubmit={submit}
 			>
 				<div className="mb-3">
 					<input
-						placeholder={"username"}
+						placeholder={C_SIGNIN_USERNAME}
 						className="form-control"
 						required
 					/>
 				</div>
 				<div className="mb-3">
 					<input
-						placeholder="password"
+						placeholder={C_SIGNIN_PASS}
 						type="password"
 						className="form-control"
 						required
@@ -37,7 +45,7 @@ const Signup = (props) => {
 				</div>
 				<div className="mb-3">
 					<input
-						placeholder="email"
+						placeholder={C_SIGNUP_EMAIL}
 						type="email"
 						className="form-control"
 						required
@@ -48,7 +56,7 @@ const Signup = (props) => {
 						type="submit"
 						className="btn btn-primary w-100"
 					>
-						Sign Up
+						{C_SIGNUP_BUTTON}
 					</button>
 				</div>
 				<div className="mb-3">
@@ -57,7 +65,7 @@ const Signup = (props) => {
 						className="btn btn-primary w-100"
 						onClick={()=>props.route("/signin")}
 					>
-						Go to Sign In
+						{C_SIGNUP_SIGNIN}
 					</button>
 				</div>
 			</form>
