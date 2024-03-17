@@ -8,7 +8,7 @@ from transcendence_backend.decorators   import jwt_auth_required
 
 
 ## TODO Do we display blocked users or users who blocked us int the leaderboard?
-@jwt_auth_required
+@jwt_auth_required()
 def getStatistics(request, user : User, id : int) -> JsonResponse:
     """
     Get statistics for a user by id
@@ -29,7 +29,7 @@ def getStatistics(request, user : User, id : int) -> JsonResponse:
             return JsonResponse({"Error": "User Not Found"}, status=400)
     return JsonResponse({"Error": "Wrong Request Method"}, status=400)
 
-@jwt_auth_required
+@jwt_auth_required()
 def leaderBoard(request, user : User) -> JsonResponse:
     """
     Get all users statistics with pagination
