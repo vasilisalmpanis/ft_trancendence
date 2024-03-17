@@ -1,15 +1,12 @@
 
-from typing         import Dict, Any
+from typing                         import Dict, Any
 import http.client  as http
-from autobahn.twisted.websocket import WebSocketClientProtocol, WebSocketClientFactory
+import utils
 import json
-
-from autobahn.websocket.protocol import NoneType
-from autobahn.websocket.types import ConnectionResponse
 
 
 class Response:
-    def __init__(self, response : http.HTTPResponse | None):
+    def __init__(self, response : http.HTTPResponse):
         if not response:
             self.status = 500
             self.body = {"error": "Internal Server Error"}
@@ -33,7 +30,7 @@ class Response:
 
 
 
-class NetworkClient:
+class NetworkClient(metaclass=utils.SingletonMeta):
         headers : Dict[str, str]
         def __init__(self):
             self.headers = {"Accept": "application/json"}
@@ -44,7 +41,7 @@ class NetworkClient:
             if method not in ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]:
                 raise ValueError(f"Invalid method {method}")
 
-        def request(self, path: str, method : str, body : Dict[Any, Any] = None) -> Response:
+        def request(self, path: str, method : str, body : str = None) -> Response:
             self.validate_method(method)
             if method == "POST" or method == "PUT" or method == "PATCH" and body:
                 self.headers["Content-Type"] = "application/json"
@@ -98,19 +95,3 @@ class NetworkClient:
                 self.refresh_token = response.body["refresh_token"]
                 self.headers["Authorization"] = f"Bearer {self.access_token}"
             return response
-
-class PongClientProtocol(WebSocketClientProtocol):
-    def onConnect(self, response: ConnectionResponse) -> NoneType:
-        print(f"Connected to {response.peer}")
-
-    def onOpen(self):
-        print("WebSocket connection open.")
-
-    def onClose(self, wasClean, code, reason):
-        print(f"WebSocket connection closed: {reason}")
-
-    def onMessage(self, payload, isBinary):
-        if isBinary:
-            print(f"Binary message received: {len(payload)} bytes")
-        else:
-            print(f"Text message received: {payload.decode('utf8')}")

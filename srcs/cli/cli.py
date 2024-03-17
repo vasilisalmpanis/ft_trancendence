@@ -1,34 +1,11 @@
-from ast import Tuple
 from multiprocessing.connection import Client
-from client                 import NetworkClient, Response, WebSocketClientProtocol, WebSocketClientFactory, PongClientProtocol
-from user                   import User
-from game                   import Game
-from typing import Tuple
+from client                     import NetworkClient, Response
+from typing                     import Tuple
+import game                     as pong
+import user
 import curses
-
-def get_input(stdscr, prompt, password=False):
-    input_str = ""
-    curses.echo()  # Enable input echoing
-    stdscr.clear()
-    stdscr.addstr(1, 1, prompt)
-    stdscr.refresh()
-    if password:
-        while True:
-            char = stdscr.getch()
-            if char == ord('\n'):
-                break
-            elif char == curses.KEY_BACKSPACE or char == 127:
-                input_str = input_str[:-1]
-            else:
-                input_str += chr(char)
-            stdscr.clear()
-            stdscr.addstr(1, 1, prompt)
-            stdscr.addstr(2, 1, "*" * len(input_str))
-    else:    
-        input_str = stdscr.getstr(2, 1, 50).decode('utf-8')
-    curses.noecho()  # Disable input echoing
-    return input_str
-
+import utils
+import time
 class Menu:
     def __init__(self, stdscr, options):
         self.stdscr = stdscr
@@ -54,69 +31,89 @@ class Menu:
             self.stdscr.addstr(4, 1, "Invalid input. Press any key to try again.")
             
 
-    def execute_selected_action(self, stdscr, client, authenticated):
+    def execute_selected_action(self, stdscr, **kwargs):
         selected_action = self.options[self.selected_option]['action']
-        if self.selected_option == 4:
-            self.options[self.selected_option]['action'](client)
-            return False
-        selected_action(stdscr, client)
+        selected_action(stdscr, **kwargs)
         return True
 
 def main_menu(stdscr):
-    authenticated = False
+    status = utils.Singleton()
     curses.curs_set(0)
-    while not authenticated:
-        stdscr.clear()
-        client = authenticate(stdscr, "username", "password")
-        authenticated = True
-        menu_options = [
-            {"label": "Play Game", "action": play_game},
-            {"label": "Search for Users", "action": search_users},
-            {"label": "Manage Friends", "action": manage_friends},
-            {"label": "Account Settings", "action": account_settings},
-            {"label": "Logout", "action": logout}
-        ]
+    try:
+        while True:
+            menu_options = [{"label": "Login", "action": authenticate},
+                        {"label": "Create Account", "action": user.create_account},
+                        {"label": "Exit", "action": user.exit}
+                        ]
+            menu = Menu(stdscr, menu_options)
+            while not status.state:
+                menu.display()
+                key = stdscr.getch()
+                if key == ord('\n'):
+                    try:
+                        menu.execute_selected_action(stdscr)
+                    except Exception as e:
+                        if str(e) == "Exit":
+                            return
+                        stdscr.clear()
+                        stdscr.addstr(1, 1, str(e))
+                        stdscr.refresh()
+                        stdscr.getch()
+                elif key in [curses.KEY_UP, curses.KEY_DOWN]:
+                    menu.navigate(key)
+                elif key == ord('q'):
+                    break
+            menu_options = [
+                {"label": "Play Game", "action": play_game},
+                # {"label": "Search for Users", "action": search_users},
+                # {"label": "Manage Friends", "action": manage_friends},
+                {"label": "Account Settings", "action": account_settings},
+                {"label": "Logout", "action": logout}
+            ]
+            menu = Menu(stdscr, menu_options)
+            while status.state == True:
+                menu.display()
+                key = stdscr.getch()
+                if key == ord('\n'):
+                    menu.execute_selected_action(stdscr)
+                elif key in [curses.KEY_UP, curses.KEY_DOWN]:
+                    menu.navigate(key)
+                elif key == 27:
+                    logout(stdscr)
+                    break
+    except Exception as e:
+        return
 
-        menu = Menu(stdscr, menu_options)
-
-        while authenticated:
-            menu.display()
-            key = stdscr.getch()
-            if key == ord('\n'):
-                authenticated = menu.execute_selected_action(stdscr, client, authenticated)
-            elif key in [curses.KEY_UP, curses.KEY_DOWN]:
-                menu.navigate(key)
-            elif key == ord('q'):
-                break
-
-def verify_2fa(stdscr, client) -> Tuple[bool, NetworkClient]:
+def verify_2fa(stdscr) -> None:
+    client = NetworkClient()
+    status = utils.Singleton()
     stdscr.clear()
-    code = get_input(stdscr, "Enter your 2FA code: ")
+    code = utils.get_input(stdscr, "Enter your 2FA code: ")
     response = client.verify_2fa(code)
     if response.status != 200:
         stdscr.addstr(1, 1, "Invalid 2FA code. Press any key to try again.")
         stdscr.refresh()
         stdscr.getch()
-        return False, client
-    return True, client
+        return
+    status.state = utils.AUTHORIZED
 
-def authenticate(stdscr, username, password) -> NetworkClient:
-    authenticated = False
+def authenticate(stdscr) -> None:
     client = NetworkClient()
-
-    while not authenticated:
+    status = utils.Singleton()
+    while not status.state:
         stdscr.clear()
         stdscr.nodelay(0)
-        username = get_input(stdscr, "Enter your username: ")
-        password = get_input(stdscr, "Enter your password: ", password=True)
+        username = utils.get_input(stdscr, "Enter your username: ")
+        password = utils.get_input(stdscr, "Enter your password: ", password=True)
         response = client.authenticate(username, password)
         response = client.request("/users/me", "GET")
-        if response.status != 200:
+        status.state = response.status == 200
+        if status.state != utils.AUTHORIZED:
             stdscr.clear()
             if response.status == 401:
                 if response.body == {"Error" : "2FA Required"}:
-                    while not authenticated:
-                        authenticated, client = verify_2fa(stdscr, client)
+                    while not status.state:
+                        verify_2fa(stdscr)
                 else:
                     stdscr.addstr(1, 1, "Invalid credentials. Press any key to try again.")
             else:
@@ -124,10 +121,15 @@ def authenticate(stdscr, username, password) -> NetworkClient:
                 stdscr.getch()
             stdscr.refresh()
         else:
-            authenticated = True
-    return client
+            return
 
-def play_game(stdcsr, client):
+def start_game(stdcsr, game_id):
+    game = pong.Game(stdcsr, game_id)
+    game.run()
+    stdcsr.nodelay(0)
+
+def play_game(stdcsr):
+    client = NetworkClient()
     response = client.request("/games?type=pending", "GET")
     if response.status != 200:
         stdcsr.clear()
@@ -137,54 +139,97 @@ def play_game(stdcsr, client):
         return
     games = response.body
     if len(games) == 0:
-        stdcsr.clear()
-        stdcsr.addstr(1, 1, "No games available. Return to the main menu")
-        stdcsr.refresh()
-        stdcsr.getch()
-        return
-    game_id = games[0]["id"]
-    stdcsr.clear()
-    stdcsr.addstr(1, 1, f"{game_id}")
-    stdcsr.refresh()
-    stdcsr.getch()
-    game = Game(stdsrc=stdcsr, client=client, game_id=game_id)
-    while game.running:
-        game.run()
-    stdcsr.nodelay(0)
+        response = client.request("/games?type=paused&me=True", "GET")
+        games = response.body
+        if games is None:
+            stdcsr.clear()
+            stdcsr.addstr(1, 1, "No games available. Return to the main menu")
+            stdcsr.refresh()
+            stdcsr.getch()
+            return
+    game_ids = [game['id'] for game in games]
+    menu_options = [{"label": f"Game {game_id}", "action": start_game} for game_id in game_ids]
+    menu = Menu(stdcsr, menu_options)
+    while True:
+        menu.display()
+        key = stdcsr.getch()
+        if key == ord('\n'):
+            menu.execute_selected_action(stdcsr, game_id=game_ids[menu.selected_option])
+            break
+        elif key in [curses.KEY_UP, curses.KEY_DOWN]:
+            menu.navigate(key)
+        elif key == ord('q'):
+            break
 
-
-def search_users():
-    print("Search for Users")
-    
-import json
-def manage_friends(stdcsr, client):
-    response = client.request("/friends", "GET")
+def user_running_games(stdcsr, response):
     if response.status != 200:
         stdcsr.clear()
         stdcsr.addstr(1, 1, "An error occurred. Return to the main menu")
         stdcsr.refresh()
         stdcsr.getch()
         return
-    friends = response.body
-    if 'status' in friends:
-        stdcsr.clear()
-        stdcsr.addstr(1, 1, "You have no friends. Return to the main menu")
-        stdcsr.refresh()
-        stdcsr.getch()
-        return
-    else:
-        user = { User(friend) for friend in friends}
-        stdcsr.clear()
-        stdcsr.addstr(1, 1, json.dumps(user))
-        stdcsr.refresh()
-        stdcsr.getch()
-        return
- 
-def account_settings():
-    print("Account Settings")
+    game = response.body.get('game_id', None)
+    return game
 
-def logout(client):
-    client.logout()
+
+
+# def search_users():
+#     print("Search for Users")
+    
+# import json
+# def manage_friends(stdcsr, client):
+#     response = client.request("/friends", "GET")
+#     if response.status != 200:
+#         stdcsr.clear()
+#         stdcsr.addstr(1, 1, "An error occurred. Return to the main menu")
+#         stdcsr.refresh()
+#         stdcsr.getch()
+#         return
+#     friends = response.body
+#     if 'status' in friends:
+#         stdcsr.clear()
+#         stdcsr.addstr(1, 1, "You have no friends. Return to the main menu")
+#         stdcsr.refresh()
+#         stdcsr.getch()
+#         return
+#     else:
+#         # user = { User(friend) for friend in friends}
+#         stdcsr.clear()
+#         # stdcsr.addstr(1, 1, json.dumps(user))
+#         stdcsr.refresh()
+#         stdcsr.getch()
+#         return
+ 
+def account_settings(stdscr):
+    status = utils.Singleton()
+    menu_options = [
+        {"label": "Change Username", "action": user.change_username},
+        {"label": "Change Password", "action": user.change_password},
+        {"label": "Change Email", "action": user.change_email},
+        {"label": "Delete Account", "action": user.delete_account}
+    ]
+    menu = Menu(stdscr, menu_options)
+    while status.state == utils.AUTHORIZED:
+        menu.display()
+        key = stdscr.getch()
+        if key == ord('\n'):
+            menu.execute_selected_action(stdscr)
+        elif key == 27:
+            break
+        elif key in [curses.KEY_UP, curses.KEY_DOWN]:
+            menu.navigate(key)
+
+def logout(stdscr):
+    try:
+        client = NetworkClient()
+        status = utils.Singleton()
+        status.unauthorize()
+        client.logout()
+    except Exception as e:
+        stdscr.clear()
+        stdscr.addstr(1, 1, str(e))
+        stdscr.refresh()
+        stdscr.getch()
 
 if __name__ == "__main__":
     curses.wrapper(main_menu)
