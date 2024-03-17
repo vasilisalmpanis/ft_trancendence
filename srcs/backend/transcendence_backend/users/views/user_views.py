@@ -69,7 +69,7 @@ class UserView(View):
             Stats.objects.create(user=User.objects.get(username=username))
             return JsonResponse({"status": "User Created"}, status=201)
         except Exception:
-            return JsonResponse({"status": "error"}, status=400)
+            return JsonResponse({"status": "creating user"}, status=400)
 
 @require_http_methods(["GET"])
 @jwt_auth_required()

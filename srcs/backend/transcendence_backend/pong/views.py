@@ -22,10 +22,11 @@ class PongView(View):
         type = str(request.GET.get('type', ''))
         skip = int(request.GET.get('skip', 0))
         limit = int(request.GET.get('limit', 10))
+        me = request.GET.get('me', False)
         if type == '':
             return JsonResponse({'Error': 'Invalid type'}, status=400)
         try:
-            games = PongService.get_games(user, type, skip, limit)
+            games = PongService.get_games(user, type, skip, limit, me)
             return JsonResponse(games, status=200, safe=False)
         except Exception as e:
             return JsonResponse({'Error': str(e)}, status=400)

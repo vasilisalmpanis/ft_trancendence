@@ -311,7 +311,6 @@ class PongRunner(AsyncConsumer):
 		logger.warn("running game " + gid)
 		for state in self._games[gid]:
 			if state:
-				logger.warn("sending state")
 				await self.channel_layer.group_send(
 					gid,
 					{
