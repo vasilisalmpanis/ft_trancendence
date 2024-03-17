@@ -27,7 +27,6 @@ urlpatterns = [
     path("", include("stats.urls")),
     path("", include("chat.urls")),
     path("", include("authorize.urls")),
-    path("", include("NotFrontend.urls")),
     path("chat/", include("chat.urls")), # mt this needs to be implemented better with the other routes
     path("", include("oauth2.urls")),
     path("", include("pong.urls")),
