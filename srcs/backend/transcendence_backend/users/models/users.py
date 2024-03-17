@@ -43,7 +43,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_2fa_enabled = models.BooleanField(default=False)
     is_user_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
-    
+
+    ft_intra_id = models.IntegerField(null=True, blank=True)
 
     friends = models.ManyToManyField('self', related_name='friends', blank=True, symmetrical=True)
     blocked = models.ManyToManyField('self', related_name='blocked_me', blank=True, symmetrical=False)

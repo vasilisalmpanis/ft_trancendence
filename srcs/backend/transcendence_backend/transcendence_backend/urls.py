@@ -24,5 +24,6 @@ urlpatterns = [
     path("", include("stats.urls")),
     path("", include("chat.urls")),
     path("", include("authorize.urls")),
+    path("", include("oauth2.urls")),
     path("", include("pong.urls")),
 ]

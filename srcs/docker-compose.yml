@@ -77,7 +77,7 @@ services:
     restart: always
     volumes:
       - pwd:/data
-  
+
   pgAdmin:
     container_name: pgAdmin
     image: dpage/pgadmin4
@@ -89,6 +89,7 @@ services:
     networks:
       - backend
     restart: always
+
   grafana:
     container_name: grafana
     image: grafana/grafana-oss
