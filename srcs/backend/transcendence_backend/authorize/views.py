@@ -39,12 +39,14 @@ def login_user(request) -> JsonResponse:
     :return: JsonResponse
     """
     if request.method == "GET":
-        return JsonResponse({"Login": "Wrong Reuqest Method"}, status=200)
+        return JsonResponse({"Login": "Wrong Request Method"}, status=200)
     data = json.loads(request.body)
     username = data.get("username", None)
     password = data.get("password", None)
+    if username == None or password == None:
+        return JsonResponse({"status": "Username or Password were not given"}, status=400)
+    user = authenticate(username=username, password=password)
     user = User.objects.get(username=username)
-    # user = authenticate(username=username, password=password)
     if user != None:
         jwt = JWT(settings.JWT_SECRET)
         user.is_user_active = True

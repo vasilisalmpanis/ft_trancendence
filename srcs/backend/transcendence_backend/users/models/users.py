@@ -36,7 +36,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255, unique=True, blank=False)
     email = models.EmailField(max_length=255, unique=True, blank=True)
-    password = models.CharField(max_length=255, null=True, blank=True)
+    password = models.CharField(max_length=255, blank=False)
     avatar = models.CharField(max_length=255, null=True, blank=True)
     token = models.CharField(max_length=255, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)

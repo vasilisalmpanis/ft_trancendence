@@ -17,9 +17,6 @@ Including another URLconf
 from django.contrib import admin, auth
 from django.urls import include, path
 
-# mt Add staticfiles_urlpatterns to serve static files during development
-from django.contrib.staticfiles.urls	import staticfiles_urlpatterns
-
 urlpatterns = [
     path("", include("users.urls")),
     #path("admin/", admin.site.urls),
