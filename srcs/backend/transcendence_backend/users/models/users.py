@@ -1,17 +1,10 @@
-import re
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils               import timezone
 from transcendence_backend.totp import get_totp_token
 from django.conf                import settings
-import base64
-import os
-import logging
-import hmac
-import hashlib
-
-logger = logging.getLogger(__name__)
+from cryptography.fernet        import Fernet
 
 class UserManager(BaseUserManager):
     def create_user(self, username : str = None,
@@ -69,93 +62,14 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def has_perm(self, perm, obj=None):
         return self.is_staff
-    
-    def get_friends(self, skip : int = 0, limit : int = 10) -> list["User"]:
-        friends = self.friends.all()[skip:skip+limit]
-        return [
-            {
-                "id": friend.id,
-                "username": friend.username,
-                "avatar": friend.avatar
-            }
-            for friend in friends
-        ]
-    
-    def unfriend(self, friend_id : int) -> "User" :
-        friend = User.objects.get(id=friend_id)
-        if not self.friends.filter(id=friend_id).exists():
-            raise Exception("You are not friends with this user")
-        self.friends.remove(friend)
-        friend.friends.remove(self)
-        return friend
-    
-    def block(self, user_id : int) -> "User":
-        user = User.objects.get(id=user_id)
-        if not user:
-            raise Exception("User not found")
-        if user in self.friends.all():
-            self.friends.remove(user)
-        if user in self.blocked.all():
-            raise Exception("User is already blocked")
-        if user.blocked.filter(id=self.id).exists():
-            raise Exception("User has already blocked you")
-        if self.id == user.id:
-            raise Exception("You cannot block yourself")
-        self.blocked.add(user)
-        return user
-    
-    def unblock(self, user_id : int) -> "User":
-        user = User.objects.get(id=user_id)
-        if not user:
-            raise Exception("User not found")
-        if user not in self.blocked.all():
-            raise Exception("User is not blocked")
-        if self.id == user.id:
-            raise Exception("You cannot unblock yourself")
-        self.blocked.remove(user)
-        return user
-    
-    def get_blocked_users(self, skip : int = 0, limit : int = 10) -> list["User"]:
-        blocked_users = self.blocked.all()[skip:skip+limit]
-        return [{
-            "id": user.id,
-            "username": user.username,
-            "avatar": user.avatar
-        }
-        for user in blocked_users]
-    
 
-    def create_otp_secret(self) -> str:
-        random = os.urandom(20).hex()
-        self.otp_secret = base64.b32encode(random.encode()).decode()
-        self.save()
-        return self.otp_secret
-    
-    def enable_2fa(self) -> str:
-        self.is_2fa_enabled = True
-        # self.save()
-        return True
-
-    def disable_2fa(self) -> bool:
-        self.otp_secret = None
-        self.is_2fa_enabled = False
-        self.save()
-        return True
-    
-    def verify_2fa(self, auth_code : str) -> bool:
-        code = get_totp_token(self.otp_secret.replace('=', ''))
-        if code != auth_code:
-            raise Exception("Invalid 2fa code")
-        return True
-
-        
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
 def user_model_to_dict(user : "User") -> dict[str, Any]:
     if not user:
-        return {}
+        return {}   
     return {
         "id": user.id,
         "username": user.username,

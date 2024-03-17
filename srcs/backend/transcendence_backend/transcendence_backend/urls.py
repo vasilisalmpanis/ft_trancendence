@@ -30,6 +30,7 @@ urlpatterns = [
     path("", include("NotFrontend.urls")),
     path("chat/", include("chat.urls")), # mt this needs to be implemented better with the other routes
     path("", include("oauth2.urls")),
+    path("", include("pong.urls")),
 ]
 
 # mt Add staticfiles_urlpatterns to serve static files during development

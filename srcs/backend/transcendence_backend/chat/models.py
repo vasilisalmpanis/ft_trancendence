@@ -14,59 +14,26 @@ class Chat(models.Model):
     id = models.AutoField(primary_key=True)
     participants = models.ManyToManyField(User, related_name="chats")
     name = models.CharField(max_length=255, null=True, blank=True)
-
-    def get_chat_id(user_id1, user_id2) -> int:
-        chat = Chat.objects.filter(
-            participants__id=user_id1
-        ).filter(
-            participants__id=user_id2
-        ).first()
-        if chat:
-            return chat.id
-        else:
-            return None
-        
-
-    def create_chat(user1_id, user2_id, name=None):
-        if user1_id == user2_id:
-            return None
-        if not User.objects.filter(id=user1_id).exists():
-            return None
-        elif not User.objects.filter(id=user2_id).exists():
-            return None
-        if not User.objects.get(id=user1_id).friends.filter(id=user2_id).exists():
-            return None
-        if not name:
-            name = f"{User.objects.get(id=user1_id).username} and {User.objects.get(id=user2_id).username} chat"
-        chat = Chat.objects.create(name=name)
-        chat.participants.add(user1_id)
-        chat.participants.add(user2_id)   
-        return chat
-    
-    def delete_chat(chat_id) -> bool:
-        chat = Chat.objects.filter(id=chat_id).first()
-        if chat:
-            chat.delete()
-            return True
-        else:
-            return False
-        
-    
-    def get_chats(user_id :int, skip : int = 0, limit : int = 10) -> list:
-        chats = Chat.objects.filter(participants__id=user_id)[skip:skip+limit]
-        user = User.objects.get(id=user_id)
-        return [
-            {
-                "id": chat.id,
-                "name": chat.name,
-                "receiver" : chat.participants.exclude(id=user_id).first().username,
-                "avatar" : user.avatar,
-            }
-            for chat in chats
-        ]
     class Meta:
         verbose_name = 'Chat'
         verbose_name_plural = 'Chats'
+
+
+def chat_model_to_dict(chat : "Chat") -> dict:
+    """
+    Convert chat model to dict
+    :param chat: Chat instance
+    :return: dict
+    """
+    if not chat:
+        return {}
+    receiver = chat.participants.exclude(id=chat.id).first()
+    return {
+        "id": chat.id,
+        "name": chat.name,
+        "receiver": receiver.username,
+        "avatar": receiver.avatar
+    }
 
 
 class Message(models.Model):

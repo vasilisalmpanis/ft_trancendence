@@ -1,0 +1,50 @@
+body {
+	background-color: #000;
+	color: rgb(248, 2, 191);
+	font-family: 'Courier New', monospace;
+	margin: 0;
+	overflow: hidden;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 100vh;
+}
+
+#field {
+	border: 2px solid rgb(248, 2, 191);
+	box-shadow: 0 0 50px rgba(248, 2, 191, 0.5);
+	padding: 0;
+	width: 95%;
+	height: 95%;
+	background-color: #000;
+	position: relative;
+}
+
+#ball {
+	height: 2%;
+	aspect-ratio : 1/1;
+	background-color: rgb(216, 223, 24);
+	border-radius: 100%;
+	position: absolute;
+}
+
+.platform {
+	width: 10px;
+	height: 20%;
+	top: 40%;
+	background-color: royalblue;
+	position: absolute;
+}
+
+#platform_1 {
+	left: 1%;
+}
+
+#platform_2 {
+	right: 1%;
+}
+
+#scoreboard {
+	margin-top: 10px;
+	text-align: center;
+}

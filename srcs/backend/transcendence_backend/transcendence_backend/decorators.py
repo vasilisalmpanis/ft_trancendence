@@ -48,89 +48,116 @@ def validate_jwt(payload : Dict, second_factor : bool, **kwargs) -> User:
             raise Exception("2FA Required")
     return user
 
+def jwt_auth_required(second_factor : bool = False, days : int = 1):
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(*args, **kwargs):
+            if isinstance(args[0], View):
+                request = args[1]
+            else:
+                request = args[0]
+            token = request.headers.get('Authorization')
+            if token is None:
+                return JsonResponse({'Error': 'Authorization header required'}, status=401)
+            try:
+                tokens = token.split(' ')
+                for t in tokens[1:]:
+                    if t != "":
+                        token = t
+            except IndexError:
+                return JsonResponse({'Error': 'Access Token Required'}, status=401)
+            jwt = JWT(settings.JWT_SECRET)
+            try:
+                payload = jwt.decrypt_jwt(token)
+                user = validate_jwt(payload, second_factor=second_factor, days=days)
+                kwargs['user'] = user
+                return view_func(*args, **kwargs)
+            except Exception as e:
+                return JsonResponse({'Error': f"{str(e)}"}, status=401)
+        return _wrapped_view
+    return decorator
 
-def jwt_auth_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(*args, **kwargs):
-        if isinstance(args[0], View):
-            request = args[1]
-        else:
-            request = args[0]
-        token = request.headers.get('Authorization')
-        if token == None:
-            return JsonResponse({'Error': 'Authorization header required'}, status=401)
-        try:
-            tokens = token.split(' ')
-            for t in tokens[1:]:
-                if t != "":
-                    token = t 
-        except IndexError:
-            return JsonResponse({'Error': 'Access Token Required'}, status=401)
-        logger.warning(f"Token: {token}")
-        jwt = JWT(settings.JWT_SECRET)
-        try:
+# def jwt_auth_required(view_func):
+#     @wraps(view_func)
+#     def _wrapped_view(*args, **kwargs):
+#         if isinstance(args[0], View):
+#             request = args[1]
+#         else:
+#             request = args[0]
+#         token = request.headers.get('Authorization')
+#         if token == None:
+#             return JsonResponse({'Error': 'Authorization header required'}, status=401)
+#         try:
+#             tokens = token.split(' ')
+#             for t in tokens[1:]:
+#                 if t != "":
+#                     token = t 
+#         except IndexError:
+#             return JsonResponse({'Error': 'Access Token Required'}, status=401)
+#         logger.warning(f"Token: {token}")
+#         jwt = JWT(settings.JWT_SECRET)
+#         try:
 
-            payload = jwt.decrypt_jwt(token)
-            user = validate_jwt(payload, second_factor=False, days=1)
-            kwargs['user'] = user
-            return view_func(*args, **kwargs)
-        except Exception as e:
-            return JsonResponse({'Error': f"{str(e)}"}, status=401)
-    return _wrapped_view
+#             payload = jwt.decrypt_jwt(token)
+#             user = validate_jwt(payload, second_factor=False, days=1)
+#             kwargs['user'] = user
+#             return view_func(*args, **kwargs)
+#         except Exception as e:
+#             return JsonResponse({'Error': f"{str(e)}"}, status=401)
+#     return _wrapped_view
 
+# def jwt_refresh_required(view_func):
+#     @wraps(view_func)
+#     def _wrapped_view(*args, **kwargs):
+#         if isinstance(args[0], View):
+#             request = args[1]
+#         else:
+#             request = args[0]
+#         token = request.headers.get('Authorization')
+#         if token == None:
+#             return JsonResponse({'Error': 'Authorization header required'}, status=401)
+#         try:
+#             tokens = token.split(' ')
+#             for t in tokens[1:]:
+#                 if t != "":
+#                     token = t 
+#         except IndexError:
+#             return JsonResponse({'Error': 'Access Token Required'}, status=401)
+#         logger.warning(f"Token: {token}")
+#         jwt = JWT(settings.JWT_SECRET)
+#         try:
+#             payload = jwt.decrypt_jwt(token)
+#             user = validate_jwt(payload, second_factor=False,  days=30)
+#             kwargs['user'] = user
+#             return view_func(*args, **kwargs)
+#         except Exception as e:
+#             return JsonResponse({'Error': f"{str(e)}"}, status=401)
+#     return _wrapped_view
 
-def jwt_refresh_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(*args, **kwargs):
-        if isinstance(args[0], View):
-            request = args[1]
-        else:
-            request = args[0]
-        token = request.headers.get('Authorization')
-        if token == None:
-            return JsonResponse({'Error': 'Authorization header required'}, status=401)
-        try:
-            tokens = token.split(' ')
-            for t in tokens[1:]:
-                if t != "":
-                    token = t 
-        except IndexError:
-            return JsonResponse({'Error': 'Access Token Required'}, status=401)
-        logger.warning(f"Token: {token}")
-        jwt = JWT(settings.JWT_SECRET)
-        try:
-            payload = jwt.decrypt_jwt(token)
-            user = validate_jwt(payload, second_factor=False,  days=30)
-            kwargs['user'] = user
-            return view_func(*args, **kwargs)
-        except Exception as e:
-            return JsonResponse({'Error': f"{str(e)}"}, status=401)
-    return _wrapped_view
-
-def jwt_2fa_required(view_func):
-    @wraps(view_func)
-    def _wrapped_view(*args, **kwargs):
-        if isinstance(args[0], View):
-            request = args[1]
-        else:
-            request = args[0]
-        token = request.headers.get('Authorization')
-        if token == None:
-            return JsonResponse({'Error': 'Authorization header required'}, status=401)
-        try:
-            tokens = token.split(' ')
-            for t in tokens[1:]:
-                if t != "":
-                    token = t
-        except IndexError:
-            return JsonResponse({'Error': 'Access Token Required'}, status=401)
-        logger.warning(f"Token: {token}")
-        jwt = JWT(settings.JWT_SECRET)
-        try:
-            payload = jwt.decrypt_jwt(token)
-            user = validate_jwt(payload, second_factor=True, days=1)
-            kwargs['user'] = user
-            return view_func(*args, **kwargs)
-        except Exception as e:
-            return JsonResponse({'Error': f"{str(e)}"}, status=401)
-    return _wrapped_view
+# def jwt_2fa_required(view_func):
+#     @wraps(view_func)
+#     def _wrapped_view(*args, **kwargs):
+#         if isinstance(args[0], View):
+#             request = args[1]
+#         else:
+#             request = args[0]
+#         token = request.headers.get('Authorization')
+#         if token == None:
+#             return JsonResponse({'Error': 'Authorization header required'}, status=401)
+#         try:
+#             tokens = token.split(' ')
+#             for t in tokens[1:]:
+#                 if t != "":
+#                     token = t
+#         except IndexError:
+#             return JsonResponse({'Error': 'Access Token Required'}, status=401)
+#         logger.warning(f"Token: {token}")
+#         jwt = JWT(settings.JWT_SECRET)
+#         try:
+#             payload = jwt.decrypt_jwt(token)
+#             user = validate_jwt(payload, second_factor=True, days=1)
+#             kwargs['user'] = user
+#             return view_func(*args, **kwargs)
+#         except Exception as e:
+#             return JsonResponse({'Error': f"{str(e)}"}, status=401)
+#     return _wrapped_view
