@@ -8,8 +8,10 @@ from jwt                            import JWT
 from django.conf                    import settings
 from authorize.views                import create_token
 from datetime                       import datetime, timedelta
-import os, json, http.client
+from users.services                 import UserService, SecondFactorService
+import logging, os, json, http.client
 
+logger = logging.getLogger(__name__)
 signer = Signer()
 
 def health_check (request) -> JsonResponse:
@@ -19,6 +21,7 @@ def health_check (request) -> JsonResponse:
     data = {'health-check oauth': 'alive'}
     return JsonResponse(data, status=200)
 
+# open in new window in frontend
 def ft_intra_auth(request):
     """
     Builds a request url to the 42intra OAuth2 endpoint
@@ -33,7 +36,6 @@ def ft_intra_auth(request):
         f'{auth_base_url}?client_id={client_id}'
         f'&redirect_uri={redirect_url}&state={state}&response_type={response_type}'
         )
-
     return redirect(auth_full_url)
 
 def handle_redir(request) -> JsonResponse:
@@ -66,8 +68,10 @@ def handle_redir(request) -> JsonResponse:
     response_raw = conn.getresponse()
     response = json.loads(response_raw.read().decode('utf-8'))
 
-    if response_raw.status is 200:
+    if response_raw.status == 200:
         access_token = response.get('access_token')
+        if not access_token:
+            return JsonResponse({'status': 'Failed to obtain OAUTH2 access token'}, status=404)
         user_data = fetch_user_data(access_token)
         if user_data:
                 user = get_or_create_user(user_data)
@@ -114,40 +118,39 @@ def get_or_create_user(user_data):
             user = User.objects.create_user(
                 username=user_data['login'], 
                 email=user_data['email'],
-                password=os.environ.get('OAUTH_RANDOM_OAUTH_USER_PASSWORD'),
+                password=os.environ.get('RANDOM_OAUTH_USER_PASSWORD'),
                 is_staff=False,
                 is_superuser=False,
                 ft_intra_id=user_data['id'],
             )
             Stats.objects.create(user=user)
         except Exception as e:
+            logger.error(f'Failed to create user: {e}')
             return None
     return user
 
-def login_ft_oauth_user(ft_user):
+def login_ft_oauth_user(user):
     """
     Checks for 2fa and creates jwt token pair for transcendence session
     :return: JSON element containing token pair
     """
-
-    if ft_user != None:
+    if user != None:
         jwt = JWT(settings.JWT_SECRET)
+        user.is_user_active = True
+        UserService.update_last_login(user)
         access_token = create_token(jwt=jwt, 
-                                    user=ft_user, 
+                                    user=user, 
                                     expiration=datetime.now() + timedelta(days=1), 
-                                    isa=ft_user.last_login, second_factor=ft_user.is_2fa_enabled)
+                                    isa=user.last_login, second_factor=user.is_2fa_enabled)
         refresh_token = create_token(jwt=jwt,
-                                     user=ft_user,
+                                     user=user,
                                      expiration=datetime.now() + timedelta(days=30),
-                                     isa=ft_user.last_login,
-                                     second_factor=ft_user.is_2fa_enabled)
-        ft_user.is_user_active = True
-        ft_user.last_login = datetime.now()
-        ft_user.save()
+                                     isa=user.last_login,
+                                     second_factor=user.is_2fa_enabled)
         return JsonResponse({
-                                'access_token': access_token,
-                                'refresh_token' : refresh_token }, status=200
+                                "access_token": access_token,
+                                "refresh_token" : refresh_token }, status=200
                             )
     else:
-        return JsonResponse({'status': 'error while creating jwt tokens for OAuth2 login'}, status=401)
+        return JsonResponse({'status': 'no user available for login with oauth2'}, status=401)
 
