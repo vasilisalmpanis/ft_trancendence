@@ -8,14 +8,21 @@ from users.models   import User
 def join_game(user , game_id : int):
     '''Joins user to game'''
     game = Pong.objects.get(id=game_id)
+    user_games = Pong.objects.filter(players=user)
     if game.status == 'finished':
         return False
     if user in game.players.all():
+        game.status = 'running'
         return True
     if game.players.count() == 2:
         return False
+    if user_games.filter(status='pending').exists() or user_games.filter(status='running').exists():
+        return False
     game.players.add(user)
     game.save()
+    if game.players.count() == 2:
+        game.status = 'running'
+        game.save()
     return True
 
 def pause_game(game_id: int):
@@ -47,7 +54,7 @@ def get_side(game_id: int, user: User) -> str:
 class PongService:
 
     @staticmethod
-    def get_games(user : User, type : str, skip : int, limit : int) -> List[Dict[Any, Any]]:
+    def get_games(user : User, type : str, skip : int, limit : int, me : bool = False) -> List[Dict[Any, Any]]:
         """
         Returns the games of the user
         @param user: User
@@ -56,16 +63,32 @@ class PongService:
         @param limit: int
         @return: JsonResponse with game schema
         """
-        if type == 'all':
-            games = Pong.objects.order_by('-timestamp')[skip:skip+limit]
-        elif type == 'pending':
-            games = Pong.objects.filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-        elif type == 'finished':
-            games = Pong.objects.filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-        elif type == 'started':
-            games = Pong.objects.filter(status='started').order_by('-timestamp')[skip:skip+limit]
+        if me:
+            if type == 'all':
+                games = Pong.objects.filter(players=user).order_by('-timestamp')[skip:skip+limit]
+            elif type == 'pending':
+                games = Pong.objects.filter(players=user).filter(status='pending').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'finished':
+                games = Pong.objects.filter(players=user).filter(status='finished').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'running':
+                games = Pong.objects.filter(players=user).filter(status='running').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'paused':
+                games = Pong.objects.filter(players=user).filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+            else:
+                raise Exception('Invalid type')
         else:
-            raise Exception('Invalid type')
+            if type == 'all':
+                games = Pong.objects.order_by('-timestamp')[skip:skip+limit]
+            elif type == 'pending':
+                games = Pong.objects.filter(status='pending').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'finished':
+                games = Pong.objects.filter(status='finished').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'running':
+                games = Pong.objects.filter(status='running').order_by('-timestamp')[skip:skip+limit]
+            elif type == 'paused':
+                games = Pong.objects.filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+            else:
+                raise Exception('Invalid type')
         return [pong_model_to_dict(game) for game in games]
     
     @staticmethod
@@ -75,7 +98,7 @@ class PongService:
         @param user: User
         @return: bool
         """
-        if Pong.objects.filter(players=user).filter(status='pending').exists() or Pong.objects.filter(players=user).filter(status='started').exists():
+        if Pong.objects.filter(players=user).filter(status='pending').exists() or Pong.objects.filter(players=user).filter(status='running').exists():
             return True
         return False
 
@@ -118,7 +141,7 @@ class PongService:
         if game is None:
             raise Exception('Game not found')
         if game.status != 'pending':
-            raise Exception('Game already started')
+            raise Exception('Game already running')
         if game.players.filter(id=user.id).exists() and game.players.count() == 2:
             raise Exception('User already joined')
         if PongService.check_user_already_joined(user) and game.players.count() == 2:
@@ -169,3 +192,5 @@ class PongService:
             game.delete()
         else:
             raise Exception('You are either not a participant or the game has already started')
+        
+        

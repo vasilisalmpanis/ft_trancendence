@@ -311,7 +311,6 @@ class PongRunner(AsyncConsumer):
 		logger.warn("running game " + gid)
 		for state in self._games[gid]:
 			if state:
-				logger.warn("sending state")
 				await self.channel_layer.group_send(
 					gid,
 					{
@@ -333,7 +332,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 		await self.accept()
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:
-		logger.warn(f"Sending: {message}")
 		await self.send(message['text'])
 
 	async def disconnect(self, close_code) -> None:
