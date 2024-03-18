@@ -140,6 +140,9 @@ class ApiClient {
     localStorage.setItem('refresh_token', refresh_token);
     return response;
   }
+  authorized() {
+    return localStorage.getItem('access_token') ? true : false;
+  }
 };
 
 export default ApiClient;
@@ -148,5 +151,6 @@ export default ApiClient;
 // TODO refresh token if access token is expired
 
 
-// Refactor decorators for jwt
-// Move business logic from models to services, managers, etc
+export const apiClient = new ApiClient(`http://localhost:8000`);
+
+export default ApiClient;

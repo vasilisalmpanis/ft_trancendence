@@ -21,14 +21,12 @@ const config = {
 	devServer: {
 		open: true,
 		host: 'localhost',
+		historyApiFallback: true,
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
 			template: './srcs/public/index.html',
 		}),
-
-		// Add your plugins here
-		// Learn more about plugins from https://webpack.js.org/configuration/plugins/
 	],
 	module: {
 		rules: [
