@@ -2,8 +2,9 @@ from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
-from transcendence_backend.decorators   import jwt_auth_required, jwt_2fa_required
+from transcendence_backend.decorators   import jwt_auth_required
 from ..models                           import User, FriendRequest
+from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
 from jwt                                import JWT
 from chat.models                        import Chat
@@ -24,7 +25,7 @@ def health_check(request) -> JsonResponse:
 
 class UserView(View):
 
-    @jwt_auth_required
+    @jwt_auth_required()
     def get(self, request, user : User) -> JsonResponse:    
         """
         GET: Get all users with pagination
@@ -35,7 +36,7 @@ class UserView(View):
         users_not_blocked_me = User.objects.exclude(blocked_me=user)
 
         # Intersection of users who haven't blocked me and users whom I haven't blocked
-        users = users_not_blocked_by_me.intersection(users_not_blocked_me)
+        users = users_not_blocked_by_me.intersection(users_not_blocked_me)[skip:skip+limit]
         data = [
             {
                 "name": user.username,
@@ -68,10 +69,10 @@ class UserView(View):
             Stats.objects.create(user=User.objects.get(username=username))
             return JsonResponse({"status": "User Created"}, status=201)
         except Exception:
-            return JsonResponse({"status": "error"}, status=400)
+            return JsonResponse({"status": "creating user"}, status=400)
 
 @require_http_methods(["GET"])
-@jwt_auth_required
+@jwt_auth_required()
 def user_by_id_view(request, user : User, id) -> JsonResponse:
     """
     Returns user data by id
@@ -88,7 +89,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     }
     return JsonResponse(data, safe=False)
 
-@method_decorator(jwt_auth_required, name="dispatch")
+@method_decorator(jwt_auth_required(), name="dispatch")
 class CurrentUserView(View):
             
     def get(self, request, user : User) -> JsonResponse:
@@ -128,7 +129,7 @@ class CurrentUserView(View):
         user.save()
         return JsonResponse({"status": "User Updated"}, status=200)
 
-@jwt_auth_required 
+@jwt_auth_required()
 def get_friends(request, user : User) -> JsonResponse:
     """
     Get all friends of currently logged in user
@@ -139,14 +140,14 @@ def get_friends(request, user : User) -> JsonResponse:
     try:
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
-        friends = user.get_friends(skip, limit)
+        friends = UserService.get_friends(user, skip, limit)
         if not friends:
             return JsonResponse({"status": "No friends"}, status=200)
         return JsonResponse(friends, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
 
-@method_decorator(jwt_auth_required, name="dispatch")    
+@method_decorator(jwt_auth_required(), name="dispatch")    
 class BlockedUsersView(View):
     def get(self, request, user : User) -> JsonResponse:
         """
@@ -155,7 +156,7 @@ class BlockedUsersView(View):
         if request.method != "GET":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
         try:
-            blocked_users = user.get_blocked_users()
+            blocked_users = UserService.get_blocked_users(user)
             if not blocked_users:
                 return JsonResponse({"status": "No blocked users"}, status=200)
             return JsonResponse(blocked_users, status=200, safe=False)
@@ -174,8 +175,7 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            if user.block(user_id):
-                FriendRequest.objects.filter(sender_id=user_id, receiver_id=user.id).delete()
+            UserService.block(user, user_id)
             return JsonResponse({"status": "User Blocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -191,7 +191,7 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            user.unblock(user_id)
+            UserService.unblock(user, user_id)
             return JsonResponse({"status": "User Unblocked"}, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -207,7 +207,7 @@ def generate_2fa_qr_uri(username, secret, issuer_name="localhost"):
 
     return uri
 
-@jwt_2fa_required
+@jwt_auth_required(second_factor=True)
 def verify_2fa_code(request, user : User) -> JsonResponse:
     """
     Verifies the 2fa code for the user
@@ -223,11 +223,11 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
     code = str(data.get("2fa_code", None))
     if code == None:
         return JsonResponse({"Error": "No code in request body"}, status=400)
-    if user.verify_2fa(code):
-        user.enable_2fa()
-        user.last_login = datetime.now()
-        user.save()
+    if SecondFactorService.verify_2fa(user, code):
+        SecondFactorService.enable_2fa(user)
+        UserService.update_last_login(user)
         jwt = JWT(settings.JWT_SECRET)
+        ## TODO: Abstract creation of tokens to a separate function
         access_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=1), isa=user.last_login, second_factor=False)
         refresh_token = authorize.views.create_token(jwt=jwt, user=user, expiration=datetime.now() + timedelta(days=30), isa=user.last_login, second_factor=False)
         return JsonResponse({
@@ -239,7 +239,7 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
         return JsonResponse({"status": "2FA Not Verified"}, status=400)
 
 
-@method_decorator(jwt_auth_required, name="dispatch")
+@method_decorator(jwt_auth_required(), name="dispatch")
 class TOPTView(View):
     def get(self, request, user : User) -> JsonResponse:
         """
@@ -250,7 +250,7 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        return JsonResponse({"status": user.decrypt_otp_secret()}, status=200)
+        return JsonResponse({"status": SecondFactorService.decrypt_otp_secret(user)}, status=200)
         # return JsonResponse({"status": generate_2fa_qr_uri(user.username, user.otp_secret)}, status=200)
         
     
@@ -263,8 +263,8 @@ class TOPTView(View):
         """
         if user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is already enabled"}, status=400)
-        secret = user.create_otp_secret()     
-        return JsonResponse({"status": "2FA enabled", "secret": user.decrypt_otp_secret(), "secret2" : secret}, status=200)
+        secret = SecondFactorService.create_otp_secret(user)     
+        return JsonResponse({"status": "2FA enabled", "secret": secret}, status=200)
     
     def put(self, request, user : User) -> JsonResponse:
         """
@@ -275,7 +275,8 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        secret = user.enable_2fa()
+        secret = SecondFactorService.create_otp_secret(user)
+        # TODO : check if the code is maches to enable again
         return JsonResponse({"status": "2FA refreshed", "secret": secret}, status=200)
     
     def delete(self, request, user : User) -> JsonResponse:
@@ -287,9 +288,7 @@ class TOPTView(View):
         """
         if not user.is_2fa_enabled:
             return JsonResponse({"status": "2FA is not enabled"}, status=400)
-        if user.disable_2fa():
+        if SecondFactorService.disable_2fa(user):
             return JsonResponse({"status": "2FA disabled"}, status=200)
         else:
             return JsonResponse({"status": "error"}, status=400)
-        
-    

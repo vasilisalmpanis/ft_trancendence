@@ -145,16 +145,11 @@ class ApiClient {
   }
 };
 
-// async function hello(){
-//   api = new ApiClient('http://localhost:8000');
+export default ApiClient;
 
-//   await api.authorize({ username: 'admin', password: 'admin' });
+// TODO check expiration date of access token before making request
+// TODO refresh token if access token is expired
 
-//   await api.get('users/me').then(async (response) => {
-//     const response_body = await response.json();
-//     console.log(response_body);
-//   })
-// }
 
 export const apiClient = new ApiClient(`http://localhost:8000`);
 

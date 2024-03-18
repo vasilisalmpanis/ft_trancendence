@@ -87,6 +87,7 @@ services:
     networks:
       - backend
     restart: always
+
   grafana:
     container_name: grafana
     image: grafana/grafana-oss
