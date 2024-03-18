@@ -1,1 +1,2 @@
-# ft_transendence
+# ft_transcendence
+## Pong online game
