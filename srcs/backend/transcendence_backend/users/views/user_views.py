@@ -89,6 +89,24 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     }
     return JsonResponse(data, safe=False)
 
+@require_http_methods(["GET"])
+@jwt_auth_required()
+def user_by_username_view(request, user : User, username) -> JsonResponse:
+    """
+    Returns user data by id
+    User must be authenticated to receive data
+    """
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
+    data = {
+        "user id" : user.id,
+        "username": user.username,
+        "avatar": user.avatar,
+    }
+    return JsonResponse(data, safe=False)
+
 @method_decorator(jwt_auth_required(), name="dispatch")
 class CurrentUserView(View):
             
@@ -175,8 +193,8 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            UserService.block(user, user_id)
-            return JsonResponse({"status": "User Blocked"}, status=200)
+            response = UserService.block(user, user_id)
+            return JsonResponse(response, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
         
@@ -191,8 +209,8 @@ class BlockedUsersView(View):
         if not user_id:
             return JsonResponse({"status": "error"}, status=400)
         try:
-            UserService.unblock(user, user_id)
-            return JsonResponse({"status": "User Unblocked"}, status=200)
+            response = UserService.unblock(user, user_id)
+            return JsonResponse(response, status=200)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
         
