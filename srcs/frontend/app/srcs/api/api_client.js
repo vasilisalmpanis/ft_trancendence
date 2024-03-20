@@ -27,6 +27,8 @@ class ApiClient {
     // dev only
   }
 
+
+
   async checkStatus (response) {
     if (!response.ok) {
       const errorData = await response;
@@ -80,15 +82,18 @@ class ApiClient {
 
   async authorize (payload, query = null) {
     try{
-      const response = await this.sendRequest('auth', 'POST', payload, query);
-      const response_body = await response.json();
+      let response_body;
+      let response;
+      if (!("access_token" in payload)) {
+        response = await this.sendRequest('auth', 'POST', payload, query);
+        response_body = await response.json();
+      } else {
+        response_body = payload;
+      }
       const access_token = response_body.access_token;
       const refresh_token = response_body.refresh_token;
       // dev only
-      if (typeof localStorage === 'undefined') {
-        this.headers['Authorization'] = `Bearer ${access_token}`;
-        return response;
-      }
+      this.headers['Authorization'] = `Bearer ${access_token}`;
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       return response;
@@ -144,12 +149,6 @@ class ApiClient {
     return localStorage.getItem('access_token') ? true : false;
   }
 };
-
-export default ApiClient;
-
-// TODO check expiration date of access token before making request
-// TODO refresh token if access token is expired
-
 
 export const apiClient = new ApiClient(`http://localhost:8000`);
 

@@ -147,10 +147,11 @@ def login_ft_oauth_user(user):
                                      expiration=datetime.now() + timedelta(days=30),
                                      isa=user.last_login,
                                      second_factor=user.is_2fa_enabled)
-        return JsonResponse({
-                                "access_token": access_token,
-                                "refresh_token" : refresh_token }, status=200
-                            )
+        return redirect(f"http://localhost:8080/signin?access_token={access_token}&refresh_token={refresh_token}")
+        #return JsonResponse({
+        #                        "access_token": access_token,
+        #                        "refresh_token" : refresh_token }, status=200
+        #                    )
     else:
         return JsonResponse({'status': 'no user available for login with oauth2'}, status=401)
 
