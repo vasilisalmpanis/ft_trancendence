@@ -5,7 +5,13 @@ import json
 class StatService:
     @staticmethod
     def set_stats(user_1: str, user_2: str, score_1: int, score_2: int):
-        '''Sets stats for the game'''
+        """
+        Sets the stats for the users based on the game result
+        :param user_1: Username of the first user
+        :param user_2: Username of the second user
+        :param score_1: Score of the first user
+        :param score_2: Score of the second user
+        """
         user1 = User.objects.get(username=user_1)
         user2 = User.objects.get(username=user_2)
         stats1 = Stats.objects.get(user=user1)
@@ -30,4 +36,13 @@ class StatService:
             stats1.games_lost += 1
             stats2.games_lost += 1
         stats1.save()
-        stats2.save() 
+        stats2.save()
+    
+    @staticmethod
+    def create_stats(user: User):
+        """
+        Creates the stats for the user
+        :param user: User object
+        """
+        stats = Stats(user=user)
+        stats.save()

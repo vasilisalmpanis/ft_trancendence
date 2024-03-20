@@ -16,7 +16,10 @@ class UserManager(BaseUserManager):
             raise ValueError('The Username field must be set')
         if not password:
             raise ValueError('The Password field must be set')
-        
+        if self.model.objects.filter(username=username).exists():
+            raise ValueError('The username already exists')
+        if self.model.objects.filter(email=email).exists():
+            raise ValueError('The email already exists')
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
