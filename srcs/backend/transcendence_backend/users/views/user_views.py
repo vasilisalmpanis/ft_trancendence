@@ -57,8 +57,8 @@ class UserView(View):
                                      is_superuser=issuper
                                      )
             return JsonResponse(new_user, status=201, safe=False)
-        except Exception:
-            return JsonResponse({"status": "creating user"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": str(e)}, status=400)
 
 @require_http_methods(["GET"])
 @jwt_auth_required()

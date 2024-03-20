@@ -11,11 +11,11 @@ import base64
 class UserService:
     @staticmethod
     def create_user(username: str, password:str, email:str, avatar:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
-            user = User.create_user(username=username,
+            user = User.objects.create_user(username=username,
                                     password=password,
                                     email=email,
-                                    isstaff=is_staff,
-                                    issuper=is_superuser)
+                                    is_staff=is_staff,
+                                    is_superuser=is_superuser)
             StatService.create_stats(user)
             return user_model_to_dict(user)
 
