@@ -24,12 +24,16 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendence_backend.settings'
 application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
-        "websocket": AuthMiddleware(
-            URLRouter([
-                game_websocket_urlpatterns,
-                chat_websocket_urlpatterns
-            ])
-        ),
+        "websocket": 
+        AuthMiddleware(
+            URLRouter(
+                [
+                *game_websocket_urlpatterns,
+                *chat_websocket_urlpatterns
+            ]
+            )
+        )
+        ,
         "channel": ChannelNameRouter(channels),
     }
 )
