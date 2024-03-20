@@ -27,6 +27,7 @@ const Signup = (props) => {
 			<h1>{C_SIGNUP_HEADER}</h1>
 			<form
 				onSubmit={submit}
+				className="mt-3"
 			>
 				<div className="mb-3">
 					<input
@@ -59,10 +60,10 @@ const Signup = (props) => {
 						{C_SIGNUP_BUTTON}
 					</button>
 				</div>
-				<div className="mb-3">
+				<div className="mb-3 mt-5">
 					<button
 						type="submit"
-						className="btn btn-primary w-100"
+						className="btn btn-outline-primary w-100"
 						onClick={()=>props.route("/signin")}
 					>
 						{C_SIGNUP_SIGNIN}

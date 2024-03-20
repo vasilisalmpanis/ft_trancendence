@@ -1,6 +1,6 @@
-import ftReact		from "../ft_react/index.js";
+import ftReact			from "../ft_react/index.js";
 import { apiClient }	from "../api/api_client.js";
-import Layout		from "../components/layout.jsx";
+import Layout			from "../components/layout.jsx";
 import {
 	C_SIGNIN_BUTTON,
 	C_SIGNIN_HEADER,
@@ -9,7 +9,7 @@ import {
 	C_SIGNIN_PASS,
 	C_SIGNIN_SIGNUP,
 	C_SIGNIN_USERNAME
-}					from "../conf/content_en.js";
+}						from "../conf/content_en.js";
 
 
 const Signin = (props) => {
@@ -29,7 +29,10 @@ const Signin = (props) => {
 		event.preventDefault();
 		const username = event.target[0].value;
 		const password = event.target[1].value;
-		apiClient.authorize({username: username, password: password}).then(resp=>{
+		apiClient.authorize({
+			username: username,
+			password: password
+		}).then(resp=>{
 			resp && resp.ok ? props.route("/") : console.log(resp);
 		});
 
@@ -40,6 +43,7 @@ const Signin = (props) => {
 				<h1>{C_SIGNIN_HEADER}</h1>
 				<form
 					onSubmit={submit}
+					className="mt-3"
 				>
 					<div className="mb-3">
 						<input
@@ -59,16 +63,16 @@ const Signin = (props) => {
 					<div className="mb-3">
 						<button
 							type="submit"
-							className="btn btn-outline-primary w-100"
+							className="btn btn-primary w-100"
 						>
 							{C_SIGNIN_BUTTON}
 						</button>
 					</div>
 				</form>
-				<div className="mb-3">
+				<div className="mb-3 mt-5">
 					<button
 						type="submit"
-						className="btn btn-outline-secondary w-100"
+						className="btn btn-outline-primary w-100"
 						onClick={()=>props.route("/signup")}
 					>
 						{C_SIGNIN_SIGNUP}
@@ -77,7 +81,7 @@ const Signin = (props) => {
 				<div className="mb-3">
 					<a
 						type="submit"
-						className="btn btn-primary w-100"
+						className="btn btn-outline-primary w-100"
 						href={C_SIGNIN_INTRA_ENDPOINT}
 					>
 						{C_SIGNIN_INTRA}
