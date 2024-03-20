@@ -190,6 +190,7 @@ class PongService:
             raise Exception('Game not found')
         if game.players.filter(id=user.id).exists() and game.status == 'pending':
             game.delete()
+            return pong_model_to_dict(game)
         else:
             raise Exception('You are either not a participant or the game has already started')
         
