@@ -42,6 +42,7 @@ class Message(models.Model):
     timestamp = models.DateTimeField(default=timezone.now)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="messages")
     read = models.BooleanField(default=False)
+    content = models.TextField(null=True, blank=True)
 
     def get_messages(chat_id, skip=0, limit=10) -> list:
         messages = Message.objects.filter(chat_id=chat_id).order_by("-timestamp")[skip:skip+limit]

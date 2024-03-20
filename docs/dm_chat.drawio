@@ -1,0 +1,76 @@
+<mxfile host="65bd71144e">
+    <diagram id="MWHfNvawKEBFL6r40QaO" name="Page-1">
+        <mxGraphModel dx="1124" dy="764" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="3" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="37" target="4">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="250" y="120" as="targetPoint"/>
+                        <mxPoint x="180" y="120" as="sourcePoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="5" style="edgeStyle=none;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="42">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="440" y="120.005" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4" value="websocket router" style="whiteSpace=wrap;html=1;shadow=0;" vertex="1" parent="1">
+                    <mxGeometry x="180" y="80" width="110" height="42.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="" style="shape=table;startSize=0;container=1;collapsible=0;childLayout=tableLayout;shadow=0;" vertex="1" parent="1">
+                    <mxGeometry x="30" y="59.5" width="120" height="63" as="geometry"/>
+                </mxCell>
+                <mxCell id="35" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;shadow=0;" vertex="1" parent="34">
+                    <mxGeometry width="120" height="19" as="geometry"/>
+                </mxCell>
+                <mxCell id="36" value="frontend" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;shadow=0;" vertex="1" parent="35">
+                    <mxGeometry width="120" height="19" as="geometry">
+                        <mxRectangle width="120" height="19" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="37" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;shadow=0;" vertex="1" parent="34">
+                    <mxGeometry y="19" width="120" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="38" value="sends request on .../ws/chat/&amp;lt;chat_id&amp;gt;" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;shadow=0;" vertex="1" parent="37">
+                    <mxGeometry width="120" height="44" as="geometry">
+                        <mxRectangle width="120" height="44" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="39" value="" style="shape=table;startSize=0;container=1;collapsible=0;childLayout=tableLayout;shadow=0;" vertex="1" parent="1">
+                    <mxGeometry x="320" y="57" width="120" height="195" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;shadow=0;" vertex="1" parent="39">
+                    <mxGeometry width="120" height="53" as="geometry"/>
+                </mxCell>
+                <mxCell id="41" value="django channels websocket consumer" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;shadow=0;" vertex="1" parent="40">
+                    <mxGeometry width="120" height="53" as="geometry">
+                        <mxRectangle width="120" height="53" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="42" value="" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;shadow=0;" vertex="1" parent="39">
+                    <mxGeometry y="53" width="120" height="82" as="geometry"/>
+                </mxCell>
+                <mxCell id="43" value="representation of the&lt;br&gt;individual chat (1 consumer object per chatroom/client)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;shadow=0;" vertex="1" parent="42">
+                    <mxGeometry width="120" height="82" as="geometry">
+                        <mxRectangle width="120" height="82" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="45" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;shadow=0;" vertex="1" parent="39">
+                    <mxGeometry y="135" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="46" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;shadow=0;" vertex="1" parent="45">
+                    <mxGeometry width="120" height="60" as="geometry">
+                        <mxRectangle width="120" height="60" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="44" value="establish connection to&lt;br&gt;channel and keep open&lt;br&gt;&lt;br&gt;receive message from client&lt;br&gt;and broadcast out to anyone&lt;br&gt;who has a connection to&lt;br&gt;&lt;br&gt;in our case: create message object&lt;br&gt;and save it in database&lt;br&gt;&lt;br&gt;what should be returned&lt;br&gt;to frontend?" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;shadow=0;" vertex="1" parent="1">
+                    <mxGeometry x="460" y="57" width="210" height="190" as="geometry"/>
+                </mxCell>
+                <mxCell id="47" value="DM Chat visualization" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="10" width="140" height="30" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

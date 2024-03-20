@@ -92,9 +92,39 @@ components:
                 type: integer
               score:
                 type: integer
+    
+    Chat:
+      type: object
+      properties:
+        id:
+          type: integer
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              user_id:
+                type: integer
+        name:
+          type: string
 
-        
-  parameters:    
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        chat_id:
+          type: integer
+        timestamp:
+          type: string
+        sender:
+          type: integer
+        read:
+          type: boolean
+        content:
+          type: string
+
+  parameters:
     skipParam:
       name: skip
       in: query
@@ -143,6 +173,8 @@ components:
 paths:
   /healthcheck:
     get:
+      tags: 
+        - healthcheck
       responses:
         '200':
           $ref: '#/components/responses/OK'
@@ -151,6 +183,8 @@ paths:
 
   /login:
     post:
+      tags:
+        - login
       requestBody:
         content:
           'application/json':
@@ -178,6 +212,8 @@ paths:
           $ref: '#/components/responses/GeneralError'
   /logout:
     post:
+      tags:
+          - login
       security:
         - bearerAuth: [ ]
       responses:
@@ -196,6 +232,8 @@ paths:
 
   /users:
     get:
+      tags:
+        - users
       security:
         - bearerAuth: [ ]
       
@@ -222,6 +260,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
     post:
+      tags:
+        - users
       security:
         - bearerAuth: [ ]
       description: "Username update endpoint"
@@ -243,6 +283,8 @@ paths:
 
   /users/me:
     get:
+      tags:
+        - users
       security:
         - bearerAuth: [ ]
       responses:
@@ -255,6 +297,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/User'
     post:
+      tags:
+        - users
       requestBody:
         content:
           'application/json':
@@ -273,6 +317,8 @@ paths:
           $ref: '#/components/responses/GeneralError'
     
     delete:
+      tags:
+        - users
       security:
         - bearerAuth: [ ]
       description: "Deletion of user currently logged in user"
@@ -285,6 +331,8 @@ paths:
       
   /users/{id}:
     get:
+      tags:
+        - users
       security:
         - bearerAuth: [ ]
       description: "Retrieval of user by ID"
@@ -307,6 +355,8 @@ paths:
 
   /friends:
     get:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Retrieval of friends of currently logged in user"
@@ -323,6 +373,8 @@ paths:
           $ref: '#/components/responses/GeneralError'
   /friendrequest/incoming:
     get:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Retrieval of incoming friend requests of currently logged in user"
@@ -339,6 +391,8 @@ paths:
           $ref: '#/components/responses/GeneralError'
   /friendrequest:
     get:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Retrieval of friend requests of currently logged in user"
@@ -354,6 +408,8 @@ paths:
         default:
           $ref: '#/components/responses/GeneralError'
     post:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Send friend request to user"
@@ -380,6 +436,8 @@ paths:
 
   /friendrequest/accept:
     post:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Accept friend request"
@@ -404,6 +462,8 @@ paths:
 
   /friendrequest/decline:
     post:
+      tags:
+        - friends
       security:
         - bearerAuth: [ ]
       description: "Decline friend request"
@@ -428,6 +488,8 @@ paths:
 
   /games:
     post:
+      tags:
+        - games
       description: 'Adds new game with userID as playerOne'
 
       responses:
@@ -441,6 +503,8 @@ paths:
           $ref: "#/components/responses/GeneralError"
 
     get:
+      tags:
+        - games
       parameters:
         - name: skip
           in: query
@@ -470,7 +534,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Game'
   /games/{game_id}/join:
-    put:  
+    put:
+      tags:
+        - games
       description: "User Me join game_id"
       responses:
         '202':
@@ -481,3 +547,53 @@ paths:
                 type: object
                 items:
                   $ref: '#/components/schemas/Game'
+
+  /chat:
+    get:
+      tags:
+        - chat
+      security:
+        - bearerAuth: [ ]
+      description: "Retrieval of chats of currently logged in user"
+      responses:
+        '200':
+          description: "Successful retrieval of chats of currently logged in user"
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+        default:
+          $ref: '#/components/responses/GeneralError'
+    post:
+      tags:
+        - chat
+      security:
+        - bearerAuth: [ ]
+      description: "Create chat"
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              type: object
+              properties:
+                participants:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                name:
+                  type: string
+      responses:
+        '202':
+          description: "Successful chat creation"
+          content:
+            'application/json':
+              schema:
+                type: object
+                $ref: '#/components/schemas/Chat'
+        default:
+          $ref: '#/components/responses/GeneralError'

@@ -31,6 +31,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 JWT_SECRET = env("JWT_SECRET")
 FERNET_SECRET = env("FERNET_SECRET")
+OAUTH_UID=env("OAUTH_UID")
+OAUTH_SECRET=env("OAUTH_SECRET")
+OAUTH_STATE=env("OAUTH_STATE")
+RANDOM_OAUTH_USER_PASSWORD=env("RANDOM_OAUTH_USER_PASSWORD")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
