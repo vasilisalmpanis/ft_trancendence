@@ -75,9 +75,7 @@ services:
     networks:
       - backend
     restart: always
-    volumes:
-      - pwd:/data
-
+  
   pgAdmin:
     container_name: pgAdmin
     image: dpage/pgadmin4
@@ -101,12 +99,14 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     user: "0:0"
+    env_file:
+      - .env
     environment:
       GF_DATABASE_TYPE: postgres
-      GF_DATABASE_HOST: postgres:5432
-      GF_DATABASE_NAME: postgres
-      GF_DATABASE_USER: postgres
-      GF_DATABASE_PASSWORD: postgres
+      GF_DATABASE_HOST: $DB_HOST:$DB_PORT
+      GF_DATABASE_NAME: $DB_NAME
+      GF_DATABASE_USER: $DB_USER
+      GF_DATABASE_PASSWORD: $DB_PASSWORD
       GF_DATABASE_SSL_MODE: disable
 
 volumes:

@@ -1,0 +1,12 @@
+{
+  "name": "conf",
+  "version": "1.0.0",
+  "description": "",
+  "main": "content_en.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Polina Simonenko",
+  "license": "MIT"
+}

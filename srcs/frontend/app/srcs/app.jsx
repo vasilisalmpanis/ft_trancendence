@@ -1,33 +1,34 @@
-import ftReact	from "./ft_react";
-import Router	from "./router";
-// Import our custom CSS
 import './scss/styles.scss';
+import * as bootstrap	from 'bootstrap';
+import ftReact			from "./ft_react";
+import {Router, Route}	from "./router";
+import Main 			from './pages/main';
+import Test 			from './pages/test';
+import { useTheme } 	from './theme/theme';
+import Profile			from './pages/profile';
+import Signup			from './pages/signup';
+import Signin			from './pages/signin';
+import Pong 			from './pages/pong';
 
-// Import all of Bootstrap's JS
-import * as bootstrap from 'bootstrap';
-
-const Cmp = () => {
-	const [count, setCount] = ftReact.useState(6);
+const App = (props) => {
+	const [theme, setTheme] = useTheme();
+	setTheme("auto");
 	return (
-		<div>
-			<span style="color: red;" >cmp    </span>
-			<br/>
-			<span style="color: black;" >{count}</span>
-			<br/>
-			<button className="btn btn-outline-danger" onClick={() => setCount(count + 1)}>Push me</button>
-			<div className="container py-4 px-3 mx-auto">
-				<h1>Hello, Bootstrap and Webpack!</h1>
-				<button className="btn btn-primary">Primary button</button>
-		  	</div>
+		<div style={{
+			width: "100vw",
+			height: "90vh",
+		}}>
+			<Router>
+				<Route fallback auth path="/" element={<Main/>}/>
+				<Route login path="/signin" element={<Signin/>}/>
+				<Route path="/signup" element={<Signup/>}/>
+				<Route auth path="/test" element={<Test/>}/>
+				<Route auth path="/me" element={<Profile/>}/>
+				<Route auth path="/pong" element={<Pong/>}/>
+			</Router>
 		</div>
 	);
 }
 
-const App = (
-	<div style="width: 100vw; height: 100vh; background-color: light-grey;">
-		<Cmp/>
-	</div>
-);
 const root = document.getElementById("root");
-
-ftReact.render(App, root);
+ftReact.render(<App/>, root);
