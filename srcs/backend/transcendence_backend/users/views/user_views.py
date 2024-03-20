@@ -1,3 +1,4 @@
+from email.mime import base
 from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
@@ -13,7 +14,9 @@ from django.conf                        import settings
 from datetime                           import datetime, timedelta
 import authorize.views
 import json
-import urllib.parse
+import base64
+
+
 
 
 def health_check(request) -> JsonResponse:
@@ -43,16 +46,14 @@ class UserView(View):
         username = data.get("username")
         password = data.get("password")
         email = data.get("email")
-        avatar = data.get("avatar", None)
         isstaff =  data.get("is_staff", False)
         issuper = data.get("is_superuser", False)
-        if not username or not password or not email or not avatar:
+        if not username or not password or not email:
             return JsonResponse({"status": "error"}, status=400)
         try:
             new_user = UserService.create_user(username=username, 
                                      password=password, 
                                      email=email,
-                                     avatar=avatar,
                                      is_staff=isstaff, 
                                      is_superuser=issuper
                                      )
@@ -72,7 +73,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
         data = {
             "user id" : user.id,
             "username": user.username,
-            "avatar": user.avatar,
+            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
         }
         return JsonResponse(data, safe=False)
     except User.DoesNotExist:
@@ -90,11 +91,11 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
         data = {
             "user id" : user.id,
             "username": user.username,
-            "avatar": user.avatar,
+            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
         }
         return JsonResponse(data, safe=False)
     except User.DoesNotExist:
-        return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
+        return JsonResponse({"error" : "User Doesn't Exist"}, status=404)
 
 @method_decorator(jwt_auth_required(), name="dispatch")
 class CurrentUserView(View):
@@ -106,7 +107,7 @@ class CurrentUserView(View):
         data = {
             "username": user.username,
             "id": user.id,
-            "avatar": user.avatar
+            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
         }
         return JsonResponse(data, status=200)
     

@@ -10,10 +10,12 @@ import base64
 
 class UserService:
     @staticmethod
-    def create_user(username: str, password:str, email:str, avatar:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
+    def create_user(username: str, password:str, email:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
+            avatar = settings.DEFAULT_AVATAR
             user = User.objects.create_user(username=username,
                                     password=password,
                                     email=email,
+                                    avatar=avatar,
                                     is_staff=is_staff,
                                     is_superuser=is_superuser)
             StatService.create_stats(user)

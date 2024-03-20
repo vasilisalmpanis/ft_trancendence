@@ -5,9 +5,9 @@ urlpatterns = [
     path("healthcheck", user_views.health_check, name="health_check"),
 
     path("users", user_views.UserView.as_view(), name="users"),
+    path("users/me", user_views.CurrentUserView.as_view(), name="get_current_user"),
     path("users/<int:id>", user_views.user_by_id_view, name="user_by_id"),
     path("users/<str:username>", user_views.user_by_username_view, name="user_by_id"),
-    path("users/me", user_views.CurrentUserView.as_view(), name="get_current_user"),
     path("block", user_views.BlockedUsersView.as_view(), name="block_user"),
 
     path("friends", user_views.get_friends, name="get_friends"), # Could be changed to /users/me/friends
