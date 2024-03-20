@@ -141,7 +141,7 @@ def play_game(stdcsr):
     if len(games) == 0:
         response = client.request("/games?type=paused&me=True", "GET")
         games = response.body
-        if games is None:
+        if len(games) == 0:
             stdcsr.clear()
             stdcsr.addstr(1, 1, "No games available. Return to the main menu")
             stdcsr.refresh()
