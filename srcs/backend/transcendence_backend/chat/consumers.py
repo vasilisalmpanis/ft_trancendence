@@ -1,20 +1,27 @@
 from channels.generic.websocket     import AsyncWebsocketConsumer
+from users.models                   import User
+from chat.models                    import Chat, Message
 from logging                        import Logger
 import asyncio, json
 
-logger = Logger(__name__)
-
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.chat_id = self.scope['url_route']['kwargs']['chat_id']
-        self.chat_group_name = f'chat_{self.chat_id}'
-
+        self.chat_group_name = self.scope['url_route']['kwargs']['chat_id']
+        # check if chat exists and user is authorized to join
+        # chat gets created elsewhere, this is just for joining
+        if self.chat_group_name not in Chat.objects.values_list('id', flat=True):
+            await self 
+        # user = self.scope['user']
         await self.channel_layer.group_add(
             self.chat_group_name,
             self.channel_name
         )
-
         await self.accept()
+        await self.send(text_data=json.dumps({
+            'status': 'connected',
+            'chat_group_name': self.chat_group_name,
+            'channel_name': self.channel_name,
+        }))
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(
@@ -24,7 +31,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
+        await self.send(text_data)
         message = text_data_json['message']
+
 
         await self.channel_layer.group_send(
             self.chat_group_name,
@@ -38,5 +47,5 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = event['message']
 
         await self.send(text_data=json.dumps({
-            'message': message
+            'message from server': message
         }))
