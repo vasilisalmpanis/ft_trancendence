@@ -75,9 +75,9 @@ class ApiClient {
     return await this.sendRequest(url, 'PUT', body, query);
   }
 
-  async delete (path, query) {
+  async delete (path, body, query) {
     const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'DELETE', null, query);
+    return await this.sendRequest(url, 'DELETE', body, query);
   }
 
   async authorize (payload, query = null) {

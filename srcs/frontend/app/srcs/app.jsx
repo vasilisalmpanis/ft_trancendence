@@ -10,6 +10,7 @@ import Signup			from './pages/signup';
 import Signin			from './pages/signin';
 import Pong 			from './pages/pong';
 import Users			from './pages/users';
+import Games			from './pages/games';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -27,6 +28,7 @@ const App = (props) => {
 				<Route auth path="/me" element={<Profile/>}/>
 				<Route auth path="/pong" element={<Pong/>}/>
 				<Route auth path="/users" element={<Users/>}/>
+				<Route auth path="/games" element={<Games/>}/>
 			</Router>
 		</div>
 	);

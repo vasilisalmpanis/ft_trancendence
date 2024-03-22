@@ -167,9 +167,7 @@ class FiberNode {
     //console.log("  VNode.updateDom", this);
     const oldProps = this.old && this.old.props || {};
     //Remove old or changed event listeners
-    Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props)
-      //|| isNew(oldProps, this.props)(key)
-    ).forEach(name => {
+    Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props) || isNew(oldProps, this.props)(key)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
       //console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.removeEventListener(eventType, oldProps[name]);
