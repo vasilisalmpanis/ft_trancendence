@@ -359,12 +359,20 @@ class FTReact {
    * @returns {FiberNode}
    */
   createElement(type, props, ...children) {
-    return new FiberNode(type, {
-      ...props,
-      children: children.flat().map((child, idx) => typeof child === "object" ? child.setKey(idx) : new FiberNode("TEXT_ELEMENT", {
-        nodeValue: child
-      }).setKey(idx))
-    });
+    return type
+      ? new FiberNode(type, {
+          ...props,
+          children: children
+            .flat()
+            .filter(child => child)
+            .map((child, idx) =>
+              typeof child === "object"
+                ? child.setKey(idx)
+                : new FiberNode("TEXT_ELEMENT", {
+                    nodeValue: child
+                  }).setKey(idx))
+        })
+      : null;
   }
 
   /**

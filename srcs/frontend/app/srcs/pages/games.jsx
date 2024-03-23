@@ -8,12 +8,14 @@ import {
 
 const CreateGame = (props) => {
 	const createGame = async () => {
-		await apiClient.post("/games");
+		const resp = await apiClient.post("/games");
 		await props.updateGames();
+		const data = await resp.json();
+		props.route("/pong", {game_id: data.id});
 	}
 	return (
 		<button
-			className="btn btn-primary"
+			className="btn btn-primary mb-3"
 			onClick={createGame}
 		>
 			Create new game
@@ -37,21 +39,31 @@ const DeleteIcon = () => (
 )
 
 const GameCard = (props) => {
-	console.log(props);
+	const me = JSON.parse(localStorage.getItem("me"));
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
 					{props.data.players[0]}
-					<button
-						className="btn d-inline p-2 ms-auto"
-						onClick={async ()=>{
-							await apiClient.delete("/games", {game_id: props.data.id});
-							await props.updateGames();
-						}}
-					>
-						<DeleteIcon/>
-					</button>
+					{props.data.players[0] === me.username &&
+						<button
+							className="btn d-inline p-0 ms-auto"
+							onClick={async ()=>{
+								await apiClient.delete("/games", {game_id: props.data.id});
+								await props.updateGames();
+							}}
+						>
+							<DeleteIcon/>
+						</button>
+					}
+						<button
+							className="btn d-inline p-0 ms-auto"
+							onClick={()=>{
+								props.route("/pong", {game_id: props.data.id});
+							}}
+						>
+							JOIN
+						</button>
 				</li>
 			</ul>
 		</div>
@@ -61,8 +73,12 @@ const GameCard = (props) => {
 const Games = (props) => {
 	const [games, setGames] = ftReact.useState(null);
 	const getGames = async () => {
-		const resp = await apiClient.get("/games", {type: "pending"});
-		const data = await resp.json();
+		let resp = await apiClient.get("/games", {type: "paused", me: true});
+		let data = await resp.json();
+		if (data.length)
+			props.route("/pong", {game_id: data[0].id});
+		resp = await apiClient.get("/games", {type: "pending"});
+		data = await resp.json();
 		if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};
@@ -71,10 +87,10 @@ const Games = (props) => {
 	},[games]);
 	return (
 		<BarLayout route={props.route}>
-			<CreateGame updateGames={getGames}/>
+			<CreateGame route={props.route} updateGames={getGames}/>
 			{
 				games
-					? games.map(game => <GameCard data={game} updateGames={getGames}/>)
+					? games.map(game => <GameCard route={props.route} data={game} updateGames={getGames}/>)
 					: (
 						<div className="spinner-grow" role="status">
 							<span className="visually-hidden">Loading...</span>

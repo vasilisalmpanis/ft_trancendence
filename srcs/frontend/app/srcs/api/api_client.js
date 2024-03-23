@@ -96,6 +96,8 @@ class ApiClient {
       this.headers['Authorization'] = `Bearer ${access_token}`;
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
+      const me = await this.get("/users/me");
+      localStorage.setItem("me", JSON.stringify(await me.json()));
       return response;
     }
     catch (error) {

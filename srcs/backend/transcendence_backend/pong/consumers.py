@@ -329,12 +329,14 @@ class PongConsumer(AsyncWebsocketConsumer):
 	_groups = GroupsManager()
  
 	async def connect(self) -> None:
-		await self.accept()
+		await self.accept("Authorization")
+		logger.warn(self.scope["user"].username)
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:
 		await self.send(message['text'])
 
 	async def disconnect(self, close_code) -> None:
+		logger.warn("disconnect..")
 		gid = self._groups.get_group_name(self.channel_name)
 		group_channels = self._groups.groups.get(gid, [])
 		self._groups.remove_channel(self.channel_name)
