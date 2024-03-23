@@ -68,4 +68,39 @@ class ChatService:
                     chat_model_to_dict(chat)
                     for chat in chats
                     ]
-        
+    
+
+class MessageService:
+    @staticmethod
+    def send_message(user : User, chat_id : int, content : str) -> bool:
+        """
+        Send message to chat
+        :param user: User instance
+        :param chat_id: int
+        :param content: str
+        :return: bool
+        """
+        chat = Chat.objects.filter(id=chat_id, participants__id=user.id).first()
+        if chat:
+            message = Message.objects.create(
+                chat_id=chat,
+                sender=user,
+                content=content
+            )
+            return True
+        return False
+
+    @staticmethod
+    def read_message(user : User, message_id : int) -> bool:
+        """
+        Mark message as read
+        :param user: User instance
+        :param message_id: int
+        :return: bool
+        """
+        message = Message.objects.filter(id=message_id, chat_id__participants__id=user.id).first()
+        if message:
+            message.read = True
+            message.save()
+            return True
+        return False
