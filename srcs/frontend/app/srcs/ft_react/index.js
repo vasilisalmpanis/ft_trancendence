@@ -54,6 +54,16 @@ class FiberNode {
       this.parent.children[this.key + 1] = val;
     }
   }
+  getNameSpace() {
+    if (this.type === 'svg') {
+      if ('xmlns' in this.props)
+        return (this.props.xmlns);
+      return null;
+    }
+    if (this.parent)
+      return this.parent.getNameSpace();
+    return null;
+  }
   setKey(key) {
     this.key = key;
     return this;
@@ -160,7 +170,14 @@ class FiberNode {
   }
   createDom() {
     //console.log("  VNode.createDom", this);
-    this.dom = this.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(this.type);
+    if (this.type == "TEXT_ELEMENT")
+      this.dom = document.createTextNode("");
+    else {
+      const nameSpace = this.getNameSpace();
+      this.dom = nameSpace
+        ? document.createElementNS(nameSpace, this.type)
+        : document.createElement(this.type);
+    }
     this.updateDom();
   }
   updateDom = () => {
@@ -181,11 +198,19 @@ class FiberNode {
 
     // Set new or changed properties
     Object.keys(this.props).filter(isProperty).filter(isNew(oldProps, this.props)).forEach(name => {
-      //console.log("     setProperties", this.dom.tagName || this.type, name);
-      if (name === 'style' && typeof this.props[name] === 'object') {
-        this.dom[name] = objectToCSS(this.props[name]);
+      //console.log("     setProperties", this.dom.tagName || this.type, name, this.props[name]);
+      if (this.getNameSpace()) {
+        this.dom.setAttribute(name, this.props[name])
       } else {
-        this.dom[name] = this.props[name];
+        if (name === 'style' && typeof this.props[name] === 'object') {
+          this.dom[name] = objectToCSS(this.props[name]);
+        } else if (name === 'className') {
+          this.dom[name] = this.props[name];
+        } else {
+          this.dom instanceof Element
+            ? this.dom.setAttribute(name, this.props[name])
+            : this.dom[name] = this.props[name];
+        }
       }
     });
 
