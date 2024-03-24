@@ -117,7 +117,7 @@ def authenticate(stdscr) -> None:
                 else:
                     stdscr.addstr(1, 1, "Invalid credentials. Press any key to try again.")
             else:
-                stdscr.addstr(1, 1, f"An error occurred. Press any key to try again.")
+                stdscr.addstr(1, 1, f"{response.text}")
                 stdscr.getch()
             stdscr.refresh()
         else:
