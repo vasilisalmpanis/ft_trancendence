@@ -67,6 +67,7 @@ const Pong = (props) => {
 		}
 	};
 	const cleanup = () => {
+		console.log("cleanup");
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
 		ws && ws.close();
@@ -75,10 +76,7 @@ const Pong = (props) => {
 	ftReact.useEffect(()=>{
 		if (!ws) {
 			if (!history.state || !history.state.game_id)
-			{
-				cleanup();
 				props.route("/games");
-			}
 			else
 			{
 				ws = new WebSocket(
@@ -94,10 +92,7 @@ const Pong = (props) => {
 						(data.Problem && data.Problem === 'Connecting to game')
 						|| (data.error && data.error === 'Game is full')
 					)
-					{
-						cleanup();
 						props.route("/games");
-					}
 					if (data.start)
 					{
 						console.log(data.start);
@@ -144,12 +139,7 @@ const Pong = (props) => {
 	}
 	requestAnimationFrame(gameLoop);
 	return (
-		<BarLayout
-			route={(newPath, state) => {
-				cleanup();
-				props.route(newPath, state);
-			}}
-		>
+		<BarLayout route={props.route}>
 			<div style={{
 				border: "2px solid rgb(248, 2, 191)",
 				borderRadius: "1%",

@@ -80,7 +80,9 @@ class FiberNode {
   resolveFunc(ftReact) {
     this.stId = 0;
     ftReact._currentNode = this;
+    //const oldChildren = this.children;
     const children = this.type(this.props);
+    //console.log("RESOLVE: ", this.type.name, oldChildren, children);
     ftReact._currentNode = null;
     this.children = Array.isArray(children) ? children : [children];
     this.parentsSiblings();
@@ -93,6 +95,7 @@ class FiberNode {
     const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
     clonedNode.states = this.states ? [...this.states] : this.states;
+    clonedNode.effects = this.effects ? [...this.effects] : this.effects;
     clonedNode.key = this.key;
     clonedNode.parent = this.parent;
     return clonedNode;
@@ -102,7 +105,8 @@ class FiberNode {
    * @param {FiberNode[]} children
    */
   reconcile(children, ftReact) {
-    //console.log("  VNode.reconcile RECONCILE: ", this, children);
+    //console.log("  VNode.reconcile RECONCILE: ", this, this.old);
+    //this.type instanceof Function && console.log("RECONCILE: ", this.type.name, this.old?.type.name, this);
     let prevSibling = null;
     let oldNode = this.old && this.old.child;
     let i = 0;
@@ -146,13 +150,19 @@ class FiberNode {
     }
   }
   commit() {
-    //console.log("  VNode.commit ", this);
+    // console.log("  VNode.commit ", this);
+    //this.type instanceof Function && console.log("COMMIT: ", this.type.name, this);
     let domParentNode = this.parent;
     while (!domParentNode.dom) {
       domParentNode = domParentNode.parent;
     }
     const domParent = domParentNode.dom;
-    if (this.effect === "PLACEMENT" && this.dom != null) domParent.appendChild(this.dom); else if (this.effect === "UPDATE" && this.dom != null) this.updateDom(); else if (this.effect === "DELETION") this.delete(domParent);
+    if (this.effect === "PLACEMENT" && this.dom != null)
+      domParent.appendChild(this.dom);
+    else if (this.effect === "UPDATE" && this.dom != null)
+      this.updateDom();
+    else if (this.effect === "DELETION")
+      this.delete(domParent);
     this.effect = null;
     this.old = this.clone();
     this.child && this.child.commit();
@@ -161,10 +171,17 @@ class FiberNode {
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
     if (this.dom) domParent.removeChild(this.dom); else this.child && this.child.delete(domParent);
-    if (this.cleanup) this.cleanup();
+    if (this.effects) {
+      this.effects.forEach(effect => {
+          if (effect && effect.cleanup) {
+            effect.cleanup();
+          }
+      });
+    };
   }
   update(ftReact) {
     //console.log("  VNode.update", this);
+    //this.type instanceof Function && console.log("UPDATE: ", this.type.name, this.old?.type.name, this);
     if (this.type instanceof Function) this.resolveFunc(ftReact); else if (!this.dom) this.createDom();
     this.reconcile(this.children, ftReact);
   }
@@ -381,7 +398,7 @@ class FTReact {
    * @param {HTMLElement} container 
    */
   render(element, container) {
-    console.log("FTReact.render ", element);
+    //console.log("FTReact.render ", element);
     this._root.dom = container;
     this._root.children = [element];
     this._root.parentsSiblings();
