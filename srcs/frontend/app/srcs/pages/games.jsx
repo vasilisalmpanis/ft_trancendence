@@ -15,7 +15,7 @@ const CreateGame = (props) => {
 	}
 	return (
 		<button
-			className="btn btn-primary mb-3"
+			className="btn btn-outline-primary mb-3"
 			onClick={createGame}
 		>
 			Create new game
