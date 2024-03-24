@@ -8,7 +8,7 @@ export const C_SIGNIN_USERNAME = "username";
 export const C_SIGNIN_PASS = "password";
 export const C_SIGNIN_SIGNUP = "Create account";
 export const C_SIGNIN_INTRA = "Sign In with 42 Intra";
-export const C_SIGNIN_INTRA_ENDPOINT = "http://localhost:8000/oauth2/42intra";
+export const C_SIGNIN_INTRA_ENDPOINT = `${window.location.protocol}//${window.location.hostname}:8000/oauth2/42intra?redir=${window.location.origin}/signin`;
 export const C_SIGNUP_HEADER = "Create account";
 export const C_SIGNUP_EMAIL = "email";
 export const C_SIGNUP_BUTTON = "Sign Up";

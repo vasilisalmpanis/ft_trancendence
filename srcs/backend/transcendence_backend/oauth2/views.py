@@ -28,9 +28,15 @@ def ft_intra_auth(request):
     :return: redirection to 42intra auth endpoint
     """
     auth_base_url = 'https://api.intra.42.fr/oauth/authorize'
+    redir_uri = request.GET.get('redir', 'http://localhost/')
+    
     client_id = os.environ.get('OAUTH_UID')
-    state = signer.sign(os.environ.get('OAUTH_STATE'))
-    redirect_url = 'http://localhost:8000/oauth2/redir'
+    state_json = json.dumps({
+        'state': os.environ.get('OAUTH_STATE'),
+        'redir': redir_uri
+    })
+    state = signer.sign(state_json)
+    redirect_url = f'http://{request.get_host()}/oauth2/redir'
     response_type = 'code'
     auth_full_url = (
         f'{auth_base_url}?client_id={client_id}'
@@ -45,17 +51,20 @@ def handle_redir(request) -> JsonResponse:
     :return: access and refresh token for transcendence
     """
     auth_code = request.GET.get('code')
+    state_json = None
     try:
-        state = signer.unsign(request.GET.get('state'))
+        state_json = json.loads(signer.unsign(request.GET.get('state')))
     except BadSignature:
-        return JsonResponse({'status': 'State not matching', 'state': state}, status=400)
-    if not auth_code or state != os.environ.get("OAUTH_STATE"):
+        return JsonResponse({'status': 'State not matching', 'state': state_json}, status=400)
+    if not state_json or 'state' not in state_json or 'redir' not in state_json:
+        return JsonResponse({'status': 'State not matching', 'state': state_json}, status=400)
+    if not auth_code or state_json['state'] != os.environ.get("OAUTH_STATE"):
         return JsonResponse({'status': 'Authorization code not provided or state mismatch'}, status=400)
 
     parameters = json.dumps({
         'client_id': os.environ.get('OAUTH_UID'),
         'client_secret': os.environ.get('OAUTH_SECRET'),
-        'redirect_uri': 'http://localhost:8000/oauth2/redir',
+        'redirect_uri': f'http://{request.get_host()}/oauth2/redir',
         'code': auth_code,
         'grant_type': 'authorization_code'
         })
@@ -75,7 +84,7 @@ def handle_redir(request) -> JsonResponse:
         user_data = fetch_user_data(access_token)
         if user_data:
                 user = get_or_create_user(user_data)
-                return login_ft_oauth_user(user)
+                return login_ft_oauth_user(user, redir=state_json['redir'])
         else:
             return JsonResponse({'status': 'Failed to fetch userdata'}, status=404)
     else:
@@ -129,7 +138,7 @@ def get_or_create_user(user_data):
             return None
     return user
 
-def login_ft_oauth_user(user):
+def login_ft_oauth_user(user, redir='http://localhost:8080/signin'):
     """
     Checks for 2fa and creates jwt token pair for transcendence session
     :return: JSON element containing token pair
@@ -147,7 +156,7 @@ def login_ft_oauth_user(user):
                                      expiration=datetime.now() + timedelta(days=30),
                                      isa=user.last_login,
                                      second_factor=user.is_2fa_enabled)
-        return redirect(f"http://localhost:8080/signin?access_token={access_token}&refresh_token={refresh_token}")
+        return redirect(f"{redir}?access_token={access_token}&refresh_token={refresh_token}")
         #return JsonResponse({
         #                        "access_token": access_token,
         #                        "refresh_token" : refresh_token }, status=200

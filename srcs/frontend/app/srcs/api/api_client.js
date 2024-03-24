@@ -152,6 +152,6 @@ class ApiClient {
   }
 };
 
-export const apiClient = new ApiClient(`http://localhost:8000`);
+export const apiClient = new ApiClient(`http://${window.location.hostname}:8000`);
 
 export default ApiClient;

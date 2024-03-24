@@ -288,7 +288,8 @@ class PongRunner(AsyncConsumer):
 
 	async def update_platform(self, data: ControlMsg) -> None:
 		'''Moves platforms in game'''
-		self._games[data['gid']].move_platform(json.loads(data['data']))
+		if data['gid'] in self._games:
+			self._games[data['gid']].move_platform(json.loads(data['data']))
 
 	async def pause_game(self, message: ControlMsg) -> None:
 		'''Pause game'''
@@ -303,8 +304,9 @@ class PongRunner(AsyncConsumer):
 		'''Resume game'''
 		logger.warn("resuming game " + str(message))
 		gid = message['gid']
-		await database_sync_to_async(resume_game)(int(gid))
-		self._games[gid]._resume()
+		if gid in self._games:
+			await database_sync_to_async(resume_game)(int(gid))
+			self._games[gid]._resume()
 		
 
 	async def _run(self, gid: str):
@@ -329,7 +331,10 @@ class PongConsumer(AsyncWebsocketConsumer):
 	_groups = GroupsManager()
  
 	async def connect(self) -> None:
-		await self.accept("Authorization")
+		if self.scope.get('auth_protocol', False):
+			await self.accept("Authorization")
+		else:
+			await self.accept()
 		logger.warn(self.scope["user"].username)
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:

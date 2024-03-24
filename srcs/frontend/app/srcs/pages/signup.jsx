@@ -1,5 +1,5 @@
 import ftReact		from "../ft_react/index.js";
-import ApiClient	from "../api/api_client.js";
+import { apiClient }	from "../api/api_client.js";
 import Layout		from "../components/layout.jsx";
 import {
 	C_SIGNIN_PASS,
@@ -11,13 +11,12 @@ import {
 }					from "../conf/content_en.js";
 
 const Signup = (props) => {
-	const client = new ApiClient("http://localhost:8000");
 	const submit = (event) => {
 		event.preventDefault();
 		const username = event.target[0].value;
 		const password = event.target[1].value;
 		const email = event.target[2].value;
-		client.post("/users", {username: username, password: password, email: email}).then(resp=>{
+		apiClient.post("/users", {username: username, password: password, email: email}).then(resp=>{
 			resp && resp.ok ? props.route("/signin") : console.log(resp);
 		});
 
