@@ -10,13 +10,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-async def decrypt_jwt_async(jwt, authorization):
-    return jwt.decrypt_jwt(authorization)
-
-async def validate_jwt_async(payload, second_factor : bool, **kwargs) -> User:
-    return validate_jwt(payload, second_factor, **kwargs)
-
 class AuthMiddleware:
     """
     Custom middleware (insecure) that takes user IDs from the query string.
