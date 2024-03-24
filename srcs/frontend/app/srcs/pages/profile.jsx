@@ -20,8 +20,7 @@ const Profile = (props) => {
 	const [me, setMe] = ftReact.useState(null);
 	ftReact.useEffect(()=>{
 		const getMe = async () => {
-			const resp = await apiClient.get("/users/me");
-			const data = await resp.json();
+			const data = await apiClient.get("/users/me");
 			if (data && !me)
 				setMe(data);
 		};

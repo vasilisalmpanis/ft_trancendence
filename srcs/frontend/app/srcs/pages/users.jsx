@@ -20,8 +20,7 @@ const Users = (props) => {
 	const [users, setUsers] = ftReact.useState(null);
 	ftReact.useEffect(()=>{
 		const getUsers = async () => {
-			const resp = await apiClient.get("/users");
-			const data = await resp.json();
+			const data = await apiClient.get("/users");
 			if (data && !users)
 				setUsers(data);
 		};

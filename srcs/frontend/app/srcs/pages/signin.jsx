@@ -10,32 +10,40 @@ import {
 	C_SIGNIN_SIGNUP,
 	C_SIGNIN_USERNAME
 }						from "../conf/content_en.js";
+import Alert from "../components/alert.jsx";
 
 
 const Signin = (props) => {
+	const [error, setError] = ftReact.useState("");
 	if (location.search.length) {
-		let queryDict = new URLSearchParams(location.search);
-		if (queryDict.has("access_token")) {
-			apiClient.authorize({
-				access_token: queryDict.get("access_token"),
-				refresh_token: queryDict.get("refresh_token")
-			});
-			queryDict.delete("access_token");
-			queryDict.delete("refresh_token");
-			props.route("/");
+		const handleQuery = async () => {
+			let queryDict = new URLSearchParams(location.search);
+			if (queryDict.has("access_token")) {
+				const res = apiClient.authorize({
+					access_token: queryDict.get("access_token"),
+					refresh_token: queryDict.get("refresh_token")
+				});
+				if (res.error)
+					setError(res.error);
+				else {
+					queryDict.delete("access_token");
+					queryDict.delete("refresh_token");
+					props.route("/");
+				}
+			}
 		}
+		handleQuery();
 	}
-	const submit = (event) => {
+	const submit = async (event) => {
 		event.preventDefault();
 		const username = event.target[0].value;
 		const password = event.target[1].value;
-		apiClient.authorize({
+		const resp = await apiClient.authorize({
 			username: username,
 			password: password
-		}).then(resp=>{
-			resp && resp.ok ? props.route("/") : console.log(resp);
 		});
-
+		if (resp)
+			resp.error ? setError(resp.error) : props.route("/");
 	};
 	return (
 		<Layout>
@@ -68,6 +76,7 @@ const Signin = (props) => {
 							{C_SIGNIN_BUTTON}
 						</button>
 					</div>
+					{error && <Alert msg={error}/>}
 				</form>
 				<div className="mb-3 mt-5">
 					<button

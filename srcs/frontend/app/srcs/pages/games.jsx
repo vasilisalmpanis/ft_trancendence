@@ -8,9 +8,8 @@ import {
 
 const CreateGame = (props) => {
 	const createGame = async () => {
-		const resp = await apiClient.post("/games");
+		const data = await apiClient.post("/games");
 		await props.updateGames();
-		const data = await resp.json();
 		props.route("/pong", {game_id: data.id});
 	}
 	return (
@@ -73,12 +72,10 @@ const GameCard = (props) => {
 const Games = (props) => {
 	const [games, setGames] = ftReact.useState(null);
 	const getGames = async () => {
-		let resp = await apiClient.get("/games", {type: "paused", me: true});
-		let data = await resp.json();
+		let data = await apiClient.get("/games", {type: "paused", me: true});
 		if (data.length)
 			props.route("/pong", {game_id: data[0].id});
-		resp = await apiClient.get("/games", {type: "pending"});
-		data = await resp.json();
+		data = await apiClient.get("/games", {type: "pending"});
 		if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};

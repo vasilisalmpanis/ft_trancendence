@@ -94,8 +94,8 @@ class FiberNode {
     };
     const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
-    clonedNode.states = this.states ? [...this.states] : this.states;
-    clonedNode.effects = this.effects ? [...this.effects] : this.effects;
+    clonedNode.states = this.states ? [...this.states] : [];
+    clonedNode.effects = this.effects ? [...this.effects] : [];
     clonedNode.key = this.key;
     clonedNode.parent = this.parent;
     return clonedNode;
@@ -170,7 +170,11 @@ class FiberNode {
   }
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
-    if (this.dom) domParent.removeChild(this.dom); else this.child && this.child.delete(domParent);
+    if (this.dom) {
+      domParent.removeChild(this.dom);
+    } else {
+      this.child && this.child.delete(domParent);
+    }
     if (this.effects) {
       this.effects.forEach(effect => {
           if (effect && effect.cleanup) {
@@ -224,9 +228,12 @@ class FiberNode {
         } else if (name === 'className') {
           this.dom[name] = this.props[name];
         } else {
-          this.dom instanceof Element
-            ? this.dom.setAttribute(name, this.props[name])
-            : this.dom[name] = this.props[name];
+          if (this.dom instanceof Element) {
+            if (this.props[name] || typeof this.props[name] !== 'boolean')
+              this.dom.setAttribute(name, this.props[name])
+          } else {
+            this.dom[name] = this.props[name];
+          }
         }
       }
     });
@@ -339,7 +346,7 @@ class FTReact {
       if (nextNode.effects) {
         nextNode.effects.forEach(effect => {
           if (effect.hasChangedDeps) {
-            if (effect.cleanup) {
+            if (effect.cleanup && effect.cleanup instanceof Function) {
               effect.cleanup();
             }
             effect.cleanup = effect.callback() || null;
@@ -361,7 +368,7 @@ class FTReact {
     };
 
     if (hasChangedDeps) {
-      if (oldEffect && oldEffect.cleanup) {
+      if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
         oldEffect.cleanup();
       }
       node.effects[node.stId] = effect;

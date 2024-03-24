@@ -27,8 +27,6 @@ class ApiClient {
     // dev only
   }
 
-
-
   async checkStatus (response) {
     if (!response.ok) {
       const errorData = await response;
@@ -38,6 +36,18 @@ class ApiClient {
       }
       throw new Error(errorMessage);
     }
+  }
+
+  async proceedResponse(response) {
+    if (response.ok)
+    {
+      let data = await response.json();
+      if (data.message)
+        return {error: data.message};
+      return data;
+    }
+    else
+      return {error: response.status}
   }
 
   async sendRequest (path, method, body, query) {
@@ -56,8 +66,9 @@ class ApiClient {
       });
     }
     const response = await fetch(url, params);
-    await this.checkStatus(response);
-    return response;
+    //await this.checkStatus(response);
+    return await this.proceedResponse(response);
+    //return response;
   }
 
   async get (path, query) {
@@ -81,37 +92,36 @@ class ApiClient {
   }
 
   async authorize (payload, query = null) {
-    try{
-      let response_body;
-      let response;
-      if (!("access_token" in payload)) {
-        response = await this.sendRequest('auth', 'POST', payload, query);
-        response_body = await response.json();
-      } else {
-        response_body = payload;
-      }
-      const access_token = response_body.access_token;
-      const refresh_token = response_body.refresh_token;
-      // dev only
-      this.headers['Authorization'] = `Bearer ${access_token}`;
-      localStorage.setItem('access_token', access_token);
-      localStorage.setItem('refresh_token', refresh_token);
-      const me = await this.get("/users/me");
-      localStorage.setItem("me", JSON.stringify(await me.json()));
-      return response;
+    let response_body;
+    if ("access_token" in payload)
+      response_body = payload;
+    else {
+      response_body = await this.sendRequest('auth', 'POST', payload, query);
+      console.log(response_body);
     }
-    catch (error) {
-      console.error('Error:', error);
-    }
+    if (response_body.error)
+      return response_body;
+    const access_token = response_body.access_token;
+    const refresh_token = response_body.refresh_token;
+    this.headers['Authorization'] = `Bearer ${access_token}`;
+    localStorage.setItem('access_token', access_token);
+    localStorage.setItem('refresh_token', refresh_token);
+    const me = await this.get("/users/me");
+    if (me.error)
+      return me;
+    localStorage.setItem("me", JSON.stringify(me));
+    return {"ok": true};
+  }
+
+  unauthorize () {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('me');
   }
 
   async logout () {
     const response = await this.sendRequest('logout', 'POST', null, null);
-    // dev only
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-    }
+    this.unauthorize();
     return response;
   }
 
