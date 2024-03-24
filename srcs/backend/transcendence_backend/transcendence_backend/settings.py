@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'stats',
     'authorize',
     'oauth2',
+    'tournament',
     # 'auth',
     # Add new apps here from (appname.apps.AppnameConfig)
 ]
