@@ -3,8 +3,9 @@ from users.models                   import User, user_model_to_dict
 from threading                      import Lock
 from typing                         import Dict, TypeVar, List
 from .models                        import Chat, Message
+from .services                      import ChatService, MessageService
 from logging                        import Logger
-from asgiref.sync                   import sync_to_async
+from channels.db                    import database_sync_to_async
 
 import json
 
@@ -35,9 +36,6 @@ class ChatroomManager(metaclass=SingletonMeta):
             return False
         if self.register_user_in_room(chat_id, channel_name, username) is False:
             return False
-        print(f"chat: {self.rooms}", flush=True)
-        # self.remove_room(chat_id)
-        # print(f"chat2: {self.rooms}", flush=True)
         return True
 
     def register_user_in_room(self, chat_id: str, channel_name: str, username: str) -> bool:
@@ -52,10 +50,8 @@ class ChatroomManager(metaclass=SingletonMeta):
 
         for db_participant in db_participants:
             if db_participant.username == username:
-                # if room does not have participants, create the list
                 if 'participants' not in self.rooms[chat_id]:
                     self.rooms[chat_id]['participants'] = []
-                # if user is already in the rooms participants list, update the channel name for the user
                 for room_participant in self.rooms[chat_id]['participants'].copy():
                     if room_participant['username'] == username:
                         self.rooms[chat_id]['participants'].remove(room_participant)
@@ -103,14 +99,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
-        if await sync_to_async(self._chats.is_room_in_db)(self.chat_id) is False:
+        if await database_sync_to_async(self._chats.is_room_in_db)(self.chat_id) is False:
             await self.send(text_data=json.dumps({
                 'status': 'error',
                 'message': 'Chat does not exist'
             }))
             await self.close()
             return
-        if not await sync_to_async(self._chats.add_channel_to_room)(self.chat_id, self.channel_name, self.scope['user'].username):
+        if not await database_sync_to_async(self._chats.add_channel_to_room)(self.chat_id, self.channel_name, self.scope['user'].username):
             await self.send(text_data=json.dumps({
                 'status': 'error',
                 'message': 'User is not a member of this chat'
@@ -121,41 +117,71 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.chat_id,
             self.channel_name
         )
-        await self.send(text_data=json.dumps({
-            'status': 'connected',
-            'chat_id': self.chat_id,
-            'participants': self._chats.rooms[self.chat_id]['participants'],
-        }))
+        await self.channel_layer.group_send(
+             self.chat_id,
+             {
+                'type': 'chat_status_update',
+                'status': 'connected',
+                'username': self.scope['user'].username,
+                'chat_id': self.chat_id,
+                'active_participants': self._chats.rooms[self.chat_id].get('participants'),
+            }
+        )
 
     async def disconnect(self, close_code):
+        """
+        Removes channel from channel layer
+        and removes user from chatroom in manager
+        """
+        await self.channel_layer.group_send(
+            self.chat_id,
+            {
+                'type': 'chat_status_update',
+                'status': 'disconnected',
+                'username': self.scope['user'].username,
+                'chat_id': self.chat_id,
+                'active_participants': self._chats.rooms[self.chat_id].get('participants'),
+            }
+        )
         await self.channel_layer.group_discard(
             self.chat_id,
             self.channel_name
         )
-
-        ###### should user be deleted here??????????
         self._chats.remove_user_from_room(self.chat_id, self.channel_name)
-        await self.send(text_data=json.dumps({
-            'status': 'disconnected',
-            'user': self.scope['user'].username,
-            'chat_id': self.chat_id,
-        }))
 
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
 
+        message = await database_sync_to_async(MessageService.create_message)(
+                            self.scope['user'], 
+                            self.chat_id, 
+                            text_data_json['content']
+                            )
         await self.channel_layer.group_send(
             self.chat_id,
             {
                 'type': text_data_json['type'],
-                'sender': self.scope['user'].username,
-                'content': text_data_json['content']
+                'message_id': message.id,
+                'sender': message.sender.username,
+                'content': message.content,
             }
         )
 
-    async def message(self, event):
+    async def chat_status_update(self, event):
         await self.send(text_data=json.dumps({
+            'type': 'chat_status_update',
+            'status': event['status'],
+            'username': event['username'],
+            'chat_id': event['chat_id'],
+            'active_participants': event['active_participants']
+            }))
+        await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
+
+    async def message(self, event):
+            await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
+            await self.send(text_data=json.dumps({
             'type': 'message',
+            'message_id': event['message_id'],
             'sender': event['sender'],
             'content': event['content']
         }))

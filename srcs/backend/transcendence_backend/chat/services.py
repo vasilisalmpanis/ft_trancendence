@@ -8,7 +8,7 @@ class ChatService:
     @staticmethod
     def get_chat_id(user : User, user_id : int) -> int:
         """
-        Get ID of chat between two users
+        Get ID of chat between User and user_id
         :param user: User instance
         :param user_id: int
         :return: int
@@ -64,15 +64,12 @@ class ChatService:
         :return: list
         """
         chats = Chat.objects.filter(participants__id=user.id)[skip:skip+limit]
-        return [
-                    chat_model_to_dict(chat)
-                    for chat in chats
-                    ]
-    
+        return [chat_model_to_dict(chat) for chat in chats]
+
 
 class MessageService:
     @staticmethod
-    def send_message(user : User, chat_id : int, content : str) -> bool:
+    def create_dm(user : User, chat_id : int, content : str) -> Message:
         """
         Send message to chat
         :param user: User instance
@@ -87,11 +84,11 @@ class MessageService:
                 sender=user,
                 content=content
             )
-            return True
-        return False
+            return message
+        return None
 
     @staticmethod
-    def read_message(user : User, message_id : int) -> bool:
+    def read_dm(user : User, message_id : int) -> bool:
         """
         Mark message as read
         :param user: User instance
@@ -99,8 +96,10 @@ class MessageService:
         :return: bool
         """
         message = Message.objects.filter(id=message_id, chat_id__participants__id=user.id).first()
-        if message:
-            message.read = True
-            message.save()
-            return True
-        return False
+        if not message:
+            return False
+        if user.username == message.sender.username:
+            return False
+        message.read = True
+        message.save()
+        return True

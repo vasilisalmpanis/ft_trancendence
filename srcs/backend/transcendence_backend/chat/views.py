@@ -11,9 +11,7 @@ from django.utils.decorators            import method_decorator
 from users.models                       import User
 import json
 
-
 logger = Logger(__name__)
-
 
 ## TODO: See what happens with chats between blocked users and their messages
 @jwt_auth_required()
@@ -27,7 +25,7 @@ def get_chats(request, user : User) -> JsonResponse:
     if len(data) == 0:
         return JsonResponse({"status": "No chats found"}, status=200)
     return JsonResponse(data, status=200, safe=False)
-    
+
 @jwt_auth_required()
 def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
     if not request.method == "GET":
@@ -39,7 +37,7 @@ def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
         return JsonResponse(messages, status=200, safe=False)
     except Exception:
         return JsonResponse({"status": "Chat not found"}, status=404)
-    
+
 @method_decorator(jwt_auth_required(), name="dispatch")
 class ChatView(View):
     def get(self, request, id : int) -> JsonResponse:

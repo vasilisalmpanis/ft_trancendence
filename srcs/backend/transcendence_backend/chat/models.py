@@ -9,15 +9,13 @@ from django.db.models           import Q
 
 # Create your models here.
 
-
 class Chat(models.Model):
     id = models.AutoField(primary_key=True)
-    participants = models.ManyToManyField(User, related_name="chats")
     name = models.CharField(max_length=255, null=True, blank=True)
+    participants = models.ManyToManyField(User, related_name="chats")
     class Meta:
         verbose_name = 'Chat'
         verbose_name_plural = 'Chats'
-
 
 def chat_model_to_dict(chat : "Chat") -> dict:
     """
@@ -47,16 +45,10 @@ class Message(models.Model):
     def get_messages(chat_id, skip=0, limit=10) -> list:
         messages = Message.objects.filter(chat_id=chat_id).order_by("-timestamp")[skip:skip+limit]
         return [
-            {
-                "id": message.id,
-                "chat_id": message.chat_id.id,
-                "timestamp": message.timestamp,
-                "sender": message.sender.username,
-                "content": message.content,
-                "read": message.read
-            }
+            Message.message_model_to_dict(message)
             for message in messages
         ]
+
     class Meta:
         verbose_name = 'Message'
         verbose_name_plural = 'Messages'
@@ -72,6 +64,6 @@ class Message(models.Model):
             "chat_id": message.chat_id.id,
             "timestamp": message.timestamp,
             "sender": message.sender.username,
+            "read": message.read,
             "content": message.content,
-            "read": message.read
         }
