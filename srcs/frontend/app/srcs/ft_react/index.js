@@ -170,7 +170,7 @@ class FiberNode {
   }
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
-    if (this.dom) {
+    if (this.dom && domParent.contains(this.dom)) {
       domParent.removeChild(this.dom);
     } else {
       this.child && this.child.delete(domParent);
@@ -358,8 +358,9 @@ class FTReact {
   }
   useEffect(callback, deps) {
     const node = this._currentNode;
-    const oldEffect = node.old && node.effects[node.stId];
-    const hasChangedDeps = oldEffect ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
+    const effectIdx = node.stId;
+    const oldEffect = node.old && node.effects[effectIdx];
+    const hasChangedDeps = oldEffect && oldEffect.deps ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
     const effect = {
       cleanup: null,
       deps,
@@ -371,7 +372,25 @@ class FTReact {
       if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
         oldEffect.cleanup();
       }
-      node.effects[node.stId] = effect;
+      //const effect = async () => {
+      //  let isActive = true; // Flag to track if the effect is still valid
+      //  const cleanup = callback(); // Execute the user-provided effect
+      //  // Check if the effect returns a cleanup function directly or from an async operation
+      //  if (cleanup instanceof Promise) {
+      //      cleanup.then(asyncCleanup => {
+      //          if (!isActive && asyncCleanup) {
+      //              asyncCleanup(); // Call the cleanup function if the component unmounted
+      //          }
+      //      });
+      //  } else if (typeof cleanup === 'function') {
+      //      node.effects[effectIdx] = { cleanup, deps }; // Store the cleanup function for later
+      //  }
+      //  // Define a cleanup function to update the flag if the component unmounts
+      //  return () => {
+      //      isActive = false;
+      //  };
+      //};
+      node.effects[effectIdx] = effect;
     }
     node.stId++;
   }

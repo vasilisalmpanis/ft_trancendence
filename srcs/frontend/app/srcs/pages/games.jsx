@@ -5,6 +5,7 @@ import {
 	C_PROFILE_HEADER,
 	C_PROFILE_USERNAME
 }						from "../conf/content_en";
+import Alert from "../components/alert";
 
 const CreateGame = (props) => {
 	const createGame = async () => {
@@ -71,28 +72,36 @@ const GameCard = (props) => {
 
 const Games = (props) => {
 	const [games, setGames] = ftReact.useState(null);
+	const [error, setError] = ftReact.useState("");
 	const getGames = async () => {
 		let data = await apiClient.get("/games", {type: "paused", me: true});
 		if (data.length)
 			props.route("/pong", {game_id: data[0].id});
 		data = await apiClient.get("/games", {type: "pending"});
-		if (data && (!games || (games && data.length != games.length)))
+		if (data.error)
+			setError(data.error);
+		else if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};
-	ftReact.useEffect(()=>{
+	if (!games && !error)
 		getGames();
-	},[games]);
+	//ftReact.useEffect(()=>{
+	//	if (!games && !error)
+	//		getGames();
+	//},[games]);
 	return (
 		<BarLayout route={props.route}>
 			<CreateGame route={props.route} updateGames={getGames}/>
 			{
 				games
 					? games.map(game => <GameCard route={props.route} data={game} updateGames={getGames}/>)
-					: (
-						<div className="spinner-grow" role="status">
-							<span className="visually-hidden">Loading...</span>
-				  		</div>
-					)
+					: error
+						? <Alert msg={error}/>
+						: (
+							<div className="spinner-grow" role="status">
+								<span className="visually-hidden">Loading...</span>
+				  			</div>
+						)
 			}
 		</BarLayout>
 	);

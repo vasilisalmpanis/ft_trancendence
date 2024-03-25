@@ -5,6 +5,7 @@ import {
 	C_PROFILE_HEADER,
 	C_PROFILE_USERNAME
 }						from "../conf/content_en";
+import Alert from "../components/alert";
 
 const UserCard = (props) => {
 	return (
@@ -18,24 +19,31 @@ const UserCard = (props) => {
 
 const Users = (props) => {
 	const [users, setUsers] = ftReact.useState(null);
-	ftReact.useEffect(()=>{
-		const getUsers = async () => {
-			const data = await apiClient.get("/users");
-			if (data && !users)
-				setUsers(data);
-		};
+	const [error, setError] = ftReact.useState("");
+	const getUsers = async () => {
+		const data = await apiClient.get("/users");
+		if (data.error)
+			setError(data.error);
+		else if (data && !users)
+			setUsers(data);
+	};
+	if (!users && !error)
 		getUsers();
-	},[]);
+	//ftReact.useEffect(()=>{
+	//	getUsers();
+	//},[]);
 	return (
 		<BarLayout route={props.route}>
 			{
 				users
 					? users.map(user => <UserCard data={user}/>)
-					: (
-						<div className="spinner-grow" role="status">
-							<span className="visually-hidden">Loading...</span>
-				  		</div>
-					)
+					: error
+						? <Alert msg={error}/>
+						: (
+							<div className="spinner-grow" role="status">
+								<span className="visually-hidden">Loading...</span>
+				  			</div>
+						)
 			}
 		</BarLayout>
 	);

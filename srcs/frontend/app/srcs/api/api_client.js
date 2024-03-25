@@ -65,10 +65,12 @@ class ApiClient {
         url.searchParams.append(key, value);
       });
     }
-    const response = await fetch(url, params);
-    //await this.checkStatus(response);
-    return await this.proceedResponse(response);
-    //return response;
+    try {
+      const response = await fetch(url, params);
+      return await this.proceedResponse(response);
+    } catch (error) {
+      return {error: "no connection"};
+    }
   }
 
   async get (path, query) {
