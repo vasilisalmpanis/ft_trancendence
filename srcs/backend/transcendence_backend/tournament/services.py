@@ -13,29 +13,11 @@ class TournamentService:
         @param max_players: int
         @param winner: User
         """
-        if Tournament.objects.filter(name=name).exists():
+        if Tournament.objects.filter(name=name).exists() and name != "Pong Tournament":
             raise Exception("Tournament already exists")
         if Tournament.objects.filter(players=user, status='open').exists():
             raise Exception("User already in a tournament")
         tournament = Tournament.objects.create(name=name, **kwargs)
-        tournament.players.add(user)
-        tournament.save()
-        return tournament_model_to_dict(tournament)
-    
-    @staticmethod
-    def join_tournament(user: User, tournament_id: int) -> Dict[str, Any]:
-        """
-        Joins user to tournament
-        @param user: User
-        @param tournament_id: int
-        """
-        tournament = Tournament.objects.get(id=tournament_id)
-        if tournament.status != 'open':
-            raise Exception("Tournament is closed")
-        if tournament.players.count() >= tournament.max_players:
-            raise Exception("Tournament is full")
-        if Tournament.objects.filter(players=user, status='open').exists():
-            raise Exception("User already in a tournament")
         tournament.players.add(user)
         tournament.save()
         return tournament_model_to_dict(tournament)
@@ -87,10 +69,12 @@ class TournamentService:
         tournament = Tournament.objects.get(id=tournament_id)
         if tournament.status != 'open':
             raise Exception("Tournament is closed")
-        if Tournament.objects.exclude(id=tournament_id).filter(players=user).filter(Q(status='open') | Q(status='closed')).exists():
+        if Tournament.objects.exclude(id=tournament_id).filter(players=user).filter(Q(status='open') | Q(status='started')).exists():
             raise Exception("User already in a tournament")
         if Tournament.objects.filter(players=user, status="open").exists():
             raise Exception("User already in a tournament")
+        if tournament.players.count() >= tournament.max_players:
+            raise Exception("Tournament is full")
         tournament.players.add(user)
         tournament.save()
         return tournament_model_to_dict(tournament)

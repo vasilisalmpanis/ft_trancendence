@@ -73,6 +73,7 @@ class TournamentRunner(AsyncConsumer):
     alias = 'tournament_runner'
     _tournaments: Dict[str, Any] = {}
     _tasks: Dict[str, asyncio.Task] = {}
+    _groups = TournamentGroupManager()
 
     async def start_tournament(self, event):
         group_name = str(event['name'])
@@ -211,15 +212,4 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await asyncio.sleep(0.000001)
         await self.close()
 
-
-
-    # async def notify_group(self, group: str, message: Dict[str, Any]):
-    #     for user in self._groups[group]:
-    #         await self.channel_layer.send(
-    #             user,
-    #             {
-    #                 'type': 'send_message',
-    #                 'message': message
-    #             }
-    #         )
 		

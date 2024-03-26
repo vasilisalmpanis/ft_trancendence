@@ -25,6 +25,7 @@ class Tournament(models.Model):
     max_players = models.IntegerField(default=20)
     status = models.CharField(max_length=50, default='open')
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    games = models.ManyToManyField('pong.Pong', related_name='games')
     created_at = models.DateTimeField(auto_now_add=True)
     players = models.ManyToManyField(User, related_name='players')
     objects = TournamentManager()
