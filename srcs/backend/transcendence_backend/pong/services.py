@@ -2,7 +2,7 @@ from ast            import Dict
 from types          import NoneType
 from typing         import Dict, Any, List
 from .models        import Pong, pong_model_to_dict    
-from users.models   import User
+from users.models   import User, user_model_to_dict
 from django.db.models import Q
 
 
@@ -163,7 +163,10 @@ class PongService:
         game.score2 = score2
         game.status = 'finished'
         game.save()
-
+        if score1 > score2:
+            return user_model_to_dict(game.player1, avatar=False)
+        elif score1 < score2:
+            return user_model_to_dict(game.player2, avatar=False)
         return pong_model_to_dict(game)
     
     @staticmethod
@@ -175,7 +178,7 @@ class PongService:
         game = Pong.objects.filter(id=game_id).first()
         if not game:
             raise Exception('Game not found')
-        if game.players.filter(Q(player1=user) | Q(player2=user)).exists() and game.status == 'pending':
+        if game.player1 == user or game.player2 == user and game.status == 'pending':
             game.delete()
             return pong_model_to_dict(game)
         else:

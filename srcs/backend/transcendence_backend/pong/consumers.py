@@ -262,7 +262,7 @@ class PongRunner(AsyncConsumer):
 			await sync_to_async(PongService.finish_game)(int(gid))
 			return
 		result = self._games[gid].get_results()
-		await database_sync_to_async(PongService.finish_game)(int(gid), result)
+		winner = await database_sync_to_async(PongService.finish_game)(int(gid), result)
 		await database_sync_to_async(StatService.set_stats)(result['left'],
 													  		result['right'],
 															result['s1'],
@@ -275,6 +275,15 @@ class PongRunner(AsyncConsumer):
 								'text': json.dumps({"status": "Game over"}),
 							}
 						)
+			await self.channel_layer.send(
+				'tournament_runner',
+				{
+					'type': 'game.finished',
+					'gid': gid,
+					'data' : result,
+					'winner' : winner
+				}
+			)
 		if gid in self._games:
 			self._tasks[gid].cancel()
 			del self._tasks[gid]

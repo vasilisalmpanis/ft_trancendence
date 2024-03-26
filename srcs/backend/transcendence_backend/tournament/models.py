@@ -1,6 +1,6 @@
 from email.policy import default
 from django.db      import models
-from users.models   import User
+from users.models   import User, user_model_to_dict
 from typing         import Dict, Any
 # Create your models here.
 
@@ -40,7 +40,7 @@ def tournament_model_to_dict(tournament: Tournament) -> Dict[str, Any]:
         'description': tournament.description,
         'max_players': tournament.max_players,
         'status': tournament.status,
-        'winner': tournament.winner,
+        'winner': user_model_to_dict(tournament.winner, avatar=False),
         'created_at': tournament.created_at,
         'player_ids': [player.id for player in tournament.players.all()]
     }
