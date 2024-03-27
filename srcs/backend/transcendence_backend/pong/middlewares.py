@@ -7,11 +7,12 @@ from channels.db						import database_sync_to_async
 from jwt                                import JWT
 from django.conf                        import settings
 import logging
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
 def get_tournament_id(user: User):
-    tournament = Tournament.objects.filter(players=user, status='open')
+    tournament = Tournament.objects.filter(players=user).filter(Q(status='open') | Q(status='locked'))
     if tournament.exists():
         return tournament_model_to_dict(tournament.first())
     return None

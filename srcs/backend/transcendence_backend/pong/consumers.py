@@ -322,7 +322,7 @@ class PongRunner(AsyncConsumer):
 						'text': json.dumps(state),
 					}
 				)
-				if state.get('s1', 0) == 10 or  state.get('s2', 0) == 10:
+				if state.get('s1', 0) == 1 or  state.get('s2', 0) == 1:
 					await self.stop_game({'gid': gid})
 			await asyncio.sleep(0.01)
 

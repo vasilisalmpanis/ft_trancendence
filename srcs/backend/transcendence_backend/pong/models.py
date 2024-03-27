@@ -24,7 +24,7 @@ def pong_model_to_dict(pong : Pong) -> Dict[Any, Any]:
 		'status': pong.status,
 		'score1': pong.score1,
 		'score2': pong.score2,
-		'timestamp': pong.timestamp
+		'timestamp': pong.timestamp.isoformat()
 	}
 
 
