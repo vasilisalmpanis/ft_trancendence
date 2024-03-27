@@ -41,7 +41,7 @@ def tournament_model_to_dict(tournament: Tournament) -> Dict[str, Any]:
         'description': tournament.description,
         'max_players': tournament.max_players,
         'status': tournament.status,
-        'winner': user_model_to_dict(tournament.winner, avatar=False),
+        'winner': tournament.winner.id if tournament.winner else None,
         'created_at': tournament.created_at,
         'player_ids': [player.id for player in tournament.players.all()]
     }

@@ -5,6 +5,7 @@ from transcendence_backend.decorators   import jwt_auth_required
 from users.models                       import User
 from django.http                        import JsonResponse
 from .services                          import TournamentService
+from .models import Tournament
 import json
 # Create your views here.
 
@@ -57,5 +58,21 @@ class TournamentView(View):
         try:
             tournament = TournamentService.update_tournament(tournament_id, user)
             return JsonResponse(tournament, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        
+    def delete(self, request , user : User):
+        """
+        Deletes a tournament
+        @param user: User
+        @return: JsonResponse with success message
+        """
+        data = json.loads(request.body)
+        tournament_id = data.get('tournament_id')
+        if not tournament_id:
+            return JsonResponse({'error': 'Tournament ID is required'}, status=400)
+        try:
+            Tournament.objects.get(id=tournament_id).delete()
+            return JsonResponse({'message': 'Tournament deleted successfully'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
