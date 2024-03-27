@@ -17,7 +17,7 @@ logger = Logger(__name__)
 @jwt_auth_required()
 def get_chats(request, user : User) -> JsonResponse:
     """
-    Get all chats for a user by user_id  
+    Get all chats for a user by user_id
     """
     skip = int(request.GET.get("skip", 0))
     limit = int(request.GET.get("limit", 10))

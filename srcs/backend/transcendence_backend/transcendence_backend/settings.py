@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'daphne',
     'channels',
     'pong',
-    #'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -58,9 +57,7 @@ INSTALLED_APPS = [
     'chat',
     'stats',
     'authorize',
-    'oauth2',
-    # 'auth',
-    # Add new apps here from (appname.apps.AppnameConfig)
+    'oauth2'
 ]
 
 APPEND_SLASH=False

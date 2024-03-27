@@ -46,7 +46,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     ft_intra_id = models.IntegerField(null=True, blank=True)
 
-    friends = models.ManyToManyField('self', related_name='friends', blank=True, symmetrical=True)
+    #When symmetrical=True (which is the default), Django won't 
+    # use the related_name option to create a reverse relation. 
+    # It automatically creates the reverse relation from "self" to "self" using the lowercased model name.
+    friends = models.ManyToManyField('self', blank=True, symmetrical=True)
     blocked = models.ManyToManyField('self', related_name='blocked_me', blank=True, symmetrical=False)
 
     is_active = models.BooleanField(default=True)

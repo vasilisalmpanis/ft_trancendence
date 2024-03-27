@@ -53,17 +53,17 @@ class Message(models.Model):
         verbose_name = 'Message'
         verbose_name_plural = 'Messages'
 
-    def message_model_to_dict(message : "Message") -> dict:
-        """
-        Convert message model to dict
-        :param message: Message instance
-        :return: dict
-        """
-        return {
-            "id": message.id,
-            "chat_id": message.chat_id.id,
-            "timestamp": message.timestamp,
-            "sender": message.sender.username,
-            "read": message.read,
-            "content": message.content,
-        }
+def message_model_to_dict(message : "Message") -> dict:
+    """
+    Convert message model to dict
+    :param message: Message instance
+    :return: dict
+    """
+    return {
+        "id": message.id,
+        "chat_id": message.chat_id.id,
+        "timestamp": message.timestamp,
+        "sender": message.sender.username,
+        "read": message.read,
+        "content": message.content,
+    }

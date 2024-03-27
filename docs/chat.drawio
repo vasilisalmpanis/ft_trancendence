@@ -1,0 +1,185 @@
+<mxfile host="65bd71144e">
+    <diagram id="aSaO-BsIKcA7HNTrVIOH" name="Page-1">
+        <mxGraphModel dx="473" dy="764" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="24" value="Message model" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="110" width="120" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="33" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="24" vertex="1">
+                    <mxGeometry y="30" width="120" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="34" value="id&lt;br&gt;chat_id - int&lt;br&gt;timestamp - Date&lt;br&gt;sender - user&lt;br&gt;read - bool&lt;br&gt;content - &quot;str&quot;" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="33" vertex="1">
+                    <mxGeometry width="120" height="100" as="geometry">
+                        <mxRectangle width="120" height="100" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="38" value="Chat model" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="35" y="110" width="160" height="151" as="geometry"/>
+                </mxCell>
+                <mxCell id="39" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="38" vertex="1">
+                    <mxGeometry y="30" width="160" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="40" value="id" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="39" vertex="1">
+                    <mxGeometry width="160" height="40" as="geometry">
+                        <mxRectangle width="160" height="40" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="43" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="38" vertex="1">
+                    <mxGeometry y="70" width="160" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="44" value="name - Str" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="43" vertex="1">
+                    <mxGeometry width="160" height="36" as="geometry">
+                        <mxRectangle width="160" height="36" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="41" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="38" vertex="1">
+                    <mxGeometry y="106" width="160" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="42" value="participants - List[user_id]" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="41" vertex="1">
+                    <mxGeometry width="160" height="45" as="geometry">
+                        <mxRectangle width="160" height="45" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="53" value="blocked user message handling!!!!!&lt;br&gt;blocked users cant have chats with eachother?&lt;br&gt;on blocking a user the chats should be deleted" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
+                    <mxGeometry x="90" y="280" width="270" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="66" value="Direct Message" style="whiteSpace=wrap;html=1;shadow=1;fillColor=#2B00FF;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="305" y="50" width="190" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="67" value="Tournament Message" style="whiteSpace=wrap;html=1;shadow=1;fillColor=#FF00FF;strokeColor=#000000;" parent="1" vertex="1">
+                    <mxGeometry x="625" y="50" width="190" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="70" style="edgeStyle=none;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="33" target="72" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="385" y="150" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="71" value="plain_message json obj" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="130" width="140" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="115" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=#392F45;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="71">
+                    <mxGeometry y="30" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="116" value="sent by user" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="115">
+                    <mxGeometry width="140" height="30" as="geometry">
+                        <mxRectangle width="140" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="72" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="71" vertex="1">
+                    <mxGeometry y="60" width="140" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="73" value="&quot;type&quot; : &quot;plain_message&quot;&lt;br&gt;&quot;id&quot; : int&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;sender&quot; : user&lt;br&gt;&quot;content&quot; : str&lt;br&gt;" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="72" vertex="1">
+                    <mxGeometry width="140" height="100" as="geometry">
+                        <mxRectangle width="140" height="100" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="82" value="" style="orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#FAFAFA;fillColor=#FAFAFF;shape=link;" parent="1" edge="1">
+                    <mxGeometry width="100" relative="1" as="geometry">
+                        <mxPoint x="590" y="110" as="sourcePoint"/>
+                        <mxPoint x="590" y="680" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="83" value="game_invite json obj" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="390" y="315" width="140" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="113" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="83">
+                    <mxGeometry y="30" width="140" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="114" value="sent by user" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=#392F45;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="113">
+                    <mxGeometry width="140" height="30" as="geometry">
+                        <mxRectangle width="140" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="84" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="83" vertex="1">
+                    <mxGeometry y="60" width="140" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="85" value="&quot;type&quot; : &quot;game_invite&quot;&lt;br&gt;&quot;sender&quot; : user&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;game_id&quot; : int" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="84" vertex="1">
+                    <mxGeometry width="140" height="80" as="geometry">
+                        <mxRectangle width="140" height="80" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="90" value="plain_message json obj" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="652.5" y="110" width="135" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="117" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="90">
+                    <mxGeometry y="30" width="135" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="118" value="sent by user" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=#392F45;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="117">
+                    <mxGeometry width="135" height="30" as="geometry">
+                        <mxRectangle width="135" height="30" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="91" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="90" vertex="1">
+                    <mxGeometry y="60" width="135" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="92" value="&quot;type&quot; : &quot;plain_message&quot;&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;sender&quot; : user&lt;br&gt;&quot;content&quot; : str" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="91" vertex="1">
+                    <mxGeometry width="135" height="100" as="geometry">
+                        <mxRectangle width="135" height="100" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="93" value="status_update" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="630" y="290" width="180" height="202.5" as="geometry"/>
+                </mxCell>
+                <mxCell id="107" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=#19151F;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="93">
+                    <mxGeometry y="30" width="180" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="108" value="only sent by consumer&lt;br&gt;(websocket)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=#392F45;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="107">
+                    <mxGeometry width="180" height="38" as="geometry">
+                        <mxRectangle width="180" height="38" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="94" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="93" vertex="1">
+                    <mxGeometry y="68" width="180" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="95" value="&quot;type&quot; : &quot;status_update&quot;&lt;br&gt;&quot;status&quot; : &quot;connect&quot;/&quot;disconnect&quot;&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;sender&quot; : user&lt;br&gt;&quot;chat_id&quot; : int (here = game_id)&lt;br&gt;&quot;participants&quot; : users" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="94" vertex="1">
+                    <mxGeometry width="180" height="135" as="geometry">
+                        <mxRectangle width="180" height="135" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="96" value="status_update" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" parent="1" vertex="1">
+                    <mxGeometry x="370" y="520" width="180" height="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="111" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=#392F45;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="96">
+                    <mxGeometry y="30" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="112" value="only sent by consumer&lt;br&gt;(websocket)" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=#372E42;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="111">
+                    <mxGeometry width="180" height="40" as="geometry">
+                        <mxRectangle width="180" height="40" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="97" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" parent="96" vertex="1">
+                    <mxGeometry y="70" width="180" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="98" value="&quot;type&quot; : &quot;status_update&quot;&lt;br&gt;&quot;status&quot; : &quot;connect&quot;/&quot;disconnect&quot;&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;sender&quot; : user&lt;br&gt;&quot;chat_id&quot; : int (game_id)&lt;br&gt;&quot;participants&quot; : users" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" parent="97" vertex="1">
+                    <mxGeometry width="180" height="110" as="geometry">
+                        <mxRectangle width="180" height="110" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="101" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="72" target="33" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="102" value="alert" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;" vertex="1" parent="1">
+                    <mxGeometry x="630" y="520" width="180" height="205" as="geometry"/>
+                </mxCell>
+                <mxCell id="105" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="102">
+                    <mxGeometry y="30" width="180" height="40" as="geometry"/>
+                </mxCell>
+                <mxCell id="106" value="only sent by &lt;br&gt;tournament runner" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=#392F45;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="105">
+                    <mxGeometry width="180" height="40" as="geometry">
+                        <mxRectangle width="180" height="40" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="103" style="shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;top=0;left=0;bottom=0;right=0;collapsible=0;dropTarget=0;fillColor=none;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="102">
+                    <mxGeometry y="70" width="180" height="135" as="geometry"/>
+                </mxCell>
+                <mxCell id="104" value="&quot;type&quot; : &quot;alert&quot;&lt;br&gt;&quot;status&quot; : &quot;game_starting&quot;&lt;br&gt;&quot;timestamp&quot; : Date&lt;br&gt;&quot;game_id&quot; :&lt;br&gt;&quot;player1&quot; - user&lt;br&gt;&quot;player2&quot; - user" style="shape=partialRectangle;html=1;whiteSpace=wrap;connectable=0;overflow=hidden;fillColor=none;top=0;left=0;bottom=0;right=0;pointerEvents=1;" vertex="1" parent="103">
+                    <mxGeometry width="180" height="135" as="geometry">
+                        <mxRectangle width="180" height="135" as="alternateBounds"/>
+                    </mxGeometry>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,4 +1,4 @@
-from .models        import Chat, Message, chat_model_to_dict
+from .models        import Chat, Message, chat_model_to_dict, message_model_to_dict
 from users.models   import User
 from typing         import List, Dict
 
@@ -103,3 +103,15 @@ class MessageService:
         message.read = True
         message.save()
         return True
+
+    @staticmethod
+    def get_unread_messages(chat_id : int, user : User) -> List[Dict[str, str]]:
+        """
+        Get all unread messages for a user
+        :param user: User instance
+        :param chat_id: int
+        :return: list
+        """
+        messages = Message.objects.filter(chat_id=chat_id, read=False).exclude(sender_id=user.id)
+        messages_dict = [message_model_to_dict(message) for message in messages]
+        return messages_dict
