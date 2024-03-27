@@ -46,7 +46,7 @@ RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
