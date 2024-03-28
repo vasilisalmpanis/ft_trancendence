@@ -9,17 +9,11 @@ from django.conf                    import settings
 from authorize.views                import create_token
 from datetime                       import datetime, timedelta
 from users.services                 import UserService, SecondFactorService
+from django.conf                    import settings
 import logging, os, json, http.client
 
 logger = logging.getLogger(__name__)
 signer = Signer()
-
-def health_check (request) -> JsonResponse:
-    """
-    Health check for oauth app
-    """
-    data = {'health-check oauth': 'alive'}
-    return JsonResponse(data, status=200)
 
 # open in new window in frontend
 def ft_intra_auth(request):
@@ -27,6 +21,7 @@ def ft_intra_auth(request):
     Builds a request url to the 42intra OAuth2 endpoint
     :return: redirection to 42intra auth endpoint
     """
+    
     auth_base_url = 'https://api.intra.42.fr/oauth/authorize'
     redir_uri = request.GET.get('redir', 'http://localhost/')
     
@@ -102,6 +97,7 @@ def fetch_user_data(access_token):
     conn = http.client.HTTPSConnection('api.intra.42.fr')
     conn.request('GET', '/v2/me', headers=user_headers)
     data_response_raw = conn.getresponse()
+    logger.warn(data_response_raw)
 
     if data_response_raw.status == 200:
         data_response = json.loads(data_response_raw.read().decode('utf-8'))
