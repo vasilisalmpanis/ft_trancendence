@@ -15,8 +15,9 @@ from channels.security.websocket    import AllowedHostsOriginValidator
 from pong.middlewares               import AuthMiddleware
 from django.core.asgi               import get_asgi_application
 
-from pong.routing import websocket_urlpatterns as game_websocket_urlpatterns, channels
-from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
+from pong.routing                   import websocket_urlpatterns as pong_ws_urlpatterns, pong_channels
+from tournament.routing             import websocket_urlpatterns as tournament_ws_urlpatterns, tournament_channels
+from chat.routing                      import websocket_urlpatterns as chat_ws_urlpatterns
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendence_backend.settings')
 
@@ -28,12 +29,13 @@ application = ProtocolTypeRouter(
         AuthMiddleware(
             URLRouter(
                 [
-                *game_websocket_urlpatterns,
-                *chat_websocket_urlpatterns
-            ]
+                    *pong_ws_urlpatterns,
+                    *chat_ws_urlpatterns,
+                    *tournament_ws_urlpatterns,
+                ]
             )
         )
         ,
-        "channel": ChannelNameRouter(channels),
+        "channel": ChannelNameRouter({**pong_channels, **tournament_channels}),
     }
 )
