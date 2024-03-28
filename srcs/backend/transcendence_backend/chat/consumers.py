@@ -6,9 +6,10 @@ from threading                      import Lock
 from typing                         import Dict, TypeVar, List
 from .models                        import Chat, Message
 from pong.models                    import Pong
-from .services                      import ChatService, MessageService
+from tournament.models              import Tournament
+from .services                      import MessageService
 from logging                        import Logger
-import asyncio
+
 
 import json
 
@@ -155,8 +156,9 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'chat_id': self.chat_id,
             }
         )
-        if not self._chats.rooms[self.chat_id]['participants']:
-            await database_sync_to_async(self._chats.remove_room)(self.chat_id)
+        if self.chat_id in self._chats.rooms.keys():
+            if not self._chats.rooms[self.chat_id]['participants']:
+                await database_sync_to_async(self._chats.remove_room)(self.chat_id)
         await self.close()
 
     async def receive(self, text_data):
@@ -167,7 +169,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         if text_data_json['type'] == 'plain_message':
             try:
-                message = await database_sync_to_async(MessageService.create_dm)(
+                message = await database_sync_to_async(MessageService.create_message)(
                                     self.scope['user'], 
                                     self.chat_id, 
                                     text_data_json['content']
@@ -216,7 +218,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             'sender': event['sender'],
             'content': event['content'],
         }))
-        await database_sync_to_async(MessageService.read_dm)(self.scope['user'], event['id'])
+        await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['id'])
 
     async def status_update(self, event):
         update_message = {
@@ -240,14 +242,13 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             'game_id': event['game_id'],
         }))
 
-class GameChatroomManager(metaclass=SingletonMeta):
-    _lobbies: Dict[str, Dict[str, any]] = {}
+class TournamentChatroomManager(metaclass=SingletonMeta):
+    rooms: Dict[str, Dict[str, any]] = {}
 
     def add_channel_to_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
         Adds a channel to a room.
-        chat_id is the game id - 
-        Todo: has to become tournament id!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        chat_id is the tournament id
         """
         if self.init_room(chat_id, username) is False:
             return False
@@ -264,8 +265,8 @@ class GameChatroomManager(metaclass=SingletonMeta):
         if chat_id in self.rooms.keys():
             return True
         else:
-            game = Pong.objects.filter(id=chat_id).first()
-            if game is None or game.status == 'finished':
+            tournament = Tournament.objects.filter(id=chat_id).first()
+            if tournament is None or tournament.status == 'finished':
                 return False
             self.rooms.setdefault(chat_id, {})
             self.rooms[chat_id]['name'] = chat_id;
@@ -283,14 +284,14 @@ class GameChatroomManager(metaclass=SingletonMeta):
         self.rooms[chat_id]['participants'].append({'channel_name': channel_name, 'username': username})
         return True
 
-    def is_game_in_db(self, game_id: str) -> bool:
+    def is_tournament_in_db(self, game_id: str) -> bool:
         """
         Checks if tournament is in the db and status in not 'finished'
         """
-        game = Pong.objects.filter(id=game_id).first()
-        if game is None:
+        tournament = Tournament.objects.filter(id=game_id).first()
+        if tournament is None:
             return False
-        if game.status == 'finished':
+        if tournament.status == 'finished':
             return False
         return True
 
@@ -312,21 +313,21 @@ class GameChatroomManager(metaclass=SingletonMeta):
                     return True
         return False
 
-class GameChatConsumer(AsyncWebsocketConsumer):
+class TournamentChatConsumer(AsyncWebsocketConsumer):
 
-    _chats = GameChatroomManager()
+    _lobbies = TournamentChatroomManager()
 
     async def connect(self):
         await self.accept()
-        self.chat_id = self.scope['url_route']['kwargs']['game_id']
-        if await database_sync_to_async(self._chats.is_game_in_db)(self.chat_id) is False:
+        self.chat_id = self.scope['url_route']['kwargs']['tournament_id']
+        if await database_sync_to_async(self._lobbies.is_tournament_in_db)(self.chat_id) is False:
             await self.send(text_data=json.dumps({
                 'status': 'error',
-                'message': 'Game does not exist or is over, no chat available'
+                'message': 'Tournament does not exist or is finished'
             }))
             await self.close()
             return
-        if not await database_sync_to_async(self._chats.add_channel_to_room)(self.chat_id, self.channel_name, self.scope['user'].username):
+        if not await database_sync_to_async(self._lobbies.add_channel_to_room)(self.chat_id, self.channel_name, self.scope['user'].username):
             await self.send(text_data=json.dumps({
                 'status': 'error',
                 'message': 'User can not be added to chatroom'
@@ -345,7 +346,7 @@ class GameChatConsumer(AsyncWebsocketConsumer):
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'sender': self.scope['user'].username,
                 'chat_id': self.chat_id,
-                'participants': self._chats.rooms[self.chat_id].get('participants'),
+                'participants': self._lobbies.rooms[self.chat_id].get('participants'),
             }
         )
 
@@ -354,7 +355,7 @@ class GameChatConsumer(AsyncWebsocketConsumer):
         Removes channel from channel layer
         and removes user from chatroom in manager
         """
-        self._chats.remove_user_from_room(self.chat_id, self.channel_name)
+        self._lobbies.remove_user_from_room(self.chat_id, self.channel_name)
         await self.channel_layer.group_discard(
             self.chat_id,
             self.channel_name
@@ -369,8 +370,8 @@ class GameChatConsumer(AsyncWebsocketConsumer):
                 'chat_id': self.chat_id,
             }
         )
-        if not self._chats.rooms[self.chat_id]['participants']:
-            await database_sync_to_async(self._chats.remove_room)(self.chat_id)
+        if not self._lobbies.rooms[self.chat_id]['participants']:
+            await database_sync_to_async(self._lobbies.remove_room)(self.chat_id)
         await self.close()
 
     async def receive(self, text_data):
@@ -411,15 +412,12 @@ class GameChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(update_message))
 
     async def plain_message(self, event):
-        """
-            On message receive from group, confirm read if recipient
-        """
         ## potentially neccessary for frontend to see also own messages
         if self.scope['user'].username == event['sender']:
             return
         await self.send(text_data=json.dumps({
                 'type': 'plain_message',
-                'id': event['id'],
+                'tournament_id': event['id'],
                 'timestamp': event['timestamp'],
                 'sender': event['sender'],
                 'content': event['content'],
@@ -431,13 +429,10 @@ class GameChatConsumer(AsyncWebsocketConsumer):
                 'type': 'alert',
                 'status': event['status'],
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'game_id': event['game_id'],
+                'tournament_id': event['tournament_id'],
                 'player1': event['player1'],
                 'player2': event['player2'],
             }))
 
-### Todo: Fully implement alerts for game
-### Todo: after merge change Game chat to Tournament chat
-### Todo: Endppoint for alll chats for me with unread messages
-### Todo: Endpoint for messages in chat with pagination
-### Todo: Websocket only sends new messages
+
+### Todo: Endpoint for all chats for me with unread messages

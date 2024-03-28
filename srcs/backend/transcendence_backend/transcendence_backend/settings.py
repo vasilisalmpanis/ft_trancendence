@@ -22,10 +22,10 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-with open("default.jpeg" , "rb") as image_file:
-    image_data = image_file.read()
+# with open("default.jpeg" , "rb") as image_file:
+#     image_data = image_file.read()
 
-DEFAULT_AVATAR = image_data
+DEFAULT_AVATAR = b'aioughaiouh'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,7 +47,6 @@ RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-
 
 # Application definition
 

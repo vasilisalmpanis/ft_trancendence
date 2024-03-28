@@ -39,7 +39,7 @@ class ChatService:
         chat = Chat.objects.create(name=name)
         chat.participants.add(sender)
         chat.participants.add(receiver)
-        return chat_model_to_dict(chat)
+        return chat_model_to_dict(chat, sender)
     
     @staticmethod
     def delete_chat(user : User, chat_id : int) -> Dict[str, str]:
@@ -50,7 +50,7 @@ class ChatService:
         """
         chat = Chat.objects.filter(id=chat_id, participants__id=user.id).first()
         if chat:
-            response = chat_model_to_dict(chat)
+            response = chat_model_to_dict(chat, user)
             chat.delete()
             return response
         return {}
@@ -65,12 +65,12 @@ class ChatService:
         :return: list
         """
         chats = Chat.objects.filter(participants__id=user.id)[skip:skip+limit]
-        return [chat_model_to_dict(chat) for chat in chats]
+        return [chat_model_to_dict(chat, user) for chat in chats]
 
 
 class MessageService:
     @staticmethod
-    def create_dm(user : User, chat_id : int, content : str) -> Message:
+    def create_message(user : User, chat_id : int, content : str) -> Message:
         """
         Send message to chat
         :param user: User instance
@@ -89,7 +89,7 @@ class MessageService:
         return None
 
     @staticmethod
-    def read_dm(user : User, message_id : int) -> bool:
+    def read_message(user : User, message_id : int) -> bool:
         """
         Mark message as read
         :param user: User instance
@@ -106,13 +106,23 @@ class MessageService:
         return True
 
     @staticmethod
-    def get_unread_messages(chat_id : int, user : User) -> List[Dict[str, str]]:
+    def get_messages(chat_id, skip=0, limit=10) -> list:
+        messages = Message.objects.filter(chat_id=chat_id).order_by("-timestamp")[skip:skip+limit]
+        return [
+            message_model_to_dict(message)
+            for message in messages
+        ]
+
+    @staticmethod
+    def get_messages_by_state(chat_id : int, state : str, user : User) -> List[Dict[str, str]]:
         """
-        Get all unread messages for a user
+        Get all messages of "state" for chat for user me
         :param user: User instance
         :param chat_id: int
+        :param state: str
         :return: list
         """
-        messages = Message.objects.filter(chat_id=chat_id, read=False).exclude(sender_id=user.id)
-        messages_dict = [message_model_to_dict(message) for message in messages]
-        return messages_dict
+        messages = Message.objects.filter(chat_id=chat_id, read=state).exclude(sender_id=user.id)
+        return [
+            message_model_to_dict(message) 
+            for message in messages]

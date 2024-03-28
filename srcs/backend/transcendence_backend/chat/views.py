@@ -3,7 +3,7 @@ from venv                               import logger
 from django.shortcuts                   import render
 from django.http                        import JsonResponse
 from .models                            import Chat, Message
-from .services                          import ChatService
+from .services                          import ChatService, MessageService
 from django.views                       import View
 from logging                            import Logger
 from transcendence_backend.decorators   import jwt_auth_required
@@ -13,46 +13,32 @@ import json
 
 logger = Logger(__name__)
 
-## TODO: See what happens with chats between blocked users and their messages
-@jwt_auth_required()
-def get_chats(request, user : User) -> JsonResponse:
-    """
-    Get all chats for a user by user_id
-    """
-    skip = int(request.GET.get("skip", 0))
-    limit = int(request.GET.get("limit", 10))
-    data = ChatService.get_chats(user, skip, limit)
-    if len(data) == 0:
-        return JsonResponse({"status": "No chats found"}, status=200)
-    return JsonResponse(data, status=200, safe=False)
-
 @jwt_auth_required()
 def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
     if not request.method == "GET":
         return JsonResponse({"status": "Wrong Request Method"}, status=400)
-    try:
-        if not Chat.objects.filter(id=id).exists() or not Chat.objects.filter(id=id, participants=user).exists():
-            return JsonResponse({"status": "Chat not found"}, status=404)
-        messages = Message.get_messages(id)
-        return JsonResponse(messages, status=200, safe=False)
-    except Exception:
+    if not Chat.objects.filter(id=id).exists() or not Chat.objects.filter(id=id, participants=user).exists():
         return JsonResponse({"status": "Chat not found"}, status=404)
+    skip = int(request.GET.get("skip", 0))
+    limit = int(request.GET.get("limit", 10))
+    data = MessageService.get_messages(id, skip, limit)
+    if len(data) == 0:
+        return JsonResponse({"status": "no messages found"}, status=404)
+    return JsonResponse(data, status=200, safe=False)
 
 @method_decorator(jwt_auth_required(), name="dispatch")
 class ChatView(View):
-    def get(self, request, id : int) -> JsonResponse:
+    def get(self, request, user : User) -> JsonResponse:
         """
-        Returns Messages of chat filtered by chat id.
+        Get all chats for a user by user_id
         """
-        if not request.user.is_authenticated:
-            return JsonResponse({"status": "Not authenticated"}, status=401)
-        try:
-            chat = ChatService.get_chat_id(request.user.id, id)
-            if not chat:
-                return JsonResponse({"status": "Chat not found"}, status=404)
-            return JsonResponse({"chat_id": chat}, status=200)
-        except Exception:
-            return JsonResponse({"status": "Chat not found"}, status=404)
+        skip = int(request.GET.get("skip", 0))
+        limit = int(request.GET.get("limit", 10))
+        data = ChatService.get_chats(user, skip, limit)
+        if len(data) == 0:
+            return JsonResponse({"status": "No chats found"}, status=200)
+        return JsonResponse(data, status=200, safe=False)
+
     def post(self, request, user : User) -> JsonResponse:
         """
         Creates a new chat between two authenticated
