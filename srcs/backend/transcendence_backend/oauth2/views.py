@@ -9,16 +9,19 @@ from django.conf                    import settings
 from authorize.views                import create_token
 from datetime                       import datetime, timedelta
 from users.services                 import UserService, SecondFactorService
-import logging, json, http.client
+from django.conf                    import settings
+import logging, os, json, http.client
 
 logger = logging.getLogger(__name__)
 signer = Signer()
 
+# open in new window in frontend
 def ft_intra_auth(request):
     """
     Builds a request url to the 42intra OAuth2 endpoint
     :return: redirection to 42intra auth endpoint
     """
+    
     auth_base_url = 'https://api.intra.42.fr/oauth/authorize'
     client_id = settings.OAUTH_UID
     state = signer.sign(settings.OAUTH_STATE)
@@ -40,8 +43,8 @@ def handle_redir(request) -> JsonResponse:
     try:
         state = signer.unsign(request.GET.get('state'))
     except BadSignature:
-        return JsonResponse({'status': 'State not matching', 'state': state}, status=400)
-    if not auth_code or state != settings.OAUTH_STATE:
+        return JsonResponse({'status': 'State not matching'}, status=400)
+    if not auth_code or state != os.environ.get("OAUTH_STATE"):
         return JsonResponse({'status': 'Authorization code not provided or state mismatch'}, status=400)
 
     parameters = json.dumps({
@@ -85,6 +88,7 @@ def fetch_user_data(access_token):
     conn = http.client.HTTPSConnection('api.intra.42.fr')
     conn.request('GET', '/v2/me', headers=user_headers)
     data_response_raw = conn.getresponse()
+    logger.warn(data_response_raw)
 
     if data_response_raw.status == 200:
         data_response = json.loads(data_response_raw.read().decode('utf-8'))

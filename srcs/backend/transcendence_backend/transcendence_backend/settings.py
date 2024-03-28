@@ -13,12 +13,19 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from math import log
 from pathlib import Path
 import logging
+import base64
+from unittest.mock import DEFAULT
 
 logger = logging.getLogger(__name__)
 import environ
 
 env = environ.Env()
 environ.Env.read_env()
+
+with open("default.jpeg" , "rb") as image_file:
+    image_data = image_file.read()
+
+DEFAULT_AVATAR = image_data
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,15 +38,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env("DJANGO_SECRET_KEY")
 JWT_SECRET = env("JWT_SECRET")
 FERNET_SECRET = env("FERNET_SECRET")
-OAUTH_UID=env("OAUTH_UID")
-OAUTH_SECRET=env("OAUTH_SECRET")
-OAUTH_STATE=env("OAUTH_STATE")
-RANDOM_OAUTH_USER_PASSWORD=env("RANDOM_OAUTH_USER_PASSWORD")
+OAUTH_STATE = env("OAUTH_STATE")
+OAUTH_SECRET = env("OAUTH_SECRET")
+OAUTH_UID = env("OAUTH_UID")
+RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -50,14 +57,17 @@ INSTALLED_APPS = [
     'pong',
     'django.contrib.auth',
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
+    #'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'users',
     'chat',
     'stats',
     'authorize',
-    'oauth2'
+    'oauth2',
+    'tournament',
+    # 'auth',
+    # Add new apps here from (appname.apps.AppnameConfig)
 ]
 
 APPEND_SLASH=False
@@ -66,12 +76,13 @@ AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
+    # 'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    # 'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # #'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # 'django.contrib.messages.middleware.MessageMiddleware',
+    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'transcendence_backend.cors_middleware.CORSMiddleware',
 ]
 
 ROOT_URLCONF = 'transcendence_backend.urls'
