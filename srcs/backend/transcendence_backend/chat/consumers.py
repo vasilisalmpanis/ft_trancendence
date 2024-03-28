@@ -31,8 +31,8 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
 
     def add_channel_to_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
-        Adds a channel to a room, if user not participant of the chat, it will return False
-        updated to not use chat objects anymore
+        Adds a channel to a room.
+        Returns False if user not participant of the chat
         """
         if self.init_room(chat_id, username) is False:
             return False
@@ -42,8 +42,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
 
     def init_room(self, chat_id: str, username: str) -> bool:
         """
-        Initializes a chatroom in the managers room dict 
-        if it exists in the db but not in the dict
+        Initializes a room.
         Returns True if room is initialized or already exists in the dict
         Returns False if room does not exist in the db
         """
@@ -57,19 +56,17 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
 
     def register_user_in_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
-        Checks if user is participant of chat in db and if true
-        adds or updates user channel in room in manager
+        Adds or updates user channel in room
+        Returns false if user is not participant of chat in db
         """
         chat = Chat.objects.filter(id=chat_id).first()
         if chat is None:
             return False
         db_participants = chat.participants.all()
-
         for db_participant in db_participants:
             if db_participant.username == username:
                 if 'participants' not in self.rooms[chat_id]:
                     self.rooms[chat_id]['participants'] = []
-                # update channel_name if user already in room
                 for room_participant in self.rooms[chat_id]['participants'].copy():
                     if room_participant['username'] == username:
                         self.rooms[chat_id]['participants'].remove(room_participant)
@@ -86,7 +83,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
 
     def remove_room(self, chat_id: str):
         """
-        Removes chatroom from manager
+        Removes room from manager
         """
         if chat_id in self.rooms:
             del self.rooms[chat_id]
@@ -112,14 +109,14 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         if await database_sync_to_async(self._chats.is_room_in_db)(self.chat_id) is False:
             await self.send(text_data=json.dumps({
                 'status': 'error',
-                'message': 'Chat does not exist'
+                'message': 'Chat does not exist',
             }))
             await self.close()
             return
         if not await database_sync_to_async(self._chats.add_channel_to_room)(self.chat_id, self.channel_name, self.scope['user'].username):
             await self.send(text_data=json.dumps({
                 'status': 'error',
-                'message': 'User is not a member of this chat'
+                'message': 'User is not a member of this chat',
             }))
             await self.close()
             return
@@ -141,8 +138,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         """
-        Removes channel from channel layer
-        and removes user from chatroom in manager
+        Removes channel from channel layer and user from room in manager
         """
         self._chats.remove_user_from_room(self.chat_id, self.channel_name)
         await self.channel_layer.group_discard(
@@ -159,15 +155,16 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'chat_id': self.chat_id,
             }
         )
+        if not self._chats.rooms[self.chat_id]['participants']:
+            await database_sync_to_async(self._chats.remove_room)(self.chat_id)
         await self.close()
 
     async def receive(self, text_data):
         """
-        On message receive from client, create message and send to group
+        On receiving messages from client, create message and send to group
         plain messages are additionaly saved to db
         """
         text_data_json = json.loads(text_data)
-
         if text_data_json['type'] == 'plain_message':
             try:
                 message = await database_sync_to_async(MessageService.create_dm)(
@@ -178,26 +175,24 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     self.chat_id,
                     {
-                        'type': text_data_json['type'],
-                        'id': message.id,
+                        'type': 'plain_message',
                         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         'sender': message.sender.username,
                         'content': message.content,
                     })
-                return
             except:
                 await self.send(
                     text_data=json.dumps({
                         'status': 'error',
                         'message': 'Could not send message'
                     }))
-                return
-        if text_data_json['type'] == 'game_invite':
+
+        elif text_data_json['type'] == 'game_invite':
             try:
                 await self.channel_layer.group_send(
                     self.chat_id,
                     {
-                        'type': text_data_json['type'],
+                        'type': 'game_invite',
                         'sender': self.scope['user'].username,
                         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         'game_id': text_data_json['game_id'],
@@ -207,22 +202,19 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                         'status': 'error',
                         'message': 'Could not send game invite'
                     })
-                )
-        return
+                    )
 
     async def plain_message(self, event):
         """
             On message receive from group, confirm read if recipient
         """
-        ## potentially neccessary for frontend to see also own messages
         if self.scope['user'].username == event['sender']:
             return
         await self.send(text_data=json.dumps({
             'type': 'plain_message',
-            'id': event['id'],
             'timestamp': event['timestamp'],
             'sender': event['sender'],
-            'content': event['content']
+            'content': event['content'],
         }))
         await database_sync_to_async(MessageService.read_dm)(self.scope['user'], event['id'])
 
@@ -249,12 +241,13 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         }))
 
 class GameChatroomManager(metaclass=SingletonMeta):
-    rooms: Dict[str, Dict[str, any]] = {}
+    _lobbies: Dict[str, Dict[str, any]] = {}
 
     def add_channel_to_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
         Adds a channel to a room.
-        chat_id is the game id
+        chat_id is the game id - 
+        Todo: has to become tournament id!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         """
         if self.init_room(chat_id, username) is False:
             return False
@@ -264,10 +257,9 @@ class GameChatroomManager(metaclass=SingletonMeta):
 
     def init_room(self, chat_id: str, username: str) -> bool:
         """
-        Initializes a chatroom in the managers room dict
-        if the game exists in the db but not in the dict
+        Initializes a room.
         Returns True if room is initialized or already exists in the dict
-        Returns False if room does not exist in the db
+        Returns False if tournament does not exist in the db
         """
         if chat_id in self.rooms.keys():
             return True
@@ -281,12 +273,10 @@ class GameChatroomManager(metaclass=SingletonMeta):
 
     def register_user_in_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
-        Checks if user is participant of chat in db and if true
-        adds or updates user channel in room in manager
+        Adds or updates user channel in room in manager
         """
         if 'participants' not in self.rooms[chat_id]:
             self.rooms[chat_id]['participants'] = []
-            # update channel_name if user already in room
         for participant in self.rooms[chat_id]['participants'].copy():
             if participant['username'] == username:
                 self.rooms[chat_id]['participants'].remove(participant)
@@ -295,7 +285,7 @@ class GameChatroomManager(metaclass=SingletonMeta):
 
     def is_game_in_db(self, game_id: str) -> bool:
         """
-        Checks if game is in the db and status in not 'finished'
+        Checks if tournament is in the db and status in not 'finished'
         """
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
@@ -379,6 +369,8 @@ class GameChatConsumer(AsyncWebsocketConsumer):
                 'chat_id': self.chat_id,
             }
         )
+        if not self._chats.rooms[self.chat_id]['participants']:
+            await database_sync_to_async(self._chats.remove_room)(self.chat_id)
         await self.close()
 
     async def receive(self, text_data):
