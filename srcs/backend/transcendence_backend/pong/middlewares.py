@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def get_tournament_id(user: User):
     tournament = Tournament.objects.filter(players=user).filter(Q(status='open') | Q(status='locked'))
     if tournament.exists():
-        return tournament_model_to_dict(tournament.first())
+        return tournament.first()
     return None
 
 class AuthMiddleware:

@@ -74,6 +74,8 @@ class TournamentGroupManager(metaclass=SingletonMeta):
         if group not in self._groups:
             return
         self._groups[group]["users"] = [user for user in self._groups[group]["users"] if user != user]
+        if len(self._groups[group]["users"]) == 0:
+            self._groups.pop(group)
     
     def get(self, group: str):
         if group not in self._groups:
@@ -99,7 +101,6 @@ class TournamentRunner(AsyncConsumer):
     alias = 'tournament_runner'
     _tournaments: Dict[str, Any] = {}
     _tasks: Dict[str, asyncio.Task] = {}
-    _manager = TournamentGroupManager()
 
     async def create_games(self, group_name, pairs):
         tournament = await database_sync_to_async(Tournament.objects.get)(id=int(group_name))
@@ -179,6 +180,20 @@ class TournamentRunner(AsyncConsumer):
                     }
                 )
 
+    async def status_update(self, event):
+        gid = event['gid']
+        name = event['name']
+        if gid in self._tournaments:
+            await self.channel_layer.send(
+                name,
+                {
+                    'type': 'send_message',
+                    'status' : 'status_update',
+                    'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[gid]['games']]}
+                }
+            )
+
+
 
 class TournamentConsumer(AsyncWebsocketConsumer):
     alias = 'tournament_connector'
@@ -193,10 +208,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         # gets tournament and user from scope
         user = self.scope['user']
         tournament = self.scope['tournament']
-        group_name = str(tournament['id'])
+        group_name = str(tournament.id)
 
         # if the group is full close the connection
-        if self._groups.group_size(group_name) <= tournament['max_players']:
+        if self._groups.group_size(group_name) <= tournament.max_players:
             self._groups.add(group_name, user)
         else:
             await self.close()
@@ -214,9 +229,9 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(group_name, self.channel_name)
         group_data = self._groups.get(group_name)
         await self.send(json.dumps(group_data))
-        tournament.refresh_from_db()
+        await database_sync_to_async(tournament.refresh_from_db)()
         if tournament.status == 'open':
-            if self._groups.group_size(group_name) == tournament['max_players']:
+            if self._groups.group_size(group_name) == tournament.max_players:
                 await self.channel_layer.send(
                     'tournament_runner',
                     {
@@ -226,8 +241,14 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                     }
                 )
         else:
-            games = await database_sync_to_async(get_games_as_dict)(tournament)
-            await self.send(json.dumps({'games': games}))
+            await self.channel_layer.send(
+                'tournament_runner',
+                {
+                    'type': 'status.update',
+                    'gid': group_name,
+                    'name' : self.channel_name
+                }
+            )
 
     async def send_message(self, event):
         message = event
