@@ -31,6 +31,14 @@ const Main = (props) => {
 				<div className="mb-3">
 					<button
 						className="btn btn-outline-primary w-100"
+						onClick={()=>props.route("/tournaments")}
+					>
+						{"Go to tournaments"}
+					</button>
+				</div>
+				<div className="mb-3">
+					<button
+						className="btn btn-outline-primary w-100"
 						onClick={()=>props.route("/users")}
 					>
 						{"Go to users"}
