@@ -265,7 +265,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         user = self.scope['user']
         tournament = self.scope['tournament']
-        group_name = str(tournament['id'])
+        group_name = str(tournament.id)
         # self._groups.remove(group_name, user)
         user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
         self._groups.remove(group_name, user)

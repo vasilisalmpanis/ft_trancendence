@@ -69,10 +69,10 @@ class TournamentView(View):
         """
         data = json.loads(request.body)
         tournament_id = data.get('tournament_id')
-        if not tournament_id:
+        if not tournament_id or not isinstance(tournament_id, int):
             return JsonResponse({'error': 'Tournament ID is required'}, status=400)
         try:
-            Tournament.objects.get(id=tournament_id).delete()
+            TournamentService.leave_tournament(user, tournament_id)
             return JsonResponse({'message': 'Tournament deleted successfully'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)

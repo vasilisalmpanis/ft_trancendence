@@ -36,6 +36,8 @@ class TournamentService:
             raise Exception("User not in a tournament")
         tournament.players.remove(user)
         tournament.save()
+        if tournament.players.count() == 0:
+            tournament.delete()
         return tournament_model_to_dict(tournament)
     
     @staticmethod
