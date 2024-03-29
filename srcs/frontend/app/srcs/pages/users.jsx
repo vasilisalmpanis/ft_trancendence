@@ -11,7 +11,7 @@ const UserCard = (props) => {
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
-				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.name}</li>
+				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
 			</ul>
 		</div>
 	);

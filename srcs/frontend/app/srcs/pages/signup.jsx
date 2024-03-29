@@ -13,10 +13,10 @@ import Alert from "../components/alert.jsx";
 
 const Signup = (props) => {
 	const [error, setError] = ftReact.useState("");
-	const [username, setUsername] = ftReact.useState("");
-	const [pass, setPass] = ftReact.useState("");
-	const [email, setEmail] = ftReact.useState("");
-	const sendData = async () => {
+	const sendData = async (event) => {
+		const username = event.target[0].value;
+		const pass = event.target[1].value;
+		const email = event.target[2].value;
 		const resp = await apiClient.post("/users", {username: username, password: pass, email: email});
 		if (resp.error)
 			setError(resp.error);
@@ -29,7 +29,7 @@ const Signup = (props) => {
 			<form
 				onSubmit={(event)=>{
 					event.preventDefault();
-					sendData();
+					sendData(event);
 				}}
 				className="mt-3"
 			>
@@ -37,7 +37,6 @@ const Signup = (props) => {
 					<input
 						placeholder={C_SIGNIN_USERNAME}
 						className="form-control"
-						onChange={(event)=>setUsername(event.target.value)}
 						required
 					/>
 				</div>
@@ -46,7 +45,6 @@ const Signup = (props) => {
 						placeholder={C_SIGNIN_PASS}
 						type="password"
 						className="form-control"
-						onChange={(event)=>setPass(event.target.value)}
 						required
 					/>
 				</div>
@@ -55,7 +53,6 @@ const Signup = (props) => {
 						placeholder={C_SIGNUP_EMAIL}
 						type="email"
 						className="form-control"
-						onChange={(event)=>setEmail(event.target.value)}
 						required
 					/>
 				</div>
