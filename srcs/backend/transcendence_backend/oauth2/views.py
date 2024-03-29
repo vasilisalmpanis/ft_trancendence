@@ -25,9 +25,9 @@ def ft_intra_auth(request):
     auth_base_url = 'https://api.intra.42.fr/oauth/authorize'
     redir_uri = request.GET.get('redir', 'http://localhost/')
     
-    client_id = os.environ.get('OAUTH_UID')
+    client_id = settings.OAUTH_UID
     state_json = json.dumps({
-        'state': os.environ.get('OAUTH_STATE'),
+        'state': settings.OAUTH_STATE,
         'redir': redir_uri
     })
     state = signer.sign(state_json)
@@ -79,7 +79,10 @@ def handle_redir(request) -> JsonResponse:
         user_data = fetch_user_data(access_token)
         if user_data:
                 user = get_or_create_user(user_data)
-                return login_ft_oauth_user(user, redir=state_json['redir'])
+                if user:
+                    return login_ft_oauth_user(user, redir=state_json['redir'])
+                else:
+                    return JsonResponse({'status': 'no user available for login with oauth2'}, status=401)
         else:
             return JsonResponse({'status': 'Failed to fetch userdata'}, status=404)
     else:
@@ -139,24 +142,21 @@ def login_ft_oauth_user(user, redir='http://localhost:8080/signin'):
     Checks for 2fa and creates jwt token pair for transcendence session
     :return: JSON element containing token pair
     """
-    if user != None:
-        jwt = JWT(settings.JWT_SECRET)
-        user.is_user_active = True
-        UserService.update_last_login(user)
-        access_token = create_token(jwt=jwt, 
-                                    user=user, 
-                                    expiration=datetime.now() + timedelta(days=1), 
-                                    isa=user.last_login, second_factor=user.is_2fa_enabled)
-        refresh_token = create_token(jwt=jwt,
-                                     user=user,
-                                     expiration=datetime.now() + timedelta(days=30),
-                                     isa=user.last_login,
-                                     second_factor=user.is_2fa_enabled)
-        return redirect(f"{redir}?access_token={access_token}&refresh_token={refresh_token}")
-        #return JsonResponse({
-        #                        "access_token": access_token,
-        #                        "refresh_token" : refresh_token }, status=200
-        #                    )
-    else:
-        return JsonResponse({'status': 'no user available for login with oauth2'}, status=401)
+    jwt = JWT(settings.JWT_SECRET)
+    user.is_user_active = True
+    UserService.update_last_login(user)
+    access_token = create_token(jwt=jwt, 
+                                user=user, 
+                                expiration=datetime.now() + timedelta(days=1), 
+                                isa=user.last_login, second_factor=user.is_2fa_enabled)
+    refresh_token = create_token(jwt=jwt,
+                                 user=user,
+                                 expiration=datetime.now() + timedelta(days=30),
+                                 isa=user.last_login,
+                                 second_factor=user.is_2fa_enabled)
+    return redirect(f"{redir}?access_token={access_token}&refresh_token={refresh_token}")
+    #return JsonResponse({
+    #                        "access_token": access_token,
+    #                        "refresh_token" : refresh_token }, status=200
+    #                    )
 

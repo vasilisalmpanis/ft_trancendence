@@ -107,7 +107,7 @@ class CurrentUserView(View):
         data = {
             "username": user.username,
             "id": user.id,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
+            "avatar": base64.b64encode(user.avatar).decode('utf-8') if user.avatar else None,
         }
         return JsonResponse(data, status=200)
     
