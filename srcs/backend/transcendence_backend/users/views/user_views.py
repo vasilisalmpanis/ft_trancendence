@@ -15,8 +15,9 @@ from datetime                           import datetime, timedelta
 import authorize.views
 import json
 import base64
+import logging
 
-
+logger = logging.getLogger(__name__)
 
 
 def health_check(request) -> JsonResponse:
@@ -130,7 +131,7 @@ class CurrentUserView(View):
         password = data.get("password", None)
         email = data.get("email", None)
         avatar = data.get("avatar", None)
-        updated_user = UserService.update_user(user, username, password, email, avatar)
+        updated_user = UserService.update_user(user, username, password, email, base64.b64decode(avatar))
         return JsonResponse(updated_user, status=200, safe=False)
 
 @jwt_auth_required()
