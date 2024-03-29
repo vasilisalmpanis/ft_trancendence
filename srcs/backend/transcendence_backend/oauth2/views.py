@@ -114,7 +114,7 @@ def get_or_create_user(user_data):
             user = User.objects.create_user(
                 username=user_data['login'], 
                 email=user_data['email'],
-                password=os.environ.get('RANDOM_OAUTH_USER_PASSWORD'),
+                password=settings.RANDOM_OAUTH_USER_PASSWORD,
                 is_staff=False,
                 is_superuser=False,
                 ft_intra_id=user_data['id'],

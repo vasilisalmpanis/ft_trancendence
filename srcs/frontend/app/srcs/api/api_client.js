@@ -145,8 +145,6 @@ class ApiClient {
   }
 };
 
-export default ApiClient;
-
 // TODO check expiration date of access token before making request
 // TODO refresh token if access token is expired
 
