@@ -2,31 +2,75 @@ import ftReact			from "../ft_react";
 import { apiClient }	from "../api/api_client";
 import BarLayout 		from "../components/barlayout";
 import Alert			from "../components/alert";
+import DeleteIcon from "../components/delete_icon";
 
 const CreateTournament = (props) => {
-	const createTournament = async () => {
-		const data = await apiClient.post("/tournaments");
-		await props.updateTournaments();
-		props.route("/tournament", {tournament_id: data.id});
+	const [error, setError] = ftReact.useState("");
+	const createTournament = async (count, name) => {
+		const data = await apiClient.post("/tournaments", {"name": name, "description": "", "max_players": count});
+		if (data.error)
+			setError(data.props);
+		else
+		{
+			await props.updateTournaments();
+			props.route("/tournament", {tournament_id: data.id, name: data.name});
+		}
 	}
 	return (
-		<button
-			className="btn btn-outline-primary mb-3"
-			onClick={createTournament}
+		<form
+			className="d-flex flex-column gap-3"
+			onSubmit={(event)=>{
+				event.preventDefault();
+				const name = event.target[0].value;
+				let count = event.target[1].value;
+				if (!count || count < 3)
+					setError("You cannot create tournament with less than 3 players!")
+				else
+					createTournament(count, name);
+			}}
 		>
-			Start new tournament
-		</button>
+			<input
+				className="form-control"
+				placeholder="Tournament name"
+				defaultValue=""
+				type="text"
+			/>
+			<input
+				className="form-control"
+				placeholder="Players count"
+				type="number"
+				min="3"
+			/>
+			<button
+				className="btn btn-outline-primary mb-3"
+				type="submit"
+			>
+				Start new tournament
+			</button>
+			{error && <Alert msg={error}/>}
+		</form>
 	);
 }
 
 const TournamentCard = (props) => {
-	console.log(props.data);
 	const me = JSON.parse(localStorage.getItem("me"));
+	console.log(props.data, me);
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
-					{props.data.players[0]}
+					{props.data.name}
+					{props.data.player_ids.includes(me.id) &&
+						<button
+							className="btn d-inline p-0 ms-auto"
+							onClick={async ()=>{
+								await apiClient.delete("/tournaments", {tournament_id: props.data.id});
+								await props.updateTournaments();
+							}}
+						>
+							<DeleteIcon/>
+						</button>
+					}
 					<button
 						className="btn d-inline p-0 ms-auto"
 						onClick={()=>{
@@ -44,7 +88,7 @@ const TournamentCard = (props) => {
 const Tournaments = (props) => {
 	const [tournaments, setTournaments] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
-	const getTounaments = async () => {
+	const getTournaments = async () => {
 		let data = await apiClient.get("/tournaments");
 		if (data.error)
 			setError(data.error);
@@ -52,13 +96,13 @@ const Tournaments = (props) => {
 			setTournaments(data);
 	};
 	if (!tournaments && !error)
-		getTounaments();
+		getTournaments();
 	return (
 		<BarLayout route={props.route}>
-			<CreateTournament route={props.route} updateGames={getTounaments}/>
+			<CreateTournament route={props.route} updateTournaments={getTournaments}/>
 			{
 				tournaments
-					? tournaments.map(tournament => <TournamentCard route={props.route} data={tournament} updateTournaments={getTounaments}/>)
+					? tournaments.map(tournament => <TournamentCard route={props.route} data={tournament} updateTournaments={getTournaments}/>)
 					: error
 						? <Alert msg={error}/>
 						: (

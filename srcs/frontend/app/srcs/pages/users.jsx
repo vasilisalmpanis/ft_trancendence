@@ -8,6 +8,7 @@ import {
 import Alert from "../components/alert";
 
 const UserCard = (props) => {
+	console.log(props.data)
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">

@@ -12,6 +12,7 @@ import Pong 			from './pages/pong';
 import Users			from './pages/users';
 import Games			from './pages/games';
 import Tournaments from './pages/tournaments';
+import Tournament from './pages/tournament';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -31,6 +32,7 @@ const App = (props) => {
 				<Route auth path="/users" element={<Users/>}/>
 				<Route auth path="/games" element={<Games/>}/>
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
+				<Route auth path="/tournament" element={<Tournament/>}/>
 			</Router>
 		</div>
 	);

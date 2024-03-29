@@ -203,7 +203,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         self.close()
 
     async def connect(self):
-        await self.accept()
+        if self.scope.get('auth_protocol', False):
+            await self.accept("Authorization")
+        else:
+            await self.accept()
 
         # gets tournament and user from scope
         user = self.scope['user']
@@ -265,7 +268,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         user = self.scope['user']
         tournament = self.scope['tournament']
-        group_name = str(tournament['id'])
+        group_name = str(tournament.id)
         # self._groups.remove(group_name, user)
         user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
         self._groups.remove(group_name, user)
@@ -279,6 +282,3 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         )
         await asyncio.sleep(0.000001)
         await self.close()
-
-
-		
