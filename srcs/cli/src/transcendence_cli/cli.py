@@ -1,11 +1,9 @@
-from multiprocessing.connection import Client
-from client                     import NetworkClient, Response
-from typing                     import Tuple
-import game                     as pong
-import user
+from .client                    import NetworkClient, Response
+from transcendence_cli          import game as pong
+from transcendence_cli          import user
+from transcendence_cli          import utils
 import curses
-import utils
-import time
+
 class Menu:
     def __init__(self, stdscr, options):
         self.stdscr = stdscr
@@ -68,7 +66,7 @@ def main_menu(stdscr):
                 # {"label": "Search for Users", "action": search_users},
                 # {"label": "Manage Friends", "action": manage_friends},
                 {"label": "Account Settings", "action": account_settings},
-                {"label": "Logout", "action": logout}
+                {"label": "Logout", "action": user.logout}
             ]
             menu = Menu(stdscr, menu_options)
             while status.state == True:
@@ -79,7 +77,7 @@ def main_menu(stdscr):
                 elif key in [curses.KEY_UP, curses.KEY_DOWN]:
                     menu.navigate(key)
                 elif key == 27:
-                    logout(stdscr)
+                    user.logout(stdscr)
                     break
     except Exception as e:
         return
@@ -219,18 +217,7 @@ def account_settings(stdscr):
         elif key in [curses.KEY_UP, curses.KEY_DOWN]:
             menu.navigate(key)
 
-def logout(stdscr):
-    try:
-        client = NetworkClient()
-        status = utils.Singleton()
-        status.unauthorize()
-        client.logout()
-    except Exception as e:
-        stdscr.clear()
-        stdscr.addstr(1, 1, str(e))
-        stdscr.refresh()
-        stdscr.getch()
-
-if __name__ == "__main__":
+def main():
     curses.wrapper(main_menu)
 
+# if __name__ == "__main__":
