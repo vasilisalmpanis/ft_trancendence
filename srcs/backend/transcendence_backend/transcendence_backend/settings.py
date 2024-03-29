@@ -22,10 +22,10 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-with open("default.jpeg" , "rb") as image_file:
-    image_data = image_file.read()
+# with open("default.jpeg" , "rb") as image_file:
+#     image_data = image_file.read()
 
-DEFAULT_AVATAR = image_data
+DEFAULT_AVATAR = b'aioughaiouh'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -48,14 +48,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
 # Application definition
 
 INSTALLED_APPS = [
     'daphne',
     'channels',
     'pong',
-    #'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     #'django.contrib.sessions',
@@ -169,7 +167,6 @@ ASGI_APPLICATION = "transcendence_backend.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        #"BACKEND": "channels.layers.InMemoryChannelLayer",
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
             "hosts": [("redis", 6379)],
