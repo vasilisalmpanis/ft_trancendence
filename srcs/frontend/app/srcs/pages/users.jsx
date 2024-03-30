@@ -6,13 +6,16 @@ import {
 	C_PROFILE_USERNAME
 }						from "../conf/content_en";
 import Alert from "../components/alert";
+import Avatar from "../components/avatar";
 
 const UserCard = (props) => {
-	console.log(props.data)
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
-				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
+				<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3">
+					<Avatar img={props.data.avatar} size={"20%"}/>
+					<span>  {props.data.username}</span>
+				</li>
 			</ul>
 		</div>
 	);

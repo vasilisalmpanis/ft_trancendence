@@ -5,11 +5,24 @@ import { C_PROFILE_HEADER, C_PROFILE_USERNAME } from "../conf/content_en";
 import Alert from "../components/alert";
 import DeleteIcon from "../components/delete_icon";
 import EditIcon from "../components/edit_icon";
+import Avatar from "../components/avatar";
 
 const ProfileCard = (props) => {
-	const [img, setImg] = ftReact.useState(props.data.avatar.replace("data", "data:").replace("base64", ";base64,"));
+	const [img, setImg] = ftReact.useState(props.data.avatar);
 	const updateMe = async () => {
-		apiClient.post("/users/me", {"avatar": img});
+		if (img && img instanceof Blob) {
+			console.log("update");
+			const reader = new FileReader();
+    		reader.onload = async function(readerEvent) {
+				const base64 = readerEvent.target.result;
+				const resp = await apiClient.post("/users/me", {"avatar": base64});
+				if (resp.error)
+					console.log(error);
+				else
+					localStorage.setItem("me", JSON.stringify(resp));
+    		};
+			reader.readAsDataURL(img);
+		}
 	}
 	return (
 		<div className="card" style="width: 18rem;">
@@ -21,18 +34,12 @@ const ProfileCard = (props) => {
 					<form
 						onSubmit={(event)=>{
 							event.preventDefault();
-							console.log(event);
 							updateMe();
 						}}
 						className="d-flex flex-column gap-3"
 					>
 						<div>
-							<img
-								width={"90%"}
-								style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
-								src={img}
-								className="img-thumbnail"
-							/>
+						<Avatar img={img}/>
 						<span
 							className="btn translate-middle rounded-pill position-absolute badge rounded-circle bg-primary"
 							style={{
@@ -60,16 +67,8 @@ const ProfileCard = (props) => {
 								id="imageInput"
 								accept="image/*"
 								onChange={(event)=>{
-									const file = event.target.files[0];
-    								if (file) {
-										const reader = new FileReader();
-    								    reader.onload = function(readerEvent) {
-											const base64 = readerEvent.target.result;
-											setImg(base64);
-											console.log(base64);
-											console.log(props.data.avatar.replace('dataimage/jpegbase64', "data:image/jpeg;base64,"))
-    								    };
-    								    reader.readAsDataURL(file);
+    								if (event.target.files[0]) {
+										setImg(event.target.files[0]);
     								}
 								}}
 							/>
@@ -85,21 +84,8 @@ const ProfileCard = (props) => {
 }
 
 const Profile = (props) => {
-	const [me, setMe] = ftReact.useState(null);
+	const me = JSON.parse(localStorage.getItem("me"));
 	const [error, setError] = ftReact.useState("");
-	const getMe = async () => {
-		const data = await apiClient.get("/users/me");
-		if (data.error)
-			setError(data.error)
-		else if (data && !me)
-			setMe(data);
-	};
-	if (!me && !error)
-		getMe();
-	//ftReact.useEffect(()=>{
-	//	if (!me && !error)
-	//		getMe();
-	//},[]);
 	return (
 		<BarLayout route={props.route}>
 			{
