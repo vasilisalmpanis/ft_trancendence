@@ -13,7 +13,12 @@ const Avatar = (props) => {
 			setBlob(await b64toBlob(img));
 		};
 		if (props.img && typeof(props.img) === 'string' && !blob)
-			fetchBlob(props.img);
+		{
+			if (props.img.startsWith("data"))
+				fetchBlob(props.img);
+			//else if (props.img.startsWith("http"))
+			//	setBlob(props.img)
+		}
 		else if (props.img && props.img instanceof Blob && (blob !== props.img))
 			setBlob(props.img);
 	},[]);
