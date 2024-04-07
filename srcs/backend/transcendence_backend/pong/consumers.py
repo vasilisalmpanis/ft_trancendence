@@ -122,7 +122,7 @@ class PongState:
 	}
 	'''
 
-	def __init__(self, left: str, right: str) -> None:
+	def __init__(self, left: str, right: str, max_score: int) -> None:
 		self.pl_s: Literal["up", "down", "stop"] = 'stop'
 		self.pr_s: Literal["up", "down", "stop"] = 'stop'
 		self.left = left
@@ -138,6 +138,7 @@ class PongState:
 		self._pr_c = False
 		self._score_c = False
 		self._paused = False
+		self._max_score = max_score
 
 	def __iter__(self) -> 'PongState':
 		return self
@@ -150,6 +151,7 @@ class PongState:
 		data = {
 			'x': round(self._x, 2),
 		  	'y': round(self._y, 2),
+			'max_score': self._max_score
 		}
 		if self._pl_c:
 			data['p1'] = int(self._pl)
@@ -247,7 +249,8 @@ class PongRunner(AsyncConsumer):
 				if self._games[gid]._paused:
 					self._games[gid]._resume()
 				return
-			self._games[gid] = PongState(left, right)
+			max_score = await database_sync_to_async(PongService.get_max_score)(int(gid))
+			self._games[gid] = PongState(left, right, max_score)
 			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
 		except Exception as e:
 			logger.error(f"Error: {e}")
@@ -315,6 +318,7 @@ class PongRunner(AsyncConsumer):
 		logger.warn("running game " + gid)
 		for state in self._games[gid]:
 			if state:
+				logger.warn(f"State: {state}")
 				await self.channel_layer.group_send(
 					gid,
 					{
@@ -322,7 +326,9 @@ class PongRunner(AsyncConsumer):
 						'text': json.dumps(state),
 					}
 				)
-				if state.get('s1', 0) == 1 or  state.get('s2', 0) == 1:
+				logger.warn(f"State sent")
+				max_score = state.get('max_score', 10)
+				if state.get('s1', 0) == max_score or  state.get('s2', 0) == max_score:
 					await self.stop_game({'gid': gid})
 			await asyncio.sleep(0.01)
 
