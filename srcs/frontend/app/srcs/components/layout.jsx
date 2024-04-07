@@ -1,6 +1,8 @@
 import ftReact from "../ft_react";
 
-const Layout = ({children, ...rest}) => {
+const Layout = (props) => {
+	const children = props.children;
+	props.children = [];
 	return (
 		<div className="
 			container-md

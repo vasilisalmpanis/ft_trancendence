@@ -1,8 +1,15 @@
 import BarLayout from "../components/barlayout";
 import ftReact			from "../ft_react";
 
+const GameCard = (props) => {
+	return (
+		<span>{JSON.stringify(props.data.group)}</span>
+	);
+}
+
+let ws = null;
 const Tournament = (props) => {
-	let ws = null;
+	const [games, setGames] = ftReact.useState([]);
 	const cleanup = () => {
 		console.log("cleanup");
 		ws && ws.close();
@@ -17,13 +24,16 @@ const Tournament = (props) => {
 			ws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
 				console.log(data);
+				if ('group' in data)
+					setGames([...games, data])
 			});
 		};
-		return cleanup;
+		//return cleanup;
 	},[])
 	return (
 		<BarLayout route={props.route}>
 			<span>It's a tournament {history.state.name}</span>
+			{games && games.length ? games.map(game => <GameCard data={game}/>) : <span>waiting games</span>}
 		</BarLayout>
 	);
 }

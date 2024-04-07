@@ -30,8 +30,8 @@ const GameCard = (props) => {
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
-					{props.data.players[0]}
-					{props.data.players[0] === me.username &&
+					{props.data.player1}
+					{props.data.player1 === me.username &&
 						<button
 							className="btn d-inline p-0 ms-auto"
 							onClick={async ()=>{

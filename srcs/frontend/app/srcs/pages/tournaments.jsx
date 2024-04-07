@@ -73,7 +73,8 @@ const TournamentCard = (props) => {
 					}
 					<button
 						className="btn d-inline p-0 ms-auto"
-						onClick={()=>{
+						onClick={async ()=>{
+							await apiClient.put("/tournaments", {tournament_id: props.data.id});
 							props.route("/tournament", {game_id: props.data.id});
 						}}
 					>

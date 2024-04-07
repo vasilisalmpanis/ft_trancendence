@@ -3,6 +3,8 @@ import Layout from "./layout";
 
 
 const BarLayout = (props) => {
+	const children = props.children;
+	props.children = [];
 	return (
 		<div className="h-100">
 			<nav className="navbar bg-body-tertiary">
@@ -22,7 +24,7 @@ const BarLayout = (props) => {
 			  	</div>
 			</nav>
 			<Layout>
-				{props.children}
+				{children}
 			</Layout>
 		</div>
 	)

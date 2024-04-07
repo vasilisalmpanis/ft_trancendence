@@ -29,13 +29,13 @@ const Platform = (props) => {
 		<div id={id} style={style}/>
 	);
 }
+let ws = null;
 
 const Pong = (props) => {
 	let ball = {x: 50, y: 50};
 	let score = {s1: 0, s2: 0};
 	let pl = 40;
 	let pr = 40;
-	let ws = null;
 	let me = 'left';
 	let platformDirection = '';
 	const keyPress = (ev) => {

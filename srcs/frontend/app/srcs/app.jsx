@@ -13,6 +13,9 @@ import Games			from './pages/games';
 import Tournaments		from './pages/tournaments';
 import Tournament		from './pages/tournament';
 
+const A = (props) => <button onClick={(ev)=>props.route("/b")}>to B</button>
+const B = (props) => <button onClick={(ev)=>props.route("/a")}>to A</button>
+
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
 	setTheme("auto");
@@ -31,6 +34,8 @@ const App = (props) => {
 				<Route auth path="/games" element={<Games/>}/>
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
 				<Route auth path="/tournament" element={<Tournament/>}/>
+				<Route auth path="/a" element={<A/>}/>
+				<Route auth path="/b" element={<B/>}/>
 			</Router>
 		</div>
 	);
