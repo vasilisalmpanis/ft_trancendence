@@ -38,8 +38,9 @@ class TournamentView(View):
         name = data.get('name', "Pong Tournament")
         description = data.get('description', "Let the games begin")
         max_players = data.get('max_players', 20)
+        max_points = data.get('max_points', 10)
         try:
-            tournament = TournamentService.create_tournament(name, user, description=description, max_players=max_players)
+            tournament = TournamentService.create_tournament(name, user, description=description, max_points=max_points, max_players=max_players)
             return JsonResponse(tournament, safe=False)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -72,7 +73,7 @@ class TournamentView(View):
         if not tournament_id or not isinstance(tournament_id, int):
             return JsonResponse({'error': 'Tournament ID is required'}, status=400)
         try:
-            TournamentService.leave_tournament(user, tournament_id)
-            return JsonResponse({'message': 'Tournament deleted successfully'})
+            tournament = TournamentService.leave_tournament(user, tournament_id)
+            return JsonResponse(tournament, safe=False)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
