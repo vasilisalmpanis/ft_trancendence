@@ -199,7 +199,10 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         self.close()
 
     async def connect(self):
-        await self.accept()
+        if self.scope.get('auth_protocol', False):
+            await self.accept("Authorization")
+        else:
+            await self.accept()
 
         # gets tournament and user from scope
         user = self.scope['user']
@@ -274,6 +277,3 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         )
         await asyncio.sleep(0.000001)
         await self.close()
-
-
-		

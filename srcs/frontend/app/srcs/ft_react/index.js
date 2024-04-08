@@ -1,5 +1,5 @@
 /**
- * Naive implementation of react-like library
+ * Naive implementation of React-like library
  */
 
 const isEvent = key => key.startsWith("on");
@@ -16,7 +16,6 @@ class FiberNode {
    * 
    * @param {string | Function} type 
    * @param {object} props 
-   * @param  {...FiberNode} children
    * @returns {FiberNode}
    */
   constructor(type, props) {
@@ -51,8 +50,32 @@ class FiberNode {
   set sibling(val) {
     if (this.parent) {
       val.key = this.key + 1;
-      this.parent.children[this.key + 1] = val;
+      val.parent = this.parent;
+      this.parent.children[val.key] = val;
     }
+  }
+  get prevSibling() {
+    if (this.key === 0)
+      return null;
+    return this.parent && this.parent.children && this.parent.children[this.key - 1] || null;
+  }
+  deleteFromFiber() {
+    if (this.parent) {
+      this.parent.children = this.parent.children.filter(val => val !== this);
+      this.parent.children.forEach((val, idx) => {
+        val.key = idx;
+      })
+    }
+  }
+  getNameSpace() {
+    if (this.type === 'svg') {
+      if ('xmlns' in this.props)
+        return (this.props.xmlns);
+      return null;
+    }
+    if (this.parent)
+      return this.parent.getNameSpace();
+    return null;
   }
   setKey(key) {
     this.key = key;
@@ -82,94 +105,127 @@ class FiberNode {
     };
     const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
-    clonedNode.states = this.states ? [...this.states] : this.states;
+    clonedNode.states = this.states ? [...this.states] : [];
+    clonedNode.effects = this.effects ? [...this.effects] : [];
     clonedNode.key = this.key;
     clonedNode.parent = this.parent;
     return clonedNode;
   }
-
-  /**
-   * @param {FiberNode[]} children
+    /**
+   * @param {FTReact} ftReact
    */
-  reconcile(children, ftReact) {
-    //console.log("  VNode.reconcile RECONCILE: ", this, children);
-    let prevSibling = null;
-    let oldNode = this.old && this.old.child;
-    let i = 0;
-    while (i < children.length) {
-      const el = children[i];
-      let newNode = null;
-      let sameType = oldNode && el && oldNode.type == el.type;
-      if (sameType) {
-        newNode = new FiberNode(oldNode.type, el.props);
-        newNode.dom = oldNode.dom;
-        newNode.parent = this;
-        newNode.old = oldNode;
-        newNode.states = oldNode.states;
-        newNode.effect = "UPDATE";
+    reconcile(ftReact) {
+      //console.log("  VNode.reconcile RECONCILE: ", this, this.old);
+      //this.type instanceof Function && console.log("RECONCILE: ", this.type.name, this.old?.type.name, this);
+      this.parentsSiblings();
+      let oldNode = this.old && this.old.child;
+      let prevSibling = null;
+      const children = this.children;
+      let i = 0;
+      while (i < children.length) {
+        const el = children[i];
+        let newNode = null;
+        let sameType = oldNode && el && oldNode.type == el.type || false;
+        if (sameType) {
+          newNode = new FiberNode(oldNode.type, el.props);
+          newNode.dom = oldNode.dom;
+          newNode.parent = this;
+          newNode.old = oldNode;
+          newNode.states = oldNode.states;
+          newNode.effect = "UPDATE";
+        }
+        if (el && !sameType) {
+          newNode = new FiberNode(el.type, el.props);
+          newNode.parent = this;
+          newNode.states = el.states;
+          newNode.effect = "PLACEMENT";
+        }
+        if (oldNode && !sameType) {
+          oldNode.effect = "DELETION";
+          ftReact._deletions.push(oldNode);
+        }
+        if (oldNode) {
+          oldNode = oldNode.sibling;
+        }
+        if (i === 0) {
+          this.child = newNode;
+        } else if (el && el.type) {
+          prevSibling.sibling = newNode;
+        }
+        prevSibling = newNode;
+        i++;
       }
-      if (el && !sameType) {
-        newNode = new FiberNode(el.type, el.props);
-        newNode.parent = this;
-        newNode.states = el.states;
-        newNode.effect = "PLACEMENT";
-      }
-      if (oldNode && !sameType) {
+      while (oldNode) {
         oldNode.effect = "DELETION";
         ftReact._deletions.push(oldNode);
-      }
-      if (oldNode) {
         oldNode = oldNode.sibling;
       }
-      if (i === 0) {
-        this.child = newNode;
-      } else if (el && el.type) {
-        prevSibling.sibling = newNode;
-      }
-      prevSibling = newNode;
-      i++;
     }
-    while (oldNode) {
-      oldNode.effect = "DELETION";
-      ftReact._deletions.push(oldNode);
-      oldNode = oldNode.sibling;
-    }
-  }
   commit() {
-    //console.log("  VNode.commit ", this);
+    // console.log("  VNode.commit ", this);
     let domParentNode = this.parent;
     while (!domParentNode.dom) {
       domParentNode = domParentNode.parent;
     }
     const domParent = domParentNode.dom;
-    if (this.effect === "PLACEMENT" && this.dom != null) domParent.appendChild(this.dom); else if (this.effect === "UPDATE" && this.dom != null) this.updateDom(); else if (this.effect === "DELETION") this.delete(domParent);
+    if (this.effect === "PLACEMENT" && this.dom != null) {
+      domParent.appendChild(this.dom);
+    }
+    else if (this.effect === "UPDATE" && this.dom != null) {
+      this.updateDom();
+    }
+    else if (this.effect === "DELETION")
+    {
+      this.delete(domParent);
+    }
     this.effect = null;
-    this.old = this.clone();
     this.child && this.child.commit();
     this.sibling && this.sibling.commit();
+    this.old = this.clone();
   }
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
-    if (this.dom) domParent.removeChild(this.dom); else this.child && this.child.delete(domParent);
-    if (this.cleanup) this.cleanup();
+    if (this.dom && domParent.contains(this.dom)) {
+      domParent.removeChild(this.dom);
+      this.dom = null;
+      //this.deleteFromFiber();
+    } else {
+      this.child && this.child.delete(domParent);
+    }
+    this.effect = null;
+    if (this.effects) {
+      this.effects.forEach(effect => {
+          if (effect && effect.cleanup) {
+            effect.cleanup();
+          }
+      });
+    };
   }
   update(ftReact) {
     //console.log("  VNode.update", this);
+    //this.type instanceof Function && console.log("UPDATE: ", this.type.name, this.old?.type.name, this);
     if (this.type instanceof Function) this.resolveFunc(ftReact); else if (!this.dom) this.createDom();
-    this.reconcile(this.children, ftReact);
+    //this.type instanceof Function && console.log(this.type.name, this.children.length);
+    this.reconcile(ftReact);
+    //this.type instanceof Function && console.log(this.children.length);
   }
   createDom() {
     //console.log("  VNode.createDom", this);
-    this.dom = this.type == "TEXT_ELEMENT" ? document.createTextNode("") : document.createElement(this.type);
+    if (this.type == "TEXT_ELEMENT")
+      this.dom = document.createTextNode("");
+    else {
+      const nameSpace = this.getNameSpace();
+      this.dom = nameSpace
+        ? document.createElementNS(nameSpace, this.type)
+        : document.createElement(this.type);
+    }
     this.updateDom();
   }
   updateDom = () => {
     //console.log("  VNode.updateDom", this);
     const oldProps = this.old && this.old.props || {};
     //Remove old or changed event listeners
-    Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props)
-      //|| isNew(oldProps, this.props)(key)
-    ).forEach(name => {
+    Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props) || isNew(oldProps, this.props)(key)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
       //console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.removeEventListener(eventType, oldProps[name]);
@@ -183,11 +239,22 @@ class FiberNode {
 
     // Set new or changed properties
     Object.keys(this.props).filter(isProperty).filter(isNew(oldProps, this.props)).forEach(name => {
-      //console.log("     setProperties", this.dom.tagName || this.type, name);
-      if (name === 'style' && typeof this.props[name] === 'object') {
-        this.dom[name] = objectToCSS(this.props[name]);
+      //console.log("     setProperties", this.dom.tagName || this.type, name, this.props[name]);
+      if (this.getNameSpace()) {
+        this.dom.setAttribute(name, this.props[name])
       } else {
-        this.dom[name] = this.props[name];
+        if (name === 'style' && typeof this.props[name] === 'object') {
+          this.dom[name] = objectToCSS(this.props[name]);
+        } else if (name === 'className') {
+          this.dom[name] = this.props[name];
+        } else {
+          if (this.dom instanceof Element) {
+            if (this.props[name] || typeof this.props[name] !== 'boolean')
+              this.dom.setAttribute(name, this.props[name])
+          } else {
+            this.dom[name] = this.props[name];
+          }
+        }
       }
     });
 
@@ -257,11 +324,23 @@ class FTReact {
     }
     this._nextTask = this._updateQueue.shift() || null;
   }
+  /** @private */
+  _printCommit() {
+    //for (let del of this._deletions)
+    //  console.log("DELETION", del.effect, del.type instanceof Function ? del.type.name : (del.dom ? del.dom : del));
+    let node = this._getNextNode(this._root);
+    while (node) {
+      //console.log(node.effect, node.type instanceof Function ? node.type.name : node.type, node);
+      node = this._getNextNode(node);
+    }
+  }
 
   /** @private */
   _renderLoop(deadline) {
+    const queue = [...this._updateQueue];
     let shouldYield = false;
-    this._setNextTask();
+    if (!this._nextTask)
+      this._setNextTask();
     while (this._nextTask && !shouldYield) {
       this._nextTask.update(this);
       this._newChanges = true;
@@ -269,6 +348,7 @@ class FTReact {
       shouldYield = deadline.timeRemaining() < 1;
     }
     if (!this._nextTask && this._newChanges) {
+      this._printCommit();
       this._commit();
     }
     requestIdleCallback(this._renderLoop);
@@ -299,7 +379,7 @@ class FTReact {
       if (nextNode.effects) {
         nextNode.effects.forEach(effect => {
           if (effect.hasChangedDeps) {
-            if (effect.cleanup) {
+            if (effect.cleanup && effect.cleanup instanceof Function) {
               effect.cleanup();
             }
             effect.cleanup = effect.callback() || null;
@@ -311,8 +391,9 @@ class FTReact {
   }
   useEffect(callback, deps) {
     const node = this._currentNode;
-    const oldEffect = node.old && node.effects[node.stId];
-    const hasChangedDeps = oldEffect ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
+    const effectIdx = node.stId;
+    const oldEffect = node.old && node.effects[effectIdx];
+    const hasChangedDeps = oldEffect && oldEffect.deps ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
     const effect = {
       cleanup: null,
       deps,
@@ -321,10 +402,28 @@ class FTReact {
     };
 
     if (hasChangedDeps) {
-      if (oldEffect && oldEffect.cleanup) {
+      if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
         oldEffect.cleanup();
       }
-      node.effects[node.stId] = effect;
+      //const effect = async () => {
+      //  let isActive = true; // Flag to track if the effect is still valid
+      //  const cleanup = callback(); // Execute the user-provided effect
+      //  // Check if the effect returns a cleanup function directly or from an async operation
+      //  if (cleanup instanceof Promise) {
+      //      cleanup.then(asyncCleanup => {
+      //          if (!isActive && asyncCleanup) {
+      //              asyncCleanup(); // Call the cleanup function if the component unmounted
+      //          }
+      //      });
+      //  } else if (typeof cleanup === 'function') {
+      //      node.effects[effectIdx] = { cleanup, deps }; // Store the cleanup function for later
+      //  }
+      //  // Define a cleanup function to update the flag if the component unmounts
+      //  return () => {
+      //      isActive = false;
+      //  };
+      //};
+      node.effects[effectIdx] = effect;
     }
     node.stId++;
   }
@@ -336,12 +435,20 @@ class FTReact {
    * @returns {FiberNode}
    */
   createElement(type, props, ...children) {
-    return new FiberNode(type, {
-      ...props,
-      children: children.flat().map((child, idx) => typeof child === "object" ? child.setKey(idx) : new FiberNode("TEXT_ELEMENT", {
-        nodeValue: child
-      }).setKey(idx))
-    });
+    return type
+      ? new FiberNode(type, {
+          ...props,
+          children: children
+            .flat()
+            .filter(child => child)
+            .map((child, idx) =>
+              typeof child === "object"
+                ? child.setKey(idx)
+                : new FiberNode("TEXT_ELEMENT", {
+                    nodeValue: child
+                  }).setKey(idx))
+        })
+      : null;
   }
 
   /**
@@ -350,7 +457,7 @@ class FTReact {
    * @param {HTMLElement} container 
    */
   render(element, container) {
-    console.log("FTReact.render ", element);
+    //console.log("FTReact.render ", element);
     this._root.dom = container;
     this._root.children = [element];
     this._root.parentsSiblings();
