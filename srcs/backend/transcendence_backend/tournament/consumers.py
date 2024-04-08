@@ -105,7 +105,6 @@ class TournamentRunner(AsyncConsumer):
         self._tournaments[group_name]['stragler'] = None
         for pair in pairs:
             if len(pair) == 1:
-                logger.warn(f"Stragler: {pair[0]}")
                 self._tournaments[group_name]['stragler'] = pair[0]
                 continue
             games.append(await database_sync_to_async(create_game)(pair[0], pair[1], tournament))
@@ -228,9 +227,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.send(json.dumps(group_data))
         await database_sync_to_async(tournament.refresh_from_db)()
         if tournament.status == 'open':
-            logger.warn(f"Group size: {self._groups.group_size(group_name)}")
             if self._groups.group_size(group_name) == tournament.max_players:
-                logger.warn("Starting tournament")
                 await self.channel_layer.send(
                     'tournament_runner',
                     {
@@ -251,7 +248,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def send_message(self, event):
         message = event
-        logger.warn(f"Sending message: {message}")
         await self.send(json.dumps(event))
 
     async def receive(self, text_data):

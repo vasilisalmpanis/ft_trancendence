@@ -240,7 +240,6 @@ class PongRunner(AsyncConsumer):
   
 	async def start_game(self, message: ControlMsg) -> None:
 		try:
-			logger.warn("starting game " + str(message))
 			gid = message['gid']
 			data = json.loads(message.get('data', None))
 			left = data[0]['username']
@@ -256,7 +255,6 @@ class PongRunner(AsyncConsumer):
 			logger.error(f"Error: {e}")
   
 	async def stop_game(self, message: ControlMsg) -> None:
-		logger.warn("stopping game " + str(message))
 		gid = message['gid']
 		status = message.get('data', None)
 		if gid == '':
@@ -299,7 +297,6 @@ class PongRunner(AsyncConsumer):
 
 	async def pause_game(self, message: ControlMsg) -> None:
 		'''Pause game'''
-		logger.warn("pausing game " + str(message))
 		gid = message['gid']
 		await database_sync_to_async(pause_game)(int(gid))
 		if gid in self._games:
@@ -308,17 +305,14 @@ class PongRunner(AsyncConsumer):
 
 	async def resume_game(self, message: ControlMsg) -> None:
 		'''Resume game'''
-		logger.warn("resuming game " + str(message))
 		gid = message['gid']
 		await database_sync_to_async(resume_game)(int(gid))
 		self._games[gid]._resume()
 		
 
 	async def _run(self, gid: str):
-		logger.warn("running game " + gid)
 		for state in self._games[gid]:
 			if state:
-				logger.warn(f"State: {state}")
 				await self.channel_layer.group_send(
 					gid,
 					{
@@ -326,7 +320,6 @@ class PongRunner(AsyncConsumer):
 						'text': json.dumps(state),
 					}
 				)
-				logger.warn(f"State sent")
 				max_score = state.get('max_score', 10)
 				if state.get('s1', 0) == max_score or  state.get('s2', 0) == max_score:
 					await self.stop_game({'gid': gid})
@@ -373,7 +366,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data: str) -> None:
 		try:
 			data = json.loads(text_data)
-			logger.warn(f"Received: {data}")
 			if 'join' in data:
 				game_id = str(data['join'])
 				if not self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username):
@@ -397,8 +389,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 							'data' : json.dumps(self._groups.get_group(game_id))
 						}
 					)
-				else:
-					logger.error("Not full")
 			else:
 				gid = self._groups.get_group_name(self.channel_name)
 				if gid == '':
