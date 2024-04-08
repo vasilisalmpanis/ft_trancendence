@@ -92,7 +92,7 @@ class PongService:
         return False
 
     @staticmethod
-    def create_game(user : User) -> Dict[Any, Any]:
+    def create_game(user : User, max_points) -> Dict[Any, Any]:
         """
         Creates a game for the user and assigns them as participant
         @param user: User
@@ -100,7 +100,9 @@ class PongService:
         """
         if PongService.check_user_already_joined(user):
             raise Exception('You have a game in progress')
-        game = Pong.objects.create(player1=user)
+        if max_points < 3 or max_points > 20:
+            raise Exception('Invalid max points')
+        game = Pong.objects.create(player1=user, max_score=max_points)
         return pong_model_to_dict(game)
     
     @staticmethod
@@ -114,30 +116,6 @@ class PongService:
         if game is None:
             raise Exception('Game not found')
         return pong_model_to_dict(game)
-    
-
-    @staticmethod
-    def join_game(user : User, game_id : int) -> Dict[Any, Any]:
-        """
-        Joins the user to the game
-        @param user: User
-        @param game_id: int
-        @return: JsonResponse with game schema
-        """
-        game = Pong.objects.filter(id=game_id).first()
-        if game is None:
-            raise Exception('Game not found')
-        if game.status != 'pending':
-            raise Exception('Game already running')
-        if game.players.filter(Q(player1=user) | Q(player2=user)).exists() and game.player2 is not None == 2:
-            raise Exception('User already joined')
-        if PongService.check_user_already_joined(user) and game.player2 is not None:
-            raise Exception('You have a game in progress')
-        if not game.player1 == user and game.player2 is None:  
-            game.players.add(user)
-            game.save()
-        return pong_model_to_dict(game)
-    
 
     @staticmethod
     def finish_game(game_id: int, result: Dict[str,Any] | NoneType = None) -> Dict[Any, Any]:
@@ -159,6 +137,8 @@ class PongService:
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
             raise Exception('Game not found')
+        if game.player2 is None:
+            raise Exception('Game is not full')
         game.score1 = score1
         game.score2 = score2
         game.status = 'finished'
@@ -170,7 +150,7 @@ class PongService:
         return pong_model_to_dict(game)
     
     @staticmethod
-    def delete_game(game_id : int, user : User) -> None:
+    def delete_game(game_id : int, user : User) -> Dict[Any, Any]:
         """
         Deletes the game
         @param game_id: int
@@ -183,5 +163,17 @@ class PongService:
             return pong_model_to_dict(game)
         else:
             raise Exception('You are either not a participant or the game has already started')
+        
+    @staticmethod
+    def get_max_score(game_id: int) -> int:
+        """
+        Returns the max score of the game
+        @param game_id: int
+        @return: int
+        """
+        game = Pong.objects.filter(id=game_id).first()
+        if game is None:
+            raise Exception('Game not found')
+        return game.max_score
         
         

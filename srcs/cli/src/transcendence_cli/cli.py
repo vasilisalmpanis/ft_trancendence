@@ -1,11 +1,9 @@
-from multiprocessing.connection import Client
-from client                     import NetworkClient, Response
-from typing                     import Tuple
-import game                     as pong
-import user
+from .client                    import NetworkClient, Response
+from transcendence_cli          import game as pong
+from transcendence_cli          import user
+from transcendence_cli          import utils
 import curses
-import utils
-import time
+
 class Menu:
     def __init__(self, stdscr, options):
         self.stdscr = stdscr
@@ -39,6 +37,7 @@ class Menu:
 def main_menu(stdscr):
     status = utils.Singleton()
     curses.curs_set(0)
+    client = NetworkClient()
     try:
         while True:
             menu_options = [{"label": "Login", "action": authenticate},
@@ -65,11 +64,21 @@ def main_menu(stdscr):
                     break
             menu_options = [
                 {"label": "Play Game", "action": play_game},
-                # {"label": "Search for Users", "action": search_users},
-                # {"label": "Manage Friends", "action": manage_friends},
+                {"label": "Create Game", "action": create_game},
                 {"label": "Account Settings", "action": account_settings},
-                {"label": "Logout", "action": logout}
+                {"label": "Logout", "action": user.logout}
             ]
+            games = client.request("/games?type=running&me=True", "GET").body
+            if len(games) > 0:
+                game_id = games[0]['id']
+                start_game(stdscr, game_id)
+                continue
+            else:
+                games = client.request("/games?type=paused&me=True", "GET").body
+                if len(games) > 0:
+                    game_id = games[0]['id']
+                    start_game(stdscr, game_id)
+                    continue
             menu = Menu(stdscr, menu_options)
             while status.state == True:
                 menu.display()
@@ -79,7 +88,7 @@ def main_menu(stdscr):
                 elif key in [curses.KEY_UP, curses.KEY_DOWN]:
                     menu.navigate(key)
                 elif key == 27:
-                    logout(stdscr)
+                    user.logout(stdscr)
                     break
     except Exception as e:
         return
@@ -127,6 +136,19 @@ def start_game(stdcsr, game_id):
     game = pong.Game(stdcsr, game_id)
     game.run()
     stdcsr.nodelay(0)
+
+def create_game(stdcsr):
+    client = NetworkClient()
+    response = client.request("/games", "POST")
+    if response.status > 201:
+        stdcsr.clear()
+        stdcsr.addstr(1, 1, "An error occurred. Return to the main menu")
+        stdcsr.refresh()
+        stdcsr.getch()
+        return
+    game_id = response.body['id']
+    start_game(stdcsr, game_id)
+
 
 def play_game(stdcsr):
     client = NetworkClient()
@@ -219,18 +241,7 @@ def account_settings(stdscr):
         elif key in [curses.KEY_UP, curses.KEY_DOWN]:
             menu.navigate(key)
 
-def logout(stdscr):
-    try:
-        client = NetworkClient()
-        status = utils.Singleton()
-        status.unauthorize()
-        client.logout()
-    except Exception as e:
-        stdscr.clear()
-        stdscr.addstr(1, 1, str(e))
-        stdscr.refresh()
-        stdscr.getch()
-
-if __name__ == "__main__":
+def main():
     curses.wrapper(main_menu)
 
+# if __name__ == "__main__":

@@ -122,7 +122,7 @@ class PongState:
 	}
 	'''
 
-	def __init__(self, left: str, right: str) -> None:
+	def __init__(self, left: str, right: str, max_score: int) -> None:
 		self.pl_s: Literal["up", "down", "stop"] = 'stop'
 		self.pr_s: Literal["up", "down", "stop"] = 'stop'
 		self.left = left
@@ -138,6 +138,7 @@ class PongState:
 		self._pr_c = False
 		self._score_c = False
 		self._paused = False
+		self._max_score = max_score
 
 	def __iter__(self) -> 'PongState':
 		return self
@@ -150,6 +151,7 @@ class PongState:
 		data = {
 			'x': round(self._x, 2),
 		  	'y': round(self._y, 2),
+			'max_score': self._max_score
 		}
 		if self._pl_c:
 			data['p1'] = int(self._pl)
@@ -238,7 +240,6 @@ class PongRunner(AsyncConsumer):
   
 	async def start_game(self, message: ControlMsg) -> None:
 		try:
-			logger.warn("starting game " + str(message))
 			gid = message['gid']
 			data = json.loads(message.get('data', None))
 			left = data[0]['username']
@@ -247,13 +248,13 @@ class PongRunner(AsyncConsumer):
 				if self._games[gid]._paused:
 					self._games[gid]._resume()
 				return
-			self._games[gid] = PongState(left, right)
+			max_score = await database_sync_to_async(PongService.get_max_score)(int(gid))
+			self._games[gid] = PongState(left, right, max_score)
 			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
 		except Exception as e:
 			logger.error(f"Error: {e}")
   
 	async def stop_game(self, message: ControlMsg) -> None:
-		logger.warn("stopping game " + str(message))
 		gid = message['gid']
 		status = message.get('data', None)
 		if gid == '':
@@ -296,7 +297,6 @@ class PongRunner(AsyncConsumer):
 
 	async def pause_game(self, message: ControlMsg) -> None:
 		'''Pause game'''
-		logger.warn("pausing game " + str(message))
 		gid = message['gid']
 		await database_sync_to_async(pause_game)(int(gid))
 		if gid in self._games:
@@ -305,14 +305,12 @@ class PongRunner(AsyncConsumer):
 
 	async def resume_game(self, message: ControlMsg) -> None:
 		'''Resume game'''
-		logger.warn("resuming game " + str(message))
 		gid = message['gid']
 		await database_sync_to_async(resume_game)(int(gid))
 		self._games[gid]._resume()
 		
 
 	async def _run(self, gid: str):
-		logger.warn("running game " + gid)
 		for state in self._games[gid]:
 			if state:
 				await self.channel_layer.group_send(
@@ -322,7 +320,8 @@ class PongRunner(AsyncConsumer):
 						'text': json.dumps(state),
 					}
 				)
-				if state.get('s1', 0) == 1 or  state.get('s2', 0) == 1:
+				max_score = state.get('max_score', 10)
+				if state.get('s1', 0) == max_score or  state.get('s2', 0) == max_score:
 					await self.stop_game({'gid': gid})
 			await asyncio.sleep(0.01)
 
@@ -367,7 +366,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 	async def receive(self, text_data: str) -> None:
 		try:
 			data = json.loads(text_data)
-			logger.warn(f"Received: {data}")
 			if 'join' in data:
 				game_id = str(data['join'])
 				if not self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username):
@@ -391,8 +389,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 							'data' : json.dumps(self._groups.get_group(game_id))
 						}
 					)
-				else:
-					logger.error("Not full")
 			else:
 				gid = self._groups.get_group_name(self.channel_name)
 				if gid == '':

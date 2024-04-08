@@ -1,5 +1,3 @@
-from math import log
-from re import U
 from channels.generic.websocket						import AsyncWebsocketConsumer, AsyncConsumer
 from channels.db									import database_sync_to_async
 from typing                                         import Dict, Any
@@ -11,11 +9,10 @@ from .models                                        import Tournament
 import asyncio
 import json
 import random
-from asgiref.sync import sync_to_async
 
 
 def create_game(user1, user2, tournament: Tournament):
-    game = tournament.games.create(player1=user1, player2=user2)
+    game = tournament.games.create(player1=user1, player2=user2, max_score=tournament.max_points)
     return game
 
 def get_games_as_dict(tournament: Tournament):
@@ -52,7 +49,6 @@ def get_winners(games):
             winners.append(game.player1)
         else:
             winners.append(game.player2)
-    logger.warn(winners)
     return winners
 class TournamentGroupManager(metaclass=SingletonMeta):
     _groups: Dict[str, Dict[Any, Any]] = {}
@@ -67,7 +63,6 @@ class TournamentGroupManager(metaclass=SingletonMeta):
     def group_size(self, group: str):
         if group not in self._groups:
             return 0
-        logger.warn(self._groups[group]["users"])
         return len(self._groups[group]["users"])
     
     def remove(self, group: str, user: str):
@@ -103,12 +98,13 @@ class TournamentRunner(AsyncConsumer):
     _tasks: Dict[str, asyncio.Task] = {}
 
     async def create_games(self, group_name, pairs):
-        tournament = await database_sync_to_async(Tournament.objects.get)(id=int(group_name))
+        g_id = int(group_name)
+        group_name = 't_' + str(g_id)
+        tournament = await database_sync_to_async(Tournament.objects.get)(id=g_id)
         games = []
         self._tournaments[group_name]['stragler'] = None
         for pair in pairs:
             if len(pair) == 1:
-                logger.warn(f"Stragler: {pair[0]}")
                 self._tournaments[group_name]['stragler'] = pair[0]
                 continue
             games.append(await database_sync_to_async(create_game)(pair[0], pair[1], tournament))
@@ -122,7 +118,8 @@ class TournamentRunner(AsyncConsumer):
 
 
     async def start_tournament(self, event):
-        group_name = str(event['name'])
+        group_name = 't_' + str(event['name'])
+        t_id = int(event['name'])
         message = json.loads(event['data'])
         self._tournaments.setdefault(group_name, {})
         self._tournaments[group_name]['users'] = await database_sync_to_async(self.get_users)(message['users'])
@@ -131,14 +128,14 @@ class TournamentRunner(AsyncConsumer):
         self._tournaments[group_name]['stragler'] = None
         shuffled_users = self._tournaments[group_name]['users']
         pairs = [shuffled_users[i:i+2] for i in range(0, len(shuffled_users), 2)]
-        self._tournaments[group_name]['games'] = await self.create_games(group_name, pairs)
-        await database_sync_to_async(update_status)(int(group_name),status='locked')
+        self._tournaments[group_name]['games'] = await self.create_games(t_id, pairs)
+        await database_sync_to_async(update_status)(t_id, status='locked')
         await self.channel_layer.group_send(
             group_name,
             {
-                'type': 'send_message',
+                'type': 'send.message',
                 'status' : 'tournament_starts',
-                'message': {'games': await database_sync_to_async(get_games_as_dict)(await database_sync_to_async(Tournament.objects.get)(id=int(group_name)))},
+                'message': {'games': await database_sync_to_async(get_games_as_dict)(await database_sync_to_async(Tournament.objects.get)(id=int(t_id)))},
                 'stragler' : user_model_to_dict(self._tournaments[group_name]['stragler']) if 'stragler' in self._tournaments[group_name] else None,
             }
         )
@@ -147,17 +144,16 @@ class TournamentRunner(AsyncConsumer):
     async def game_finished(self, message):
         game_id = int(message['gid'])
         for group in self._tournaments:
-
             # If there is only one game in this round and no strangler its was the last round
             if len(self._tournaments[group]['games']) == 1 and self._tournaments[group]['stragler'] == None:
                 winner = await database_sync_to_async(get_winner)(self._tournaments[group]['games'][0])
-                await database_sync_to_async(finish_tournament)(int(group), winner)
+                await database_sync_to_async(finish_tournament)(int(group.removeprefix('t_')), winner)
                 await self.channel_layer.group_send(
                     group,
                     {
-                        'type': 'send_message',
+                        'type': 'send.message',
                         'status' : 'tournament_ends',
-                        'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner)}
+                        'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner, avatar=False)}
                     }
                 )
                 self._tournaments.pop(group)
@@ -169,14 +165,14 @@ class TournamentRunner(AsyncConsumer):
                 if self._tournaments[group]['stragler']:
                     all_users.insert(0, self._tournaments[group]['stragler'])
                 pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
-                self._tournaments[group]['games'] = await self.create_games(group, pairs)
+                self._tournaments[group]['games'] = await self.create_games(group.removesuffix('t_'), pairs)
                 await self.channel_layer.group_send(
                     group,
                     {
-                        'type': 'send_message',
+                        'type': 'send.message',
                         'status' : 'next_round',
                         'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[group]['games']]},
-                        'stragler' : user_model_to_dict(self._tournaments[group]['stragler']) if 'stragler' in self._tournaments[group] else None,
+                        'stragler' : user_model_to_dict(self._tournaments[group]['stragler'], avatar=False) if 'stragler' in self._tournaments[group] else None,
                     }
                 )
 
@@ -187,7 +183,7 @@ class TournamentRunner(AsyncConsumer):
             await self.channel_layer.send(
                 name,
                 {
-                    'type': 'send_message',
+                    'type': 'send.message',
                     'status' : 'status_update',
                     'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[gid]['games']]}
                 }
@@ -220,13 +216,13 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         # send a message to the group that a user has joined
         user_dict = user_model_to_dict(user, avatar=False)
         await self.channel_layer.group_send(
-            group_name,
+            't_' + group_name,
             {
                 'type': 'send_message',
                 'message': {'user_joined' : user_dict}
             }
         )
-        await self.channel_layer.group_add(group_name, self.channel_name)
+        await self.channel_layer.group_add('t_' + group_name, self.channel_name)
         group_data = self._groups.get(group_name)
         await self.send(json.dumps(group_data))
         await database_sync_to_async(tournament.refresh_from_db)()
@@ -252,7 +248,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
 
     async def send_message(self, event):
         message = event
-        logger.warn(f"Sending message: {message}")
         await self.send(json.dumps(event))
 
     async def receive(self, text_data):
@@ -265,13 +260,13 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         user = self.scope['user']
         tournament = self.scope['tournament']
-        group_name = str(tournament['id'])
+        group_name = str(tournament.id)
         # self._groups.remove(group_name, user)
         user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
         self._groups.remove(group_name, user)
-        await self.channel_layer.group_discard(group_name, self.channel_name)
+        await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
         await self.channel_layer.group_send(
-            group_name,
+            't_' + group_name,
             {
                 'type': 'send_message',
                 'message': {'user_left' : user_dict}
