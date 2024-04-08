@@ -1,3 +1,4 @@
+import re
 from .models            import Tournament, tournament_model_to_dict
 from users.models       import User
 from django.db.models   import Q
@@ -36,7 +37,10 @@ class TournamentService:
             raise Exception("User not in a tournament")
         tournament.players.remove(user)
         tournament.save()
-        return tournament_model_to_dict(tournament)
+        data = tournament_model_to_dict(tournament)
+        if tournament.players.count() == 0:
+            tournament.delete()
+        return data
     
     @staticmethod
     def get_tournaments(type: str, skip: int, limit: int) -> List[Dict[Any, Any]]:

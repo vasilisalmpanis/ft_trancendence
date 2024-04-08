@@ -1,5 +1,4 @@
 import curses
-from pickle import TRUE
 UNAUTHORIZED = False
 AUTHORIZED = True
 

@@ -1,8 +1,6 @@
 import json
-import client as cl
-import curses
-from cli import logout
-import utils
+from transcendence_cli  import client as cl
+from transcendence_cli  import utils
 
 def change_username(stdscr):
     '''Changes username of currently logged in user'''
@@ -99,3 +97,15 @@ def exit(stdscr):
         client.logout()
     raise Exception("Exit")
 
+
+def logout(stdscr):
+    try:
+        client = cl.NetworkClient()
+        status = utils.Singleton()
+        status.unauthorize()
+        client.logout()
+    except Exception as e:
+        stdscr.clear()
+        stdscr.addstr(1, 1, str(e))
+        stdscr.refresh()
+        stdscr.getch()

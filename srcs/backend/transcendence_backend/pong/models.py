@@ -10,6 +10,7 @@ class Pong(models.Model):
 	status = models.CharField(max_length=20, default='pending')
 	score1 = models.IntegerField(default=0)
 	score2 = models.IntegerField(default=0)
+	max_score = models.IntegerField(default=10)
 
 	timestamp = models.DateTimeField(default=timezone.now)
 	class Meta:
@@ -24,18 +25,8 @@ def pong_model_to_dict(pong : Pong) -> Dict[Any, Any]:
 		'status': pong.status,
 		'score1': pong.score1,
 		'score2': pong.score2,
+		'max_score': pong.max_score,
 		'timestamp': pong.timestamp.isoformat()
 	}
 
-
-# class Tournaments(models.Model):
-# 	id = models.AutoField(primary_key=True)
-# 	participants = models.ManyToManyField(User, related_name='tournament')
-
-# 	# 8
-# 	status = models.CharField(max_length=120, default="open")
-
-# 	# locked
-
-# 	users = self.participants
 

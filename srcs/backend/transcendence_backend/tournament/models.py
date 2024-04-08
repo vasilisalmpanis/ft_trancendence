@@ -23,6 +23,7 @@ class Tournament(models.Model):
     name = models.CharField(max_length=50)
     description = models.TextField(default="let the games begin")
     max_players = models.IntegerField(default=20)
+    max_points = models.IntegerField(default=10)
     status = models.CharField(max_length=50, default='open')
     winner = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     games = models.ManyToManyField('pong.Pong', related_name='games')
@@ -40,6 +41,7 @@ def tournament_model_to_dict(tournament: Tournament) -> Dict[str, Any]:
         'name': tournament.name,
         'description': tournament.description,
         'max_players': tournament.max_players,
+        'max_points': tournament.max_points,
         'status': tournament.status,
         'winner': tournament.winner.id if tournament.winner else None,
         'created_at': tournament.created_at,

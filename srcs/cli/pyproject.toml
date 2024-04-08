@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "transcendence_cli"
+version = "0.1.0"
+description = "CLI client for the 42 ft_transendence full stack pong web project"
+authors = ["valmpani <vasilisalmpanis@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+websockets = "^12.0"
+
+[tool.poetry.scripts]
+pong_cli = 'transcendence_cli:main'
+
+[project.urls]
+Homepage = "https://github.com/vasilisalmpanis/ft_transendence"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -39,16 +39,9 @@ class PongView(View):
         @param user: User
         @return: JsonResponse with game schema
         """
-        if request.body != b'':
-            body = json.loads(request.body)
-            game_id = body.get('game_id', None)
-        else:
-            game_id = None
-        try :
-            if game_id is not None:
-                game = PongService.join_game(user, game_id)
-            else:
-                game = PongService.create_game(user)
+        try:
+            max_points = int(request.GET.get('max_points', 10))
+            game = PongService.create_game(user, max_points)
             return JsonResponse(game, status=201)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
