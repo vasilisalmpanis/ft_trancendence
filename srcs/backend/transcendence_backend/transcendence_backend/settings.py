@@ -14,7 +14,7 @@ from math import log
 from pathlib import Path
 import logging
 import base64
-from unittest.mock import DEFAULT
+import os
 
 logger = logging.getLogger(__name__)
 import environ
@@ -22,10 +22,18 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
-# with open("default.jpeg" , "rb") as image_file:
-#     image_data = image_file.read()
+def create_data_uri(image_data, mediatype='image/jpeg'):
+    base64_encoded_data = base64.b64encode(image_data).decode('utf-8')
+    data_uri = f'data:{mediatype};base64,{base64_encoded_data}'
+    return data_uri
 
-DEFAULT_AVATAR = b'aioughaiouh'
+# Read the default avatar image file
+with open("/data/backend/default.jpeg", "rb") as image_file:
+    default_avatar_image_data = image_file.read()
+
+# Prepend the image data with the appropriate data URI scheme
+base64_data = create_data_uri(default_avatar_image_data)
+DEFAULT_AVATAR = base64.b64decode(base64_data)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent

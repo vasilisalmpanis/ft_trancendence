@@ -2,6 +2,21 @@
  * Naive implementation of React-like library
  */
 
+const requestIdleCallback =
+      window.requestIdleCallback ||
+      function (cb) {
+        var start = Date.now()
+        return setTimeout(function () {
+          cb({
+            didTimeout: false,
+            timeRemaining: function () {
+              return Math.max(0, 50 - (Date.now() - start))
+            },
+          })
+        }, 1)
+  };
+
+
 const isEvent = key => key.startsWith("on");
 const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];

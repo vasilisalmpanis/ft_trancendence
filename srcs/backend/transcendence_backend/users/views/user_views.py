@@ -4,7 +4,7 @@ from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
 from transcendence_backend.decorators   import jwt_auth_required
-from ..models                           import User, FriendRequest
+from ..models                           import User, FriendRequest, user_model_to_dict
 from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
 from jwt                                import JWT
@@ -71,11 +71,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     """
     try:
         user = User.objects.get(id=id)
-        data = {
-            "user id" : user.id,
-            "username": user.username,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
-        }
+        data = user_model_to_dict(user)
         return JsonResponse(data, safe=False)
     except User.DoesNotExist:
         return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)

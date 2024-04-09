@@ -38,6 +38,7 @@ const Pong = (props) => {
 	let pr = 40;
 	let me = 'left';
 	let platformDirection = '';
+	let prevYCoordinate = null;
 	const keyPress = (ev) => {
 		if (ws && ws.readyState === WebSocket.OPEN) {
 			switch (ev.key) {
@@ -72,6 +73,25 @@ const Pong = (props) => {
 		document.removeEventListener('keyup', keyRelease);
 		ws && ws.close();
 		ws = null;
+	}
+	const touchMove = (ev) => {
+		const currentYCoordinate = ev.touches[0].clientY;
+		if (currentYCoordinate > prevYCoordinate && platformDirection !== 'down')
+		{
+			platformDirection = 'down';
+			ws.send(JSON.stringify({"message": "down", "d": me}));
+		}
+		else if (currentYCoordinate < prevYCoordinate && platformDirection !== 'up')
+		{
+			platformDirection = 'up';
+			ws.send(JSON.stringify({"message": "up", "d": me}));
+		}
+		prevYCoordinate = currentYCoordinate;
+	}
+
+	const touchEnd = (ev) => {
+		platformDirection = '';
+		ws.send(JSON.stringify({"message": "stop", "d": me}));
 	}
 	ftReact.useEffect(()=>{
 		if (!ws) {
@@ -114,6 +134,8 @@ const Pong = (props) => {
 				});
 				document.addEventListener('keydown', keyPress);
 				document.addEventListener('keyup', keyRelease);
+				document.addEventListener("touchmove", touchMove);
+				document.addEventListener("touchend", touchEnd);
 			}
 		};
 		return cleanup;
@@ -148,6 +170,7 @@ const Pong = (props) => {
 				width: "95%",
 				height: "95%",
 				position: "relative",
+				touchAction: "none",
 			}}>
 				<Score score={score}/>
 				<div id="ball" style={{

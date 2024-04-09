@@ -86,7 +86,7 @@ def handle_redir(request) -> JsonResponse:
         else:
             return JsonResponse({'status': 'Failed to fetch userdata'}, status=404)
     else:
-        return JsonResponse({'status': 'Failed to obtain access token'}, status=response.status_code)
+        return JsonResponse({'status': 'Failed to obtain access token'}, status=response_raw.status)
 
 def fetch_user_data(access_token):
     """

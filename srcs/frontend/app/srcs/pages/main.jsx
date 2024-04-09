@@ -44,6 +44,14 @@ const Main = (props) => {
 						{"Go to users"}
 					</button>
 				</div>
+				<div className="mb-3">
+					<button
+						className="btn btn-outline-primary w-100"
+						onClick={()=>props.route("/leaderboard")}
+					>
+						{"Go to Leaderboard"}
+					</button>
+				</div>
 			</div>
 		</BarLayout>
 	);
