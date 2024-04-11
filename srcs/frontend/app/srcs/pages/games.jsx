@@ -66,6 +66,8 @@ const Games = (props) => {
 		data = await apiClient.get("/games", {type: "pending"});
 		if (data.error)
 			setError(data.error);
+			if (data.error == 401)
+				props.route("/login");
 		else if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};

@@ -13,44 +13,18 @@ const Main = (props) => {
 					<h1>{C_MAIN_HEADER}</h1>
 				</div>
 				<div className="mb-3">
-					<button
-						className="btn btn-outline-primary w-100"
-						onClick={()=>props.route("/signin")}
-					>
-						{C_MAIN_LOGIN}
-					</button>
+					<button className="btn btn-primary" onClick={() => props.route("/signin")}>{C_MAIN_LOGIN}</button>
 				</div>
-				<div className="mb-3">
-					<button
-						className="btn btn-outline-primary w-100"
-						onClick={()=>props.route("/games")}
-					>
-						{"Go to games"}
-					</button>
-				</div>
-				<div className="mb-3">
-					<button
-						className="btn btn-outline-primary w-100"
-						onClick={()=>props.route("/tournaments")}
-					>
-						{"Go to tournaments"}
-					</button>
-				</div>
-				<div className="mb-3">
-					<button
-						className="btn btn-outline-primary w-100"
-						onClick={()=>props.route("/users")}
-					>
-						{"Go to users"}
-					</button>
-				</div>
-				<div className="mb-3">
-					<button
-						className="btn btn-outline-primary w-100"
-						onClick={()=>props.route("/leaderboard")}
-					>
-						{"Go to Leaderboard"}
-					</button>
+				<div className="mb-3 d-flex justify-content-center">
+					<div className="d-flex border border-secondary rounded p-5 mr-3"> {/* Added mr-3 for right margin */}
+						<h5>Running</h5>
+					</div>
+					<div className="d-flex border border-secondary rounded p-5 mr-3"> {/* Added mr-3 for right margin */}
+						<h5>Running</h5>
+					</div>
+					<div className="d-flex border border-secondary rounded p-5">
+						<h5>Running</h5>
+					</div>
 				</div>
 			</div>
 		</BarLayout>

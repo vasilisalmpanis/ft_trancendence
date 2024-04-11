@@ -1,11 +1,12 @@
-import ftReact		from "../ft_react";
-import { apiClient } from "../api/api_client";
-import BarLayout from "../components/barlayout";
+import ftReact									from "../ft_react";
+import { apiClient }							from "../api/api_client";
+import BarLayout								from "../components/barlayout";
 import { C_PROFILE_HEADER, C_PROFILE_USERNAME } from "../conf/content_en";
-import Alert from "../components/alert";
-import DeleteIcon from "../components/delete_icon";
-import EditIcon from "../components/edit_icon";
-import Avatar from "../components/avatar";
+import Alert									from "../components/alert";
+import DeleteIcon								from "../components/delete_icon";
+import EditIcon									from "../components/edit_icon";
+import Avatar									from "../components/avatar";
+import StatsLayout								from "../components/statslayout";
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
@@ -26,9 +27,6 @@ const ProfileCard = (props) => {
 	}
 	return (
 		<div className="card" style="width: 18rem;">
-			<div className="card-body">
-				<h5 className="card-title">{C_PROFILE_HEADER}</h5>
-			</div>
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -40,6 +38,7 @@ const ProfileCard = (props) => {
 					>
 						<div>
 						<Avatar img={img}/>
+						<h5 className="">{props.data.username}</h5>
 						<span
 							className="btn translate-middle rounded-pill position-absolute badge rounded-circle bg-primary"
 							style={{
@@ -77,7 +76,6 @@ const ProfileCard = (props) => {
 						<button type="submit" className="btn btn-outline-primary">Save</button>
 					</form>
 				</li>
-				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
 			</ul>
 		</div>
 	);
@@ -85,12 +83,25 @@ const ProfileCard = (props) => {
 
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
+	const [myStats, setMyStats] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
+	const getMyStats = async () => {
+		const data = await apiClient.get(`/users/${me.id}/stats`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !myStats)
+			setMyStats(data);
+	}
+	if (me && !myStats && !error)
+		getMyStats();
 	return (
 		<BarLayout route={props.route}>
 			{
-				me
-					? <ProfileCard data={me}/>
+				me && myStats
+					? 	<div className="d-flex">
+							<ProfileCard data={me}/>
+							<StatsLayout data={myStats}/>
+						</div>
 					: error
 						? <Alert msg={error}/>
 						: (

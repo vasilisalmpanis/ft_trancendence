@@ -1,4 +1,5 @@
 import './scss/styles.scss';
+import './styles/styles.css';
 import * as bootstrap	from 'bootstrap';
 import ftReact			from "./ft_react";
 import {Router, Route}	from "./router";
@@ -13,6 +14,7 @@ import Games			from './pages/games';
 import Tournaments		from './pages/tournaments';
 import Tournament		from './pages/tournament';
 import Leaderboard		from './pages/leaderboard';
+import User				from './pages/user';
 
 const A = (props) => <button onClick={(ev)=>props.route("/b")}>to B</button>
 const B = (props) => <button onClick={(ev)=>props.route("/a")}>to A</button>
@@ -21,7 +23,7 @@ const App = (props) => {
 	const [theme, setTheme] = useTheme();
 	setTheme("auto");
 	return (
-		<div style={{
+		<div className="" style={{
 			width: "100vw",
 			height: "90vh",
 		}}>
@@ -36,6 +38,7 @@ const App = (props) => {
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
 				<Route auth path="/tournament" element={<Tournament/>}/>
 				<Route auth path="/leaderboard" element={<Leaderboard/>}/>
+				<Route auth path="/user" element={<User/>}/>
 				<Route auth path="/a" element={<A/>}/>
 				<Route auth path="/b" element={<B/>}/>
 			</Router>

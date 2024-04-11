@@ -72,9 +72,9 @@ class StatService:
         if order not in ["asc", "desc"]:
             raise ValueError("Invalid order")
         if order == "asc":
-            users = Stats.objects.order_by("total_points")[skip:skip+limit]
+            users = Stats.objects.order_by("total_points").order_by('id')[skip:skip+limit]
         else:
-            users = Stats.objects.order_by("-total_points")[skip:skip+limit]
+            users = Stats.objects.order_by("-total_points").order_by('id')[skip:skip+limit]
         data = [
             StatService.get_stats(user.user)
             for user in users

@@ -11,12 +11,14 @@ import Avatar from "../components/avatar";
 const UserCard = (props) => {
 	return (
 		<div className="card mb-2" style="width: 18rem;">
-			<ul className="list-group list-group-flush">
-				<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3">
-					<Avatar img={props.data.avatar} size={"20%"}/>
-					<span>  {props.data.username}</span>
-				</li>
-			</ul>
+			<button className="btn" onClick={() => props.route("/user", props.data)}>
+				<ul className="list-group list-group-flush">
+					<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3">
+						<Avatar img={props.data.avatar} size={"20%"}/>
+						<span>  {props.data.username}</span>
+					</li>
+				</ul>
+			</button>
 		</div>
 	);
 }
@@ -40,7 +42,7 @@ const Users = (props) => {
 		<BarLayout route={props.route}>
 			{
 				users
-					? users.map(user => <UserCard data={user}/>)
+					? users.map(user => <UserCard data={user} route={props.route} user={user}/>)
 					: error
 						? <Alert msg={error}/>
 						: (
