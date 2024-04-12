@@ -25,7 +25,8 @@ const App = (props) => {
 	return (
 		<div className="" style={{
 			width: "100vw",
-			height: "90vh",
+			minHeight: "90vh",
+			display: "grid",
 		}}>
 			<Router>
 				<Route fallback auth path="/" element={<Main/>}/>

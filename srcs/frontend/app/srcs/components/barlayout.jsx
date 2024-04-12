@@ -1,5 +1,7 @@
 import ftReact		from "../ft_react";
 import Layout from "./layout";
+import Avatar from './avatar'
+
 
 const NavBar = (props) => {
 	return (
@@ -46,11 +48,14 @@ const NavBar = (props) => {
 								className="rounded-circle btn me-3 ms-auto"
 							>
 								<img
-									src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"						
+									src={props.me.avatar.replace("data", "data:").replace("base64", ";base64,")}
+									style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
 									alt="profile"
 									width="30"
 								></img>
 							</button>
+
+					{/* <Avatar img={props.me.avatar} size="50px"/> */}
 					{/* <h5 className="mx-auto">{props.me.username}</h5> */}
 				</div>
 			</div>
@@ -65,7 +70,7 @@ const BarLayout = (props) => {
 	return (
 			<div className="h-100">
 				<NavBar route={props.route} me={me}/>
-				{/* <Avatar img={me.avatar} size="50px"/>	 */}
+				{/* <Avatar img={me.avatar}/>	 */}
 				<Layout>
 					{props.children}
 				</Layout>

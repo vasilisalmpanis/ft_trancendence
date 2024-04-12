@@ -201,6 +201,7 @@ class FiberNode {
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
     if (this.dom && domParent.contains(this.dom)) {
+      console.log(domParent, this.dom);
       domParent.removeChild(this.dom);
       this.dom = null;
       //this.deleteFromFiber();

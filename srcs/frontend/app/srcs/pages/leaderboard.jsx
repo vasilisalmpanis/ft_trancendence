@@ -41,9 +41,9 @@ const LeaderboardCard = (props) => {
 const Leaderboard = (props) => {
     const [error, setError] = ftReact.useState(null);
     const [order, setOrder] = ftReact.useState("desc");
-    const [limit, setLimit] = ftReact.useState(10);
+    const [limit, setLimit] = ftReact.useState(2);
     const [lbItems, setLbItems] = ftReact.useState(null);
-    let skip = 0;
+    const [skip, setSkip] = ftReact.useState(0);
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
@@ -54,9 +54,9 @@ const Leaderboard = (props) => {
             temp.push(user);
         }
         setLbItems(data.map(player => <LeaderboardCard data={player} users={temp} route={props.route}/>));
+        setSkip(skip + limit);
     }
     const updateLeaderBoard = async () => {
-        skip += limit;
         console.log(skip);
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
         let temp = [];
@@ -65,10 +65,8 @@ const Leaderboard = (props) => {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
             temp.push(user);
         }
-        await updateLbItems(data, temp);
-    }
-    const updateLbItems = async (data, temp) => {
-        setLbItems([...lbItems, ...data.map(player => <LeaderboardCard data={player} users={temp} route={props.route}/>)]);     
+        setLbItems([...lbItems, ...data.map(player => <LeaderboardCard data={player} users={temp} route={props.route}/>)]);
+        setSkip(skip + limit);
     }
     if (!lbItems && !error)
         getLeaderboard();
