@@ -6,9 +6,11 @@ import Alert from "../components/alert";
 import DeleteIcon from "../components/delete_icon";
 import EditIcon from "../components/edit_icon";
 import Avatar from "../components/avatar";
+import QR from "../qr";
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
+	const [tfa, setTfa] = ftReact.useState("");
 	const updateMe = async () => {
 		if (img && img instanceof Blob) {
 			console.log("update");
@@ -78,6 +80,41 @@ const ProfileCard = (props) => {
 					</form>
 				</li>
 				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
+				<li className="list-group-item">
+					{
+						localStorage.getItem('2fa') === 'true'
+							? <button
+								className="btn btn-outline-primary"
+								onClick={
+									async ()=>{
+										const res = await apiClient.delete("/2fa");
+										if (res.error)
+											console.log(res)
+										else
+											localStorage.setItem("2fa", false)
+									}
+								}
+							>
+								Disable 2FA
+							</button>
+							: <button
+								className="btn btn-outline-primary"
+								onClick={
+									async ()=>{
+										//QR("HELLOWORLD");
+										const res = await apiClient.post("/2fa");
+										if (res.error)
+											console.log(res);
+										else if (res.secret) {
+											console.log(res);
+										}
+									}
+								}
+							>
+								Enable 2FA
+							</button>
+					}
+				</li>
 			</ul>
 		</div>
 	);

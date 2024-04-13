@@ -108,11 +108,18 @@ class ApiClient {
     this.headers['Authorization'] = `Bearer ${access_token}`;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
+    if (!JSON.parse(atob(access_token.split(".")[1]))["is_authenticated"])
+    {
+      localStorage.setItem('2fa', true);
+      return {"ok": "2fa"}
+    } else {
+      localStorage.setItem('2fa', false);
+    }
     const me = await this.get("/users/me");
     if (me.error)
       return me;
     localStorage.setItem("me", JSON.stringify(me));
-    return {"ok": true};
+    return {"ok": "true"};
   }
 
   unauthorize () {

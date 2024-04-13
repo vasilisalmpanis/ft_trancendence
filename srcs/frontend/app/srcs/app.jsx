@@ -12,9 +12,7 @@ import Users			from './pages/users';
 import Games			from './pages/games';
 import Tournaments		from './pages/tournaments';
 import Tournament		from './pages/tournament';
-
-const A = (props) => <button onClick={(ev)=>props.route("/b")}>to B</button>
-const B = (props) => <button onClick={(ev)=>props.route("/a")}>to A</button>
+import TFA				from './pages/2fa';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -34,8 +32,7 @@ const App = (props) => {
 				<Route auth path="/games" element={<Games/>}/>
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
 				<Route auth path="/tournament" element={<Tournament/>}/>
-				<Route auth path="/a" element={<A/>}/>
-				<Route auth path="/b" element={<B/>}/>
+				<Route auth path="/2fa" element={<TFA/>}/>
 			</Router>
 		</div>
 	);
