@@ -123,15 +123,7 @@ def get_or_create_user(user_data):
         if not user_data['login'] or not user_data['email']:
             return None
         try:
-            user = User.objects.create_user(
-                username=user_data['login'], 
-                email=user_data['email'],
-                password=settings.RANDOM_OAUTH_USER_PASSWORD,
-                is_staff=False,
-                is_superuser=False,
-                ft_intra_id=user_data['id'],
-            )
-            Stats.objects.create(user=user)
+            UserService.create_user(user_data['login'], user_data['email'], user_data['id'])
         except Exception as e:
             logger.error(f'Failed to create user: {e}')
             return None
