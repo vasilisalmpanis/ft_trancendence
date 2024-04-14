@@ -4,7 +4,7 @@ from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils               import timezone
-from .                          import User
+from .                          import User, user_model_to_dict
 import logging
 
 logger = logging.getLogger(__name__)
@@ -28,8 +28,8 @@ def friend_request_model_to_dict(friend_request : FriendRequest) -> dict[Any, An
     """
     return {
         "id": friend_request.id,
-        "sender_id": friend_request.sender.id,
-        "receiver_id": friend_request.receiver.id,
+        "sender": user_model_to_dict(friend_request.sender, avatar=False),
+        "receiver": user_model_to_dict(friend_request.receiver, avatar=False),
         "message": friend_request.message,
         "status": friend_request.status
     }

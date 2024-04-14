@@ -1,14 +1,11 @@
 from channels.generic.websocket     import AsyncWebsocketConsumer
 from channels.db                    import database_sync_to_async
-from users.models                   import User, user_model_to_dict
 from datetime                       import datetime
 from threading                      import Lock
 from typing                         import Dict, TypeVar, List
-from .models                        import Chat, Message
-from pong.models                    import Pong
+from .models                        import Chat
 from tournament.models              import Tournament
 from .services                      import MessageService
-from logging                        import Logger
 
 
 import json

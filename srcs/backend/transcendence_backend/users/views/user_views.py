@@ -70,8 +70,8 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     User must be authenticated to receive data
     """
     try:
-        user = User.objects.get(id=id)
-        data = user_model_to_dict(user)
+        user_element = User.objects.get(id=id)
+        data = user_model_to_dict(user_element, me=user)
         return JsonResponse(data, safe=False)
     except User.DoesNotExist:
         return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
@@ -84,12 +84,8 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
     User must be authenticated to receive data
     """
     try:
-        user = User.objects.get(username=username)
-        data = {
-            "user id" : user.id,
-            "username": user.username,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
-        }
+        user_element = User.objects.get(username=username)
+        data = user_model_to_dict(user_element, me=user)
         return JsonResponse(data, safe=False)
     except User.DoesNotExist:
         return JsonResponse({"error" : "User Doesn't Exist"}, status=404)

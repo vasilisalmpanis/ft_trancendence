@@ -1,5 +1,5 @@
 from django.db 				import models
-from users.models			import User
+from users.models			import User, user_model_to_dict
 from django.utils			import timezone
 from typing					import Dict, Any
 
@@ -17,11 +17,11 @@ class Pong(models.Model):
 		verbose_name = 'Pong'
 
 
-def pong_model_to_dict(pong : Pong) -> Dict[Any, Any]:
+def pong_model_to_dict(pong : Pong, me: User | None = None) -> Dict[Any, Any]:
 	return {
 		'id': pong.id,
-		'player1': pong.player1.username,
-		'player2': pong.player2.username if pong.player2 is not None else None,
+		'player1': user_model_to_dict(pong.player1, me=me),
+		'player2': user_model_to_dict(pong.player2, me=me) if pong.player2 is not None else None,
 		'status': pong.status,
 		'score1': pong.score1,
 		'score2': pong.score2,
