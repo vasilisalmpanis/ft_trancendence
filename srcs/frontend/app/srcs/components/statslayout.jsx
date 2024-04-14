@@ -2,7 +2,7 @@ import ftReact from "../ft_react";
 
 const StatsLayout = (props) => {
 	return (
-		<div className="card ml-2" style="width: 18rem;">
+		<div className="card ml-2 h-100" style="width: 18rem;">
 			<div className="card-body">
 				<h5 className="card-title">My Stats</h5>
 			</div>
@@ -18,4 +18,4 @@ const StatsLayout = (props) => {
 
 }
 
-export default StatsLayout;
+export default StatsLayout;	

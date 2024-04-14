@@ -27,7 +27,10 @@ const RouterIn = (props) => {
 	const [path, route, startListening] = useRouter();
 	startListening();
 	let child = props.routes.find(
-		route => route.props.path && route.props.path === path
+		route => //route.props.path && path === route.props.path
+		{
+			console.log(route.props.path, path, path.startsWith(route.props.path));
+			return route.props.path && path.startsWith(route.props.path)}
 	) || null;
 	const login =
 		props.routes.find(route => route.props.login)
@@ -54,6 +57,7 @@ const RouterIn = (props) => {
 
 export const Router = (props) => {
 	const routes = props.children.filter(ch=>ch.props.path);
+	console.log(routes);
 	return (
 		<RouterIn routes={routes}>
 			{props.children}

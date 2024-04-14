@@ -1,6 +1,6 @@
-import './scss/styles.scss';
-import './styles/styles.css';
 import * as bootstrap	from 'bootstrap';
+import './scss/styles.scss';
+// import './styles/styles.css';
 import ftReact			from "./ft_react";
 import {Router, Route}	from "./router";
 import Main 			from './pages/main';
@@ -29,7 +29,6 @@ const App = (props) => {
 			display: "grid",
 		}}>
 			<Router>
-				<Route fallback auth path="/" element={<Main/>}/>
 				<Route login path="/signin" element={<Signin/>}/>
 				<Route path="/signup" element={<Signup/>}/>
 				<Route auth path="/me" element={<Profile/>}/>
@@ -42,6 +41,7 @@ const App = (props) => {
 				<Route auth path="/user" element={<User/>}/>
 				<Route auth path="/a" element={<A/>}/>
 				<Route auth path="/b" element={<B/>}/>
+				<Route fallback auth path="/" element={<Main/>}/>
 			</Router>
 		</div>
 	);

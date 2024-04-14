@@ -26,7 +26,7 @@ const ProfileCard = (props) => {
 		}
 	}
 	return (
-		<div className="card" style="width: 18rem;">
+		<div className="card justify-content-center" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -81,9 +81,60 @@ const ProfileCard = (props) => {
 	);
 }
 
+const IncomingRequests = (props) => {
+	return (
+		<div className="card" style="width: 20rem;">
+			<ul className="list-group list-group-flush">
+				<li className="list-group-item">
+					<h5 className="card-title">Friend Requests</h5>
+				</li>
+				{
+					props.data.map((request, i) => {
+						return (
+							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.data}/>
+						);
+					})
+				}
+			</ul>
+		</div>
+	);
+
+}
+
+const FriendRequestLayout = (props) => {
+	const acceptRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
+		if (data.error)
+			console.log(data.error);
+		else {
+			props.setter(null);
+		}
+	};
+
+	const declineRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
+		if (data.error)
+			console.log(data.error);
+		else {
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
+		}
+	};
+	return (
+		<li key={props.i} className="list-group-item d-flex">
+				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
+					<h5>From:</h5>
+					<h5 className="">{props.request.receiver.username}</h5>
+					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
+					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
+				</div>
+		</li>
+	)
+}
+
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
 	const [myStats, setMyStats] = ftReact.useState(null);
+	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
 	const getMyStats = async () => {
 		const data = await apiClient.get(`/users/${me.id}/stats`);
@@ -92,23 +143,33 @@ const Profile = (props) => {
 		else if (data && !myStats)
 			setMyStats(data);
 	}
+	const getIncomingRequests = async () => {
+		const data = await apiClient.get(`/friendrequests/incoming`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !incomingRequests)
+			setIncomingRequests(data);
+	}
 	if (me && !myStats && !error)
 		getMyStats();
+	if (me && !incomingRequests && !error)
+		getIncomingRequests();
 	return (
 		<BarLayout route={props.route}>
 			{
-				me && myStats
-					? 	<div className="d-flex">
-							<ProfileCard data={me}/>
-							<StatsLayout data={myStats}/>
+				me && myStats && incomingRequests
+					? 	<div className="d-flex gap-5">
+							<div>
+								<ProfileCard data={me}/>
+							</div>
+							<div>
+								<StatsLayout data={myStats}/>
+							</div>
+							<div>
+								<IncomingRequests data={incomingRequests} setter={setIncomingRequests}/>
+							</div>
 						</div>
-					: error
-						? <Alert msg={error}/>
-						: (
-							<div className="spinner-grow" role="status">
-								<span className="visually-hidden">Loading...</span>
-				  			</div>
-						)
+					: 	"Loading..."
 			}
 		</BarLayout>
 	);
