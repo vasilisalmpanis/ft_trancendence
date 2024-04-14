@@ -31,10 +31,10 @@ class TournamentService:
         @param tournament_id: int
         """
         tournament = Tournament.objects.get(id=tournament_id)
-        if tournament.status != 'open':
+        if tournament.status != 'open' and tournament.status != 'locked':
             raise Exception("Tournament is closed")
-        if not Tournament.objects.filter(players=user, status='open').exists():
-            raise Exception("User not in a tournament")
+        # if not Tournament.objects.filter(players=user, status='open').exists():
+        #     raise Exception("User not in a tournament")
         tournament.players.remove(user)
         tournament.save()
         data = tournament_model_to_dict(tournament)

@@ -39,15 +39,21 @@ class ApiClient {
   }
 
   async proceedResponse(response) {
+    let data = await response.json();
     if (response.ok)
     {
-      let data = await response.json();
       if (data.message)
         return {error: data.message};
       return data;
     }
     else
+    {
+      if (data.Error)
+      return {error: data.Error};
+      else if (data.status)
+        return {error: data.status};
       return {error: response.status}
+    }
   }
 
   async sendRequest (path, method, body, query) {
@@ -112,8 +118,6 @@ class ApiClient {
     {
       localStorage.setItem('2fa', true);
       return {"ok": "2fa"}
-    } else {
-      localStorage.setItem('2fa', false);
     }
     const me = await this.get("/users/me");
     if (me.error)

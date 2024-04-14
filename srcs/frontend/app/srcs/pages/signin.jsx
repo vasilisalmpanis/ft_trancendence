@@ -47,7 +47,7 @@ const Signin = (props) => {
 		});
 		if (resp) {
 			if (resp.error)
-				setError
+				setError(resp.error);
 			else if (resp["ok"] === "true")
 				props.route("/");
 			else if (resp["ok"] === "2fa")

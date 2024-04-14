@@ -165,7 +165,8 @@ class TournamentRunner(AsyncConsumer):
                 if self._tournaments[group]['stragler']:
                     all_users.insert(0, self._tournaments[group]['stragler'])
                 pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
-                self._tournaments[group]['games'] = await self.create_games(group.removesuffix('t_'), pairs)
+                self._tournaments[group]['games'] = await self.create_games(group.removeprefix('t_'), pairs)
+                logger.warn(self._tournaments[group]['games'])
                 await self.channel_layer.group_send(
                     group,
                     {
@@ -177,7 +178,7 @@ class TournamentRunner(AsyncConsumer):
                 )
 
     async def status_update(self, event):
-        gid = event['gid']
+        gid = 't_' + event['gid']
         name = event['name']
         if gid in self._tournaments:
             await self.channel_layer.send(

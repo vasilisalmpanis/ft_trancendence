@@ -62,7 +62,7 @@ const Games = (props) => {
 	const getGames = async () => {
 		let data = await apiClient.get("/games", {type: "paused", me: true});
 		if (data.length)
-			props.route("/pong", {game_id: data[0].id});
+			props.route("/pong", {game_id: data[0].id, from: "/games"});
 		data = await apiClient.get("/games", {type: "pending"});
 		if (data.error)
 			setError(data.error);

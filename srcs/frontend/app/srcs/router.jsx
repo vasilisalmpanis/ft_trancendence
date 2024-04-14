@@ -6,6 +6,11 @@ const useRouter = () => {
 	window.onpopstate = (ev) => console.log(ev);
 	const route = (newPath, state) => {
 		if (newPath !== window.location.pathname) {
+			//if (!state && window.history.state && window.history.prevState)
+			//	state = window.history.state.prevState;
+			//else if (!state)
+			//	state = {};
+			//state.prevState = state;
 			window.history.pushState(state, '', newPath);
 			setPath(newPath);
 		}

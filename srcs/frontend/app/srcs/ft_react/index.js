@@ -364,8 +364,11 @@ class FTReact {
     actions.forEach(action => {
       hook.state = action instanceof Function ? action(hook.state) : action;
     });
+    // console.log("render", node.type instanceof Function ? node.type.name: node.type, hook);
+    // console.log("rndr", hook, oldHook);
     const setState = action => {
       hook.queue.push(action);
+      // console.log("setState", hook, oldHook);
       this._scheduleUpdate(node);
     };
     node.states[node.stId] = hook;
