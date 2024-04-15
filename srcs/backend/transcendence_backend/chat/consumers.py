@@ -15,6 +15,7 @@ import json
 T = TypeVar('T')
 class SingletonMeta(type):
 	_instances: Dict[type[T], T] = {}
+
 	_lock: Lock = Lock()
 
 	def __call__(cls: type[T], *args, **kwargs) -> T:
@@ -28,6 +29,7 @@ class SingletonMeta(type):
 
 class DirectMessageChatroomManager(metaclass=SingletonMeta):
     rooms: Dict[str, Dict[str, any]] = {}
+    users: Dict[str, Dict[str, any]] = {}
 
     def get_chat_ids(self, user_id: int) -> List[int]:
         """
@@ -37,48 +39,52 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         user_chat_ids.append(0) # global chat
         return user_chat_ids
 
-    def add_user_to_authorized_rooms(self, user_id: int, username: str, channel_name: str, chat_ids: List[int]):
+    def add_user(self, user_id: int, username: str, channel_name: str, chat_ids: List[int]):
         """
-        Adds a channel to a room.
+        Adds a channel to rooms and users list.
         """
+        self.users.setdefault(user_id, {})
+        self.users[user_id]['username'] = username
+        self.users[user_id]['channel_name'] = channel_name
         for chat_id in chat_ids:
             self.init_room(chat_id)
-            self.register_user_in_room(chat_id, channel_name, user_id, username)
+            self.add_participant_to_room(chat_id, user_id, channel_name)
 
     def init_room(self, chat_id: str):
         """
-        Initializes a room in the manager with chat_id and chat name (from db)
+        Initializes or updates a room in the manager with chat_id and chat name
         """
         if chat_id != 0:
             chat = Chat.objects.filter(id=chat_id).first()
-        if chat_id not in self.rooms.keys():
-            self.rooms.setdefault(chat_id, {})
-            if chat_id == 0:
-                self.rooms[chat_id]['name'] = 'global'
-            else:
-                self.rooms[chat_id]['name'] = chat.name;
+        self.rooms.setdefault(chat_id, {})
+        if chat_id == 0:
+            self.rooms[chat_id]['name'] = 'global'
+        else:
+            self.rooms[chat_id]['name'] = chat.name;
 
-    def register_user_in_room(self, chat_id: str, channel_name: str, user_id: str, username: str):
+    def add_participant_to_room(self, chat_id: str, user_id: str, channel_name: str):
         """
         Adds or updates user channel in room
         """
         if 'participants' not in self.rooms[chat_id]:
             self.rooms[chat_id]['participants'] = []
         for participant in self.rooms[chat_id]['participants'].copy():
-            if participant['username'] == username:
+            if participant.get('user_id') == user_id:
                 self.rooms[chat_id]['participants'].remove(participant)
-        self.rooms[chat_id]['participants'].append({'user_id': user_id, 'username': username, 'channel_name': channel_name})
+        self.rooms[chat_id]['participants'].append({'user_id': user_id, 'channel_name': channel_name})
 
-    def remove_user_from_rooms(self, chat_ids: List[int], channel_name: str):
+    def remove_user(self, chat_ids: List[int], user_id: int):
         """
-        Removes user from chatroom in manager and removes room if empty
+        Removes user from rooms and users and removes room if empty
         """
+        if user_id in self.users:
+            del self.users[user_id]
         for chat_id in chat_ids:
             if chat_id in self.rooms:
                 for participant in self.rooms[chat_id]['participants']:
-                    if participant.get('channel_name') == channel_name:
+                    if participant.get('user_id') == user_id:
                         self.rooms[chat_id]['participants'].remove(participant)
-                if not self.rooms[chat_id]['participants']:
+                if not self.rooms[chat_id]['participants'] and chat_id != 0:
                     del self.rooms[chat_id]
 
     def get_online_friends_ids(self, user: User) -> List[int]:
@@ -86,7 +92,6 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         Returns a list of online friends for user
         """
         friends_ids = list(user.friends.values_list('id', flat=True))
-        print
         online_friends_ids = []
         for participant in self.rooms[0]['participants']:
                 if participant['user_id'] in friends_ids:
@@ -100,24 +105,11 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         friends_ids = list(user.friends.values_list('id', flat=True))
         return list(friends_ids)
 
-    def update_rooms_dict(self, chat_id: str):
+    def update_room_dict(self, chat_id: str):
         """
         Updates the rooms dict if a new chat is created while users are connected
         """
         self.init_room(chat_id)
-        participants = Chat.objects.filter(id=chat_id).first().participants.all()
-
-    def update_rooms_participants(self, chat_id: str, usernames: List[str], channel_names: List[str]):
-        """
-        Updates the participants in the room
-        """
-        if self.rooms.get(chat_id) is None:
-            return
-        if 'participants' not in self.rooms[chat_id]:
-            self.rooms[chat_id]['participants'] = []
-        for parti
-        self.rooms[chat_id]['participants'] = participants
-
 
 class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
@@ -126,7 +118,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
         self.chat_ids = await database_sync_to_async(self._chats.get_chat_ids)(self.scope['user'].id)
-        await database_sync_to_async(self._chats.add_user_to_authorized_rooms)(
+        await database_sync_to_async(self._chats.add_user)(
             self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
 
         for chat_id in self.chat_ids:
@@ -136,18 +128,14 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'type': 'status_update',
                 'status': 'connected',
                 'sender_id': self.scope['user'].id,
-                'sender_name': self.scope['user'].username,
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                'sender_name': self.scope['user'].username
             })
-
         active_friends = await database_sync_to_async(self._chats.get_online_friends_ids)(self.scope['user'])
         await self.send(text_data=json.dumps({
                 'type': 'update_for_connecting_client',
                 'status': 'connected',
-                'active_friends_ids': active_friends,
-                'connected_chat_ids': list(self.chat_ids),
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }))
+                'active_friends_ids': active_friends
+                }))
 
     async def disconnect(self, close_code):
         """
@@ -157,31 +145,26 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'status_update',
                 'status': 'disconnected',
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'sender_id': self.scope['user'].id,
                 'sender_name': self.scope['user'].username
-            })
-        self._chats.remove_user_from_rooms(self.chat_ids, self.channel_name)
+                })
+        self._chats.remove_user(self.chat_ids, self.scope['user'].id)
         for chat_id in self.chat_ids:
             await self.channel_layer.group_discard(str(chat_id), self.channel_name)
         await self.close()
 
     async def receive(self, text_data):
         """
-        On receiving messages from client, create message and send to group
-        plain messages are additionaly saved to db
+        On receiving messages from client, send to group. additionaly create plain_message in db
         """
         text_data_json = json.loads(text_data)
         if text_data_json['type'] == 'plain_message':
             if text_data_json['chat_id'] == "0":
                 return
             # if chat_id is not in rooms, update rooms list and add both users to the room
-            if self._chats.rooms.get(text_data_json['chat_id']) is None:
-                await database_sync_to_async(self._chats.update_rooms_dict)(
-                    text_data_json['chat_id'], 
-                    [self.channel_name, text_data_json['receiver_channel_name']], 
-                    [self.scope['user'].username, text_data_json['receiver_name']]
-                    )
+            # if self._chats.rooms.get(text_data_json['chat_id']) is None:
+            #     await database_sync_to_async(self._chats.update_rooms_dict)(text_data_json['chat_id'])
+            #     self.channel_layer.group_add(text_data_json['chat_id'], self.channel_name)
             try:
                 message = await database_sync_to_async(MessageService.create_message)(
                                     self.scope['user'], 
