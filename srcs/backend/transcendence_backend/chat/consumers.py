@@ -50,12 +50,28 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
             self.init_room(chat_id)
             self.add_participant_to_room(chat_id, user_id, channel_name)
 
+    def remove_user(self, chat_ids: List[int], user_id: int):
+        """
+        Removes user from rooms and users and removes room if empty
+        """
+        if user_id in self.users:
+            del self.users[user_id]
+        for chat_id in chat_ids:
+            if chat_id in self.rooms:
+                for participant in self.rooms[chat_id]['participants']:
+                    if participant.get('user_id') == user_id:
+                        self.rooms[chat_id]['participants'].remove(participant)
+                if not self.rooms[chat_id]['participants'] and chat_id != 0:
+                    del self.rooms[chat_id]
+
     def init_room(self, chat_id: str):
         """
         Initializes or updates a room in the manager with chat_id and chat name
         """
         if chat_id != 0:
             chat = Chat.objects.filter(id=chat_id).first()
+            if not chat:
+                return
         self.rooms.setdefault(chat_id, {})
         if chat_id == 0:
             self.rooms[chat_id]['name'] = 'global'
@@ -73,43 +89,32 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
                 self.rooms[chat_id]['participants'].remove(participant)
         self.rooms[chat_id]['participants'].append({'user_id': user_id, 'channel_name': channel_name})
 
-    def remove_user(self, chat_ids: List[int], user_id: int):
-        """
-        Removes user from rooms and users and removes room if empty
-        """
-        if user_id in self.users:
-            del self.users[user_id]
-        for chat_id in chat_ids:
-            if chat_id in self.rooms:
-                for participant in self.rooms[chat_id]['participants']:
-                    if participant.get('user_id') == user_id:
-                        self.rooms[chat_id]['participants'].remove(participant)
-                if not self.rooms[chat_id]['participants'] and chat_id != 0:
-                    del self.rooms[chat_id]
-
-    def get_online_friends_ids(self, user: User) -> List[int]:
+    def get_friends_ids(self, user: User, filter: str) -> List[int]:
         """
         Returns a list of online friends for user
         """
         friends_ids = list(user.friends.values_list('id', flat=True))
-        online_friends_ids = []
-        for participant in self.rooms[0]['participants']:
-                if participant['user_id'] in friends_ids:
-                    online_friends_ids.append(participant['user_id'])
-        return online_friends_ids
+        if filter == 'all':
+            return friends_ids
+        elif filter == 'online':
+            online_friends_ids = []
+            for participant in self.rooms[0]['participants']:
+                    if participant['user_id'] in friends_ids:
+                        online_friends_ids.append(participant['user_id'])
+            return online_friends_ids
 
-    def get_all_friends_ids(self, user: User) -> List[int]:
-        """
-        Returns a list of all friends for user
-        """
-        friends_ids = list(user.friends.values_list('id', flat=True))
-        return list(friends_ids)
-
-    def update_room_dict(self, chat_id: str):
+    def update_rooms_dict(self, chat_id: str):
         """
         Updates the rooms dict if a new chat is created while users are connected
         """
         self.init_room(chat_id)
+        if chat_id != 0:
+            chat = Chat.objects.filter(id=chat_id).first()
+            if not chat:
+                return
+            for participant in chat.participants.all():
+                if participant.id in self.users:
+                    self.add_participant_to_room(chat_id, participant.id, self.users[participant.id]['channel_name'])
 
 class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
@@ -130,7 +135,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'sender_id': self.scope['user'].id,
                 'sender_name': self.scope['user'].username
             })
-        active_friends = await database_sync_to_async(self._chats.get_online_friends_ids)(self.scope['user'])
+        active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
         await self.send(text_data=json.dumps({
                 'type': 'update_for_connecting_client',
                 'status': 'connected',
@@ -155,16 +160,20 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         """
-        On receiving messages from client, send to group. additionaly create plain_message in db
+        On receiving messages from client, send to group.
+        create plain_message in db
+        update rooms dict if chat_id for new message is not in rooms
         """
         text_data_json = json.loads(text_data)
         if text_data_json['type'] == 'plain_message':
             if text_data_json['chat_id'] == "0":
                 return
             # if chat_id is not in rooms, update rooms list and add both users to the room
-            # if self._chats.rooms.get(text_data_json['chat_id']) is None:
-            #     await database_sync_to_async(self._chats.update_rooms_dict)(text_data_json['chat_id'])
-            #     self.channel_layer.group_add(text_data_json['chat_id'], self.channel_name)
+            if self._chats.rooms.get(text_data_json['chat_id']) is None:
+                await database_sync_to_async(self._chats.update_rooms_dict)(text_data_json['chat_id'])
+                if self._chats.rooms.get(text_data_json['chat_id']) is not None:
+                    for participant in self._chats.rooms[text_data_json['chat_id']]['participants']:
+                        self.channel_layer.group_add(text_data_json['chat_id'], participant['channel_name'])
             try:
                 message = await database_sync_to_async(MessageService.create_message)(
                                     self.scope['user'], 
@@ -207,7 +216,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     async def plain_message(self, event):
         if self.scope['user'].id == event['sender_id']:
             return
-
         await self.send(text_data=json.dumps({
             'type': 'plain_message',
             'chat_id': event['chat_id'],
@@ -220,7 +228,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
 
     async def status_update(self, event):
-        friends = await database_sync_to_async(self._chats.get_all_friends_ids)(self.scope['user'])
+        friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'all')
         if event['sender_id'] not in friends or self.scope['user'].id == event['sender_id']:
             return
         await self.send(text_data=json.dumps({
