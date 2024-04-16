@@ -4,6 +4,9 @@ from typing         import Dict, Any, List
 from .models        import Pong, pong_model_to_dict    
 from users.models   import User, user_model_to_dict
 from django.db.models import Q
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def join_game(user , game_id : int):
@@ -151,25 +154,26 @@ class PongService:
         @param game_id: int
         @return: JsonResponse with game schema
         """
+        score1 = 0
+        score2 = 0
         if result is not None:
             score1 = result['s1']
             score2 = result['s2']
-            left = result['left']
-            right = result['right']
-        else:
-            score1 = 0
-            score2 = 0
-            left = None
-            right = None
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
             raise Exception('Game not found')
         if game.player2 is None:
             raise Exception('Game is not full')
+        if game.status != 'finished' and score1 < game.max_score and score2 < game.max_score:
+            game.delete()
+            return pong_model_to_dict(game)
+        if game.status == 'finished':
+            return pong_model_to_dict(game)
         game.score1 = score1
         game.score2 = score2
         game.status = 'finished'
         game.save()
+        logger.warn(f'Game {game_id} finished with score {score1} - {score2}')
         if score1 > score2:
             return user_model_to_dict(game.player1, avatar=False)
         elif score1 < score2:

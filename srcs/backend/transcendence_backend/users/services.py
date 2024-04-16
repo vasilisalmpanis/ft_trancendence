@@ -330,6 +330,7 @@ class FriendRequestService:
         :param request_id: int
         :return: bool
         """
+        logger.warn("Accepting friend request %d", request_id)
         friend_request = FriendRequest.objects.get(id=request_id, receiver=user)
         if not friend_request:
             raise Exception("Friend request does not exist")

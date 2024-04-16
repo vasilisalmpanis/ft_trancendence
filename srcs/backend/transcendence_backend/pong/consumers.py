@@ -255,41 +255,44 @@ class PongRunner(AsyncConsumer):
 			logger.error(f"Error: {e}")
   
 	async def stop_game(self, message: ControlMsg) -> None:
-		gid = message['gid']
-		status = message.get('data', None)
-		if gid == '':
-			return
-		if gid not in self._games:
-			await sync_to_async(PongService.finish_game)(int(gid))
-			return
-		result = self._games[gid].get_results()
-		winner = await database_sync_to_async(PongService.finish_game)(int(gid), result)
-		await database_sync_to_async(StatService.set_stats)(result['left'],
-													  		result['right'],
-															result['s1'],
-																result['s2'])
-		if not status and gid in self._games:
-			await self.channel_layer.group_send(
-							gid,
-							{
-								'type': 'update.game.state',
-								'text': json.dumps({"status": "Game over"}),
-							}
-						)
-			await self.channel_layer.send(
-				'tournament_runner',
-				{
-					'type': 'game.finished',
-					'gid': gid,
-					'data' : result,
-					'winner' : winner
-				}
-			)
-		if gid in self._games:
-			self._tasks[gid].cancel()
-			del self._tasks[gid]
-			del self._games[gid]
-			self.channel_layer
+		try:
+			gid = message['gid']
+			status = message.get('data', None)
+			if gid == '':
+				return
+			if gid not in self._games:
+				await database_sync_to_async(PongService.finish_game)(int(gid), result=None)
+				return
+			result = self._games[gid].get_results()
+			winner = await database_sync_to_async(PongService.finish_game)(int(gid), result=result)
+			await database_sync_to_async(StatService.set_stats)(result['left'],
+																result['right'],
+																result['s1'],
+																	result['s2'])
+			if not status and gid in self._games:
+				await self.channel_layer.group_send(
+								gid,
+								{
+									'type': 'update.game.state',
+									'text': json.dumps({"status": "Game over"}),
+								}
+							)
+				await self.channel_layer.send(
+					'tournament_runner',
+					{
+						'type': 'game.finished',
+						'gid': gid,
+						'data' : result,
+						'winner' : winner
+					}
+				)
+			if gid in self._games:
+				self._tasks[gid].cancel()
+				del self._tasks[gid]
+				del self._games[gid]
+				self.channel_layer
+		except Exception as e:
+			logger.warn(f"Error: {e}")
 
 	async def update_platform(self, data: ControlMsg) -> None:
 		'''Moves platforms in game'''
