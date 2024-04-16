@@ -201,7 +201,6 @@ class FiberNode {
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
     if (this.dom && domParent.contains(this.dom)) {
-      console.log(domParent, this.dom);
       domParent.removeChild(this.dom);
       this.dom = null;
       //this.deleteFromFiber();
@@ -243,8 +242,8 @@ class FiberNode {
     //Remove old or changed event listeners
     Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props) || isNew(oldProps, this.props)(key)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
+      //console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.removeEventListener(eventType, oldProps[name]);
-      4;
     });
 
     // Remove old properties
@@ -277,6 +276,7 @@ class FiberNode {
     // Add event listeners
     Object.keys(this.props).filter(isEvent).filter(isNew(oldProps, this.props)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
+      //console.log("     addEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.addEventListener(eventType, this.props[name]);
     });
   };

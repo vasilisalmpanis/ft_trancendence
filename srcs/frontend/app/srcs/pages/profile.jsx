@@ -165,11 +165,12 @@ const Profile = (props) => {
 							<div>
 								<StatsLayout data={myStats}/>
 							</div>
+
 							<div>
-								<IncomingRequests data={incomingRequests} setter={setIncomingRequests}/>
+								{/* <IncomingRequests data={incomingRequests} setter={setIncomingRequests}/> */}
 							</div>
 						</div>
-					: 	"Loading..."
+					: 	<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);

@@ -1,20 +1,22 @@
 import * as bootstrap	from 'bootstrap';
 import './scss/styles.scss';
 // import './styles/styles.css';
-import ftReact			from "./ft_react";
-import {Router, Route}	from "./router";
-import Main 			from './pages/main';
-import { useTheme } 	from './theme/theme';
-import Profile			from './pages/profile';
-import Signup			from './pages/signup';
-import Signin			from './pages/signin';
-import Pong 			from './pages/pong';
-import Users			from './pages/users';
-import Games			from './pages/games';
-import Tournaments		from './pages/tournaments';
-import Tournament		from './pages/tournament';
-import Leaderboard		from './pages/leaderboard';
-import User				from './pages/user';
+import ftReact				from "./ft_react";
+import {Router, Route}		from "./router";
+import Main 				from './pages/main';
+import { useTheme } 		from './theme/theme';
+import Profile				from './pages/profile';
+import Signup				from './pages/signup';
+import Signin				from './pages/signin';
+import Pong 				from './pages/pong';
+import Users				from './pages/users';
+import Games				from './pages/games';
+import Tournaments			from './pages/tournaments';
+import Tournament			from './pages/tournament';
+import Leaderboard			from './pages/leaderboard';
+import User					from './pages/user';
+import UserFriendsLayout 	from './pages/user_friends';
+import ReRoutePage			from './pages/reroute';
 
 const A = (props) => <button onClick={(ev)=>props.route("/b")}>to B</button>
 const B = (props) => <button onClick={(ev)=>props.route("/a")}>to A</button>
@@ -38,6 +40,8 @@ const App = (props) => {
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
 				<Route auth path="/tournament" element={<Tournament/>}/>
 				<Route auth path="/leaderboard" element={<Leaderboard/>}/>
+				<Route auth path="/user-friends" element={<UserFriendsLayout/>}/>
+				<Route auth path="/reroute" element={<ReRoutePage/>}/>
 				<Route auth path="/user" element={<User/>}/>
 				<Route auth path="/a" element={<A/>}/>
 				<Route auth path="/b" element={<B/>}/>
