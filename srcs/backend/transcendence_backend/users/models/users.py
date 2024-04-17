@@ -46,13 +46,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=255, blank=False)
     avatar = models.BinaryField(editable=True, max_length=1024*1024*20, unique=False, blank=True, null=True)
     token = models.CharField(max_length=255, null=True, blank=True)
+    stats = models.ForeignKey('stats.Stats', on_delete=models.CASCADE, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)
     is_2fa_enabled = models.BooleanField(default=False)
     is_user_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     ft_intra_id = models.IntegerField(null=True, blank=True)
-
     #When symmetrical=True (which is the default), Django won't 
     # use the related_name option to create a reverse relation. 
     # It automatically creates the reverse relation from "self" to "self" using the lowercased model name.

@@ -1,9 +1,7 @@
 from django.db          import models
-from users.models       import User
 from typing             import Any, Dict
 class Stats(models.Model):
     id = models.AutoField(primary_key=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='stats')
     games_played = models.PositiveIntegerField(default=0)
     games_won = models.PositiveIntegerField(default=0)
     games_lost = models.PositiveIntegerField(default=0)
@@ -14,16 +12,20 @@ class Stats(models.Model):
         verbose_name = 'Stats'
         verbose_name_plural = 'Stats'
 
+    @classmethod
+    def get_default_pk(cls):
+        return 1
 
-def stats_model_to_dict(stat : Stats) -> Dict[Any,Any]:
-    if not stat:
+
+def stats_model_to_dict(user) -> Dict[Any,Any]:
+    if not user:
         return {}
     return {
-        "user_id": stat.user.id,
-        "username": stat.user.username,
-        "games_played": stat.games_played,
-        "games_won": stat.games_won,
-        "games_lost": stat.games_lost,
-        "total_points": stat.total_points,
-        "win_streaks": stat.win_streaks,
+        "username": user.username,
+        "user_id" : user.id,
+        "games_played": user.stats.games_played,
+        "games_won": user.stats.games_won,
+        "games_lost": user.stats.games_lost,
+        "total_points": user.stats.total_points,
+        "win_streaks": user.stats.win_streaks,
     }

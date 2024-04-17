@@ -7,7 +7,9 @@ from users.services                     import UserService
 from django.views                       import View
 from transcendence_backend.decorators   import jwt_auth_required
 
+import logging
 
+logger = logging.getLogger(__name__)
 
 ## TODO Do we display blocked users or users who blocked us int the leaderboard?
 @jwt_auth_required()
@@ -18,7 +20,7 @@ def getStatistics(request, user : User, id : int) -> JsonResponse:
     if request.method == "GET":
         try:
             new_user = User.objects.get(id=id)
-            stats = StatService.get_stats(new_user)
+            stats = StatService.get_stats(user, new_user)
             return JsonResponse(stats, status=200, safe=False)
         except Exception:
             return JsonResponse({"error": "user not found"}, status=400)
@@ -36,9 +38,10 @@ def leaderBoard(request, user : User) -> JsonResponse:
             skip = int(request.GET.get("skip", 0))
             limit = int(request.GET.get("limit", 10))
             order = request.GET.get("order", "desc")
-            stats = StatService.leaderboard(skip, limit, order)
+            stats = StatService.leaderboard(user, skip, limit, order)
             return JsonResponse(stats, status=200, safe=False)
         except Exception as e:
+            logger.warning(f"Error: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "wrong request method"}, status=400)

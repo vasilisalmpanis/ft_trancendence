@@ -55,6 +55,8 @@ class PongService:
         @param limit: int
         @return: JsonResponse with game schema
         """
+        users_blocked_by_me = user.blocked.all()
+        users_blocked_me = User.objects.filter(blocked=user)
         if me:
             if type == 'all':
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).order_by('-timestamp')[skip:skip+limit]
@@ -81,6 +83,7 @@ class PongService:
                 games = Pong.objects.filter(status='paused').order_by('-timestamp')[skip:skip+limit]
             else:
                 raise Exception('Invalid type')
+        games = games.exclude(player1__in=users_blocked_by_me).exclude(player2__in=users_blocked_by_me).exclude(player1__in=users_blocked_me).exclude(player2__in=users_blocked_me)
         return [pong_model_to_dict(game) for game in games]
     
     @staticmethod
@@ -96,6 +99,8 @@ class PongService:
         user = User.objects.filter(id=id).first()
         if user is None:
             raise Exception('User not found')
+        if user.blocked.filter(id=me.id).exists() or me.blocked.filter(id=user.id).exists():
+            raise Exception('User blocked')
         if type == 'all':
             games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).order_by('-timestamp')[skip:skip+limit]
         elif type == 'pending':

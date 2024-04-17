@@ -1,8 +1,14 @@
+from math import log
+from operator import le
+from re import S
 from typing import Dict, List
+from venv import logger
 from users.models import User
 from stats.models import Stats, stats_model_to_dict
 import json
+import logging
 
+logger  = logging.getLogger(__name__)
 class StatService:
     @staticmethod
     def set_stats(user_1: str, user_2: str, score_1: int, score_2: int):
@@ -40,26 +46,29 @@ class StatService:
         stats2.save()
     
     @staticmethod
-    def create_stats(user: User):
+    def create_stats():
         """
         Creates the stats for the user
         :param user: User object
         """
-        stats = Stats(user=user)
+        stats = Stats()
         stats.save()
+        return stats
 
     @staticmethod
-    def get_stats(user: User) -> Dict[str, int]:
+    def get_stats(me: User, user: User | None = None) -> Dict[str, int]:
         """
         Returns the stats for the user
         :param user: User object
         :return: Dict
         """
-        stats = Stats.objects.get(user=user)
-        return stats_model_to_dict(stats)
+        # stats = user.stats
+        if user and (me.blocked.filter(id=user.id).exists() or user.blocked.filter(id=me.id).exists()):
+            raise Exception("User blocked")
+        return stats_model_to_dict(user)
     
     @staticmethod
-    def leaderboard(skip: int, limit: int, order: str) -> List[Dict[str, int]]:
+    def leaderboard(me: User, skip: int, limit: int, order: str) -> List[Dict[str, int]]:
         """
         Returns the leaderboard
         :param skip: int
@@ -71,12 +80,13 @@ class StatService:
             raise ValueError("Limit too high")
         if order not in ["asc", "desc"]:
             raise ValueError("Invalid order")
+        users_not_blocked_by_me = User.objects.exclude(blocked=me).exclude(blocked_me=me)
         if order == "asc":
-            users = Stats.objects.order_by("total_points").order_by('id')[skip:skip+limit]
+            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).order_by("stats__total_points").values_list('stats__user', flat=True)[skip:skip+limit]
         else:
-            users = Stats.objects.order_by("-total_points").order_by('id')[skip:skip+limit]
+            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).order_by("-stats__total_points").values_list('stats__user', flat=True)[skip:skip+limit]
         data = [
-            StatService.get_stats(user.user)
-            for user in users
+            stats_model_to_dict(User.objects.get(id=user_id))
+            for user_id in leaderboard_users
         ]
         return data

@@ -1,5 +1,6 @@
 from datetime                   import datetime
 import re
+import stat
 from urllib import request
 from .models                    import User, FriendRequest, user_model_to_dict, friend_request_model_to_dict
 from django.conf                import settings
@@ -17,13 +18,14 @@ class UserService:
     @staticmethod
     def create_user(username: str, password:str, email:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
             avatar = settings.DEFAULT_AVATAR
+            stats = StatService.create_stats()
             user = User.objects.create_user(username=username,
                                     password=password,
                                     email=email,
                                     avatar=avatar,
+                                    stats=stats,
                                     is_staff=is_staff,
                                     is_superuser=is_superuser)
-            StatService.create_stats(user)
             return user_model_to_dict(user)
 
 
@@ -170,6 +172,40 @@ class UserService:
                 user_model_to_dict(user_element, me=user)
                 for user_element in blocked_users
         ]
+    
+    @staticmethod
+    def get_user_by_id(me: User, id: int) -> Dict[str,Any]:
+        """
+        Get user by id
+        :param user: User instance
+        :param id: int
+        :return: User instance
+        """
+        requested_user = User.objects.get(id=id)
+        if not me:
+            raise Exception("User not found")
+        if me.blocked.filter(id=requested_user.id).exists():
+            raise Exception("User blocked")
+        if (requested_user.blocked.filter(id=me.id).exists()):
+            raise Exception("User blocked you")
+        return user_model_to_dict(requested_user, me=me)
+
+    @staticmethod
+    def get_user_by_username(me: User, username: str) -> Dict[str,Any]:
+        """
+        Get user by id
+        :param user: User instance
+        :param id: int
+        :return: User instance
+        """
+        requested_user = User.objects.get(username=username)
+        if not me:
+            raise Exception("User not found")
+        if me.blocked.filter(id=requested_user.id).exists():
+            raise Exception("User blocked")
+        if (requested_user.blocked.filter(id=me.id).exists()):
+            raise Exception("User blocked you")
+        return user_model_to_dict(requested_user, me=me)
     
     @staticmethod
     def update_last_login(user : User) -> User:
