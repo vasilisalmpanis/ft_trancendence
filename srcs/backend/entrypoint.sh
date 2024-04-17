@@ -8,6 +8,11 @@ cd transcendence_backend
 
 echo "${0}: running migrations."
 python3 manage.py makemigrations --merge
+python3 manage.py makemigrations chat
+python3 manage.py makemigrations pong
+python3 manage.py makemigrations users
+python3 manage.py makemigrations tournament
+python3 manage.py makemigrations stats
 python3 manage.py migrate --noinput
 
 python3 manage.py runworker pong_runner tournament_runner&
