@@ -6,7 +6,7 @@ from django.http    import JsonResponse
 from jwt            import JWT
 from django.conf    import settings
 from users.models   import User
-from datetime       import datetime, timedelta
+from datetime       import date, datetime, timedelta
 from django.views   import View
 
 import logging
@@ -49,7 +49,7 @@ def validate_jwt(payload : Dict, second_factor : bool, **kwargs) -> User:
             raise Exception("2FA Required")
     return user
 
-def jwt_auth_required(second_factor : bool = False, days : int = 1):
+def jwt_auth_required(second_factor : bool = False, days: int = 1):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(*args, **kwargs):
