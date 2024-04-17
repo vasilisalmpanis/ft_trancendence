@@ -167,6 +167,14 @@ const User = (props) => {
         }
         props.route(`/reroute?path=user&id=${id}`);
     };
+    const block = async(user_id) => {
+        const res = await apiClient.post(`/block` ,{user_id: user_id});
+        if (res.error) {
+            setError(res.error);
+            return;
+        }
+        props.route(`/users`);
+    }
     const getData = async () => {
         let temp_user;
         let temp_stats;
@@ -176,9 +184,8 @@ const User = (props) => {
             temp_user = await apiClient.get(`/users/${id}`);
             if (temp_user.error) {
                 console.log(temp_user.error);
-                if (temp_user.error === 401 || temp_user.error === "no connection")
-                    return;
-                setError(temp_user.error);
+                if (temp_user.error === 404)
+                    props.route("/users");
                 return;
             }
         }
@@ -218,7 +225,7 @@ const User = (props) => {
                                 <StatsLayout data={stats} />
                             </div>
                         </div>
-                        <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend}/>
+                        <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend} block={block}/>
                     </div>
                 { friends && <UsersFriendsLayout friends={friends} route={props.route} user={user.id}/>}
                 </div>
@@ -235,9 +242,9 @@ const UserActionsLayout = (props) => {
     return (<div className="d-flex flex-row justify-content-evenly">
                 {props.user.id !== props.me.id && props.user.friend == "NOT_SENT" && <button className="btn btn-primary" onClick={() => props.add(props.user.id)}>Add Friend</button>}
                 {props.user.id !== props.me.id && props.user.friend == "PENDING" && <button className="btn disabled">Request Sent</button>}
-                {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => props.route(`/chat/${props.user.id}`)}>Chat</button>}
+                {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => console.log(`/chat/${props.user.id}`)}>Chat</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-danger" onClick={() => props.unfriend(props.user.id)}>Unfriend</button>}
-                {props.user.id !== props.me.id && <button className="btn btn-danger" onClick={() => props.route(`/chat/${props.user.id}`)}>Block User</button>}
+                {props.user.id !== props.me.id && <button className="btn btn-danger" onClick={() => props.block(props.user.id)}>Block User</button>}
                 {console.log(props.user)}
             </div>
     );

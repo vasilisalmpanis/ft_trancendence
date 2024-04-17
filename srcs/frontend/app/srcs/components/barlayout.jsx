@@ -19,7 +19,7 @@ const NavBar = (props) => {
 						className="btn me-3"
 					>
 						{window.location.pathname === "/leaderboard" ? 
-							<b>Leaderboard</b>
+							<b className="border-bottom">Leaderboard</b>
 							: "Leaderboard"}
 					</button>
 					<button
@@ -27,7 +27,7 @@ const NavBar = (props) => {
 						className="btn me-3"
 					>
 						{window.location.pathname === "/games" ? 
-							<b>Games</b>
+							<b className="border-bottom">Games</b>
 							: "Games"}
 					</button>
 					<button
@@ -35,7 +35,7 @@ const NavBar = (props) => {
 						className="btn me-3"
 					>
 						{window.location.pathname === "/users" ? 
-							<b>Users</b>
+							<b className="border-bottom">Users</b>
 							: "Users"}
 					</button>
 				</div>

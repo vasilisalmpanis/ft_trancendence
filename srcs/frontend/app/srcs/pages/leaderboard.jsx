@@ -64,6 +64,8 @@ const Leaderboard = (props) => {
         if (data.error === 401)
             return ;
         let temp = [];
+        if (data.length === 0)
+            return ;
         for (let i = 0; i < data.length; i++)
         {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
