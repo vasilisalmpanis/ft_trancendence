@@ -6,6 +6,7 @@
 class ApiClient {
   constructor (baseUrl) {
     this.baseUrl = new URL(baseUrl);
+    this.route = null;
     if (typeof localStorage === 'undefined') {
       this.headers = {
         'Content-Type': 'application/json',
@@ -46,8 +47,9 @@ class ApiClient {
         return {error: data.message};
       return data;
     }
-    else
+    else {
       return {error: response.status}
+    }
   }
 
   async sendRequest (path, method, body, query) {
@@ -66,9 +68,19 @@ class ApiClient {
       });
     }
     try {
-      const response = await fetch(url, params);
+      let response = await fetch(url, params);
+      while (response.status === 401 && path !== 'auth/refresh') {
+        const refresh = await this.refresh();
+        if (refresh.error === 401) {
+          this.unauthorize();
+          this.route('/signin');
+          return {error: 401};
+        }
+        response = await fetch(url, params);
+      }
       return await this.proceedResponse(response);
     } catch (error) {
+      // console.error("HIIIIII");
       return {error: "no connection"};
     }
   }
@@ -99,7 +111,6 @@ class ApiClient {
       response_body = payload;
     else {
       response_body = await this.sendRequest('auth', 'POST', payload, query);
-      console.log(response_body);
     }
     if (response_body.error)
       return response_body;
@@ -133,15 +144,19 @@ class ApiClient {
       return ;
     }
     this.headers['Authorization'] = `Bearer ${this.refresh_token}`;
-    const response = await this.sendRequest('auth/refresh', 'POST', null, null);
-    const response_body = await response.json();
-    const access_token = response_body.access_token;
+    const response = await this.sendRequest('auth/refresh', 'GET', null, null);
+    if (response.error)
+    {
+      return response;
+    }
+    const access_token = response.access_token;
     // dev only
     if (typeof localStorage === 'undefined') {
       this.headers['Authorization'] = `Bearer ${access_token}`;
       return response;
     }
-    localStorage.setItem('access_token', access_token);
+    let test = localStorage.setItem('access_token', access_token);
+    this.headers['Authorization'] = `Bearer ${access_token}`;
     return response;
   }
 
