@@ -4,6 +4,8 @@ from django.conf                import settings
 from cryptography.fernet        import Fernet
 from transcendence_backend.totp import get_totp_token
 from typing                     import Any, Dict, List
+from channels.layers            import get_channel_layer
+from asgiref.sync               import async_to_sync
 from stats.services             import StatService
 import os
 import base64
@@ -95,6 +97,14 @@ class UserService:
         friend = user.friends.get(id=friend_id)
         if not friend:
             raise Exception("You are not friends with this user")
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'status.update',
+            'status': 'unfriend',
+            'sender_id': user.id,
+            'receiver_id': friend_id,
+            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        })
         user.friends.remove(friend)
         friend.friends.remove(user)
         return friend
