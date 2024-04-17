@@ -82,9 +82,13 @@ class StatService:
             raise ValueError("Invalid order")
         users_not_blocked_by_me = User.objects.exclude(blocked=me).exclude(blocked_me=me)
         if order == "asc":
-            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).order_by("stats__total_points").values_list('stats__user', flat=True)[skip:skip+limit]
+            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).\
+                                                        order_by("stats__total_points", 'id').\
+                                                        values_list('stats__user', flat=True)[skip:skip+limit]
         else:
-            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).order_by("-stats__total_points").values_list('stats__user', flat=True)[skip:skip+limit]
+            leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).\
+                                                        order_by("-stats__total_points", 'id').\
+                                                        values_list('stats__user', flat=True)[skip:skip+limit]
         data = [
             stats_model_to_dict(User.objects.get(id=user_id))
             for user_id in leaderboard_users

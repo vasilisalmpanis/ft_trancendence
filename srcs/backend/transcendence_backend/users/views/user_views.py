@@ -72,7 +72,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     try:
         data = UserService.get_user_by_id(user, id)
         return JsonResponse(data, safe=False)
-    except User.DoesNotExist:
+    except Exception as e:
         return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
 
 @require_http_methods(["GET"])
@@ -85,7 +85,7 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
     try:
         data = UserService.get_user_by_username(user, username)
         return JsonResponse(data, safe=False)
-    except User.DoesNotExist:
+    except Exception as e:
         return JsonResponse({"error" : "User Doesn't Exist"}, status=404)
 
 @method_decorator(jwt_auth_required(), name="dispatch")
