@@ -21,8 +21,8 @@ class StatService:
         """
         user1 = User.objects.get(username=user_1)
         user2 = User.objects.get(username=user_2)
-        stats1 = Stats.objects.get(user=user1)
-        stats2 = Stats.objects.get(user=user2)
+        stats1 = user1.stats
+        stats2 = user2.stats
         stats1.games_played += 1
         stats2.games_played += 1
         if score_1 > score_2:

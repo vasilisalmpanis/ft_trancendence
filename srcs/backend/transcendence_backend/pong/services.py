@@ -57,33 +57,26 @@ class PongService:
         """
         users_blocked_by_me = user.blocked.all()
         users_blocked_me = User.objects.filter(blocked=user)
+        if type.lower() not in ['all', 'pending', 'finished', 'running', 'paused']:
+            raise Exception('Invalid type')
         if me:
             if type == 'all':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).order_by('-timestamp')[skip:skip+limit]
-            elif type == 'pending':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'finished':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'running':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='running').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'paused':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                    order_by('-timestamp').\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
-                raise Exception('Invalid type')
+                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                    filter(status='pending').\
+                    order_by('-timestamp').\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         else:
             if type == 'all':
-                games = Pong.objects.order_by('-timestamp')[skip:skip+limit]
-            elif type == 'pending':
-                games = Pong.objects.filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'finished':
-                games = Pong.objects.filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'running':
-                games = Pong.objects.filter(status='running').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'paused':
-                games = Pong.objects.filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+                games = Pong.objects.order_by('-timestamp').\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
-                raise Exception('Invalid type')
-        games = games.exclude(player1__in=users_blocked_by_me).exclude(player2__in=users_blocked_by_me).exclude(player1__in=users_blocked_me).exclude(player2__in=users_blocked_me)
+                games = Pong.objects.filter(status='pending').\
+                    order_by('-timestamp').\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         return [pong_model_to_dict(game) for game in games]
     
     @staticmethod
@@ -96,23 +89,41 @@ class PongService:
         @param limit: int
         @return: JsonResponse with game schema
         """
+
         user = User.objects.filter(id=id).first()
+
         if user is None:
             raise Exception('User not found')
+        users_blocked_by_me = user.blocked.all()
+        users_blocked_me = User.objects.filter(blocked=user)
         if user.blocked.filter(id=me.id).exists() or me.blocked.filter(id=user.id).exists():
             raise Exception('User blocked')
-        if type == 'all':
-            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).order_by('-timestamp')[skip:skip+limit]
-        elif type == 'pending':
-            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-        elif type == 'finished':
-            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-        elif type == 'running':
-            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='running').order_by('-timestamp')[skip:skip+limit]
-        elif type == 'paused':
-            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='paused').order_by('-timestamp')[skip:skip+limit]
-        else:
+        if type.upper() not in ['ALL', 'PENDING', 'FINISHED', 'RUNNING', 'PAUSED']:
             raise Exception('Invalid type')
+        if type == 'all':
+            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                order_by('-timestamp').\
+                exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        else:
+            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                filter(status=type.lower()).\
+                order_by('-timestamp').\
+                exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        # elif type == 'finished':
+        #     games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+        #         filter(status='finished').\
+        #         order_by('-timestamp').\
+        #         exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        # elif type == 'running':
+        #     games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+        #         filter(status='running').\
+        #         order_by('-timestamp').\
+        #         exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        # elif type == 'paused':
+        #     games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+        #         filter(status='paused').\
+        #         order_by('-timestamp').\
+        #         exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         return [pong_model_to_dict(game, me) for game in games]
     
     @staticmethod
