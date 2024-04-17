@@ -47,6 +47,8 @@ const Leaderboard = (props) => {
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
+        if (data.error === 401)
+            return ;
         let temp = [];
         for (let i = 0; i < data.length; i++)
         {
@@ -59,6 +61,8 @@ const Leaderboard = (props) => {
     const updateLeaderBoard = async () => {
         console.log(skip);
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
+        if (data.error === 401)
+            return ;
         let temp = [];
         for (let i = 0; i < data.length; i++)
         {

@@ -175,11 +175,9 @@ const User = (props) => {
         if (!user) {
             temp_user = await apiClient.get(`/users/${id}`);
             if (temp_user.error) {
-                if (temp_user.error === 401)
-                {
-                    props.route("/login");
+                console.log(temp_user.error);
+                if (temp_user.error === 401 || temp_user.error === "no connection")
                     return;
-                }
                 setError(temp_user.error);
                 return;
             }
@@ -239,7 +237,7 @@ const UserActionsLayout = (props) => {
                 {props.user.id !== props.me.id && props.user.friend == "PENDING" && <button className="btn disabled">Request Sent</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => props.route(`/chat/${props.user.id}`)}>Chat</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-danger" onClick={() => props.unfriend(props.user.id)}>Unfriend</button>}
-                <button className="btn btn-danger" onClick={() => props.route(`/chat/${props.user.id}`)}>Block User</button>
+                {props.user.id !== props.me.id && <button className="btn btn-danger" onClick={() => props.route(`/chat/${props.user.id}`)}>Block User</button>}
                 {console.log(props.user)}
             </div>
     );

@@ -26,6 +26,8 @@ export const Route = (props) => {
 
 const RouterIn = (props) => {
     const [path, route, startListening] = useRouter(props.useless_state, props.set_useless_state);
+    if (apiClient.route === null)
+        apiClient.route = route;
     startListening();
     let child = props.routes.find(
         route => {

@@ -61,9 +61,17 @@ const Games = (props) => {
 	const [error, setError] = ftReact.useState("");
 	const getGames = async () => {
 		let data = await apiClient.get("/games", {type: "paused", me: true});
+		if (data.error === 401)
+			return ;
+		else if (data.error)
+			setError(data.error);
 		if (data.length)
 			props.route("/pong", {game_id: data[0].id, from: "/games"});
 		data = await apiClient.get("/games", {type: "pending"});
+		if (data.error === 401)
+			return ;
+		else if (data.error)
+			setError(data.error);
 		if (data.error)
 			setError(data.error);
 		else if (data && (!games || (games && data.length != games.length)))
