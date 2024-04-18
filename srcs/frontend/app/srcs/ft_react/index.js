@@ -369,7 +369,14 @@ class FTReact {
     const setState = action => {
       hook.queue.push(action);
       // console.log("setState", hook, oldHook);
-      this._scheduleUpdate(node);
+      node.states.forEach(hook => {
+        hook.queue.forEach(action => {
+          hook.state = typeof action === 'function' ? action(hook.state) : action;
+        });
+        hook.queue = [];
+        this._scheduleUpdate(node);
+    });
+
     };
     node.states[node.stId] = hook;
     node.stId++;
@@ -396,7 +403,7 @@ class FTReact {
     const node = this._currentNode;
     const effectIdx = node.stId;
     const oldEffect = node.old && node.effects[effectIdx];
-    const hasChangedDeps = oldEffect && oldEffect.deps ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
+    const hasChangedDeps = oldEffect && oldEffect.deps ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i])) : true;
     const effect = {
       cleanup: null,
       deps,

@@ -1,4 +1,4 @@
-import Avatar from "../components/avatar";
+import Avatar		from "../components/avatar";
 import BarLayout	from "../components/barlayout";
 import ftReact		from "../ft_react";
 
@@ -17,7 +17,7 @@ const GameCard = (props) => {
 const UserCard = (props) => {
 	return (
 		<div>
-			<Avatar size={"46rem"} img={props.data.avatar}/>
+			{/* <Avatar size={"46rem"} img={props.data.avatar}/> */}
 			<span className="ms-1">{props.data.username}</span>
 		</div>
 	)
@@ -32,7 +32,7 @@ const Tournament = (props) => {
 		ws && ws.close();
 		ws = null;
 	};
-	ftReact.useEffect(()=>{
+	//ftReact.useEffect(()=>{
 		if (!history.state)
 			props.route("/tournaments");
 		if (!ws) {
@@ -40,6 +40,8 @@ const Tournament = (props) => {
 				`ws://${window.location.hostname}:8000/tournament`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
+		};
+		if (ws) {
 			ws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
 				console.log("ws msg: ", data);
@@ -55,9 +57,9 @@ const Tournament = (props) => {
 					setUsers([...users, data['message']['user_joined']]);
 				}
 			});
-		};
+		}
 		//return cleanup;
-	},[]);
+	//},[]);
 	return (
 		<BarLayout route={props.route}>
 			<h3>It's a tournament {history.state?.name}</h3>

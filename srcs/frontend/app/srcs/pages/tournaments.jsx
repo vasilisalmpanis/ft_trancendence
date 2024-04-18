@@ -24,7 +24,7 @@ const CreateTournament = (props) => {
 				const name = event.target[0].value;
 				let count = event.target[1].value;
 				if (!count || count < 3)
-					setError("You cannot create tournament with less than 3 players!")
+					setError("You cannot create tournament with less than 3 players!");
 				else
 					createTournament(count, name);
 			}}
@@ -60,7 +60,7 @@ const TournamentCard = (props) => {
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
 					{props.data.name}
-					{props.data.player_ids.includes(me.id) &&
+					{props.data.player_ids.includes(me.id) && props.data.status !== 'closed' &&
 						<button
 							className="btn d-inline p-0 ms-auto"
 							onClick={async ()=>{
@@ -71,15 +71,23 @@ const TournamentCard = (props) => {
 							<DeleteIcon/>
 						</button>
 					}
-					<button
-						className="btn d-inline p-0 ms-auto"
-						onClick={async ()=>{
-							await apiClient.put("/tournaments", {tournament_id: props.data.id});
-							props.route("/tournament", {tournament_id: props.data.id, name: props.data.name});
-						}}
-					>
-						JOIN
-					</button>
+					{props.data.status !== 'closed' &&
+						<button
+							className="btn d-inline p-0 ms-auto"
+							onClick={async ()=>{
+								if (!props.data.player_ids.includes(me.id)) {
+									const resp = await apiClient.put("/tournaments", {tournament_id: props.data.id});
+									if (resp.error) {
+										console.log(resp);
+										return ;
+									}
+								}
+								props.route("/tournament", {tournament_id: props.data.id, name: props.data.name});
+							}}
+						>
+							JOIN
+						</button>
+					}
 				</li>
 			</ul>
 		</div>
@@ -114,6 +122,6 @@ const Tournaments = (props) => {
 			}
 		</BarLayout>
 	);
-}
+};
 
 export default Tournaments;

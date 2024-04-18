@@ -57,7 +57,8 @@ class TournamentGroupManager(metaclass=SingletonMeta):
         self._groups.setdefault(group, {})
         if "users" not in self._groups[group]:
             self._groups[group]["users"] = []
-        self._groups[group]["users"].append(user)
+        if user not in self._groups[group].setdefault('users', []):
+            self._groups[group]["users"].append(user)
         return self._groups[group]
 
     def group_size(self, group: str):
