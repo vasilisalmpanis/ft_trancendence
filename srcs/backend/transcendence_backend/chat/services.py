@@ -1,7 +1,9 @@
-from .models        import Chat, Message, chat_model_to_dict, message_model_to_dict
-from users.models   import User
-from typing         import List, Dict
+from .models            import Chat, Message, chat_model_to_dict, message_model_to_dict
+from users.models       import User
+from typing             import List, Dict
 
+from channels.layers    import get_channel_layer
+from asgiref.sync       import async_to_sync
 
 
 class ChatService:
@@ -39,6 +41,12 @@ class ChatService:
         chat = Chat.objects.create(name=name)
         chat.participants.add(sender)
         chat.participants.add(receiver)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'manager.update',
+            'status': 'chat_id {chat.id} created',
+            'sender_id': sender.id,
+        })
         return chat_model_to_dict(chat, sender)
     
     @staticmethod
@@ -52,9 +60,15 @@ class ChatService:
         if chat:
             response = chat_model_to_dict(chat, user)
             chat.delete()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)('0', {
+                'type': 'manager.update',
+                'status': 'chat_id {chat_id} deleted',
+                'sender_id': user.id,
+            })
             return response
         return {}
-    
+
     @staticmethod
     def get_chats(user : User, skip : int = 0, limit : int = 10) -> List[Dict[str, str]]:
         """

@@ -99,11 +99,9 @@ class UserService:
             raise Exception("You are not friends with this user")
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)('0', {
-            'type': 'status.update',
-            'status': 'unfriend',
+            'type': 'manager.update',
+            'status': 'unfriended friend_id {friend_id}',
             'sender_id': user.id,
-            'receiver_id': friend_id,
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         })
         user.friends.remove(friend)
         friend.friends.remove(user)
@@ -129,6 +127,12 @@ class UserService:
         if user.id == user_to_block.id:
             raise Exception("You cannot block yourself")
         user.blocked.add(user_to_block)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'manager.update',
+            'status': 'user {user_id} blocked',
+            'sender_id': user.id,
+        })
         FriendRequest.objects.filter(sender_id=user_to_block.id,
                                      receiver_id=user.id).delete()
         return user_model_to_dict(user_to_block)
@@ -149,6 +153,12 @@ class UserService:
         if user.id == user_to_unblock.id:
             raise Exception("You cannot unblock yourself")
         user.blocked.remove(user_to_unblock)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+        'type': 'manager.update',
+        'status': 'user {user_id} unblocked',
+        'sender_id': user.id,
+        })
         return user_model_to_dict(user_to_unblock)
     
     @staticmethod
@@ -165,7 +175,7 @@ class UserService:
                 user_model_to_dict(user)
                 for user in blocked_users
         ]
-    
+
     @staticmethod
     def update_last_login(user : User) -> User:
         """

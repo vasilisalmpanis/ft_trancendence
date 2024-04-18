@@ -115,6 +115,19 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
             for participant in chat.participants.all():
                 if participant.id in self.users:
                     self.add_participant_to_room(chat_id, participant.id, self.users[participant.id]['channel_name'])
+    
+    def update_manager_dicts(self):
+        """
+        Updates the manager dicts with the current state of rooms and users
+        """
+        for user in self.users:
+            self.users[user]['status'] = 'online'
+    
+    #debugging
+    def get_users_dict(self):
+        return self.users
+    def get_rooms_dict(self):
+        return self.rooms
 
 #todo: what happens when user gets blocked while in chat?
 
@@ -136,7 +149,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'type': 'status.update',
                     'status': 'connected',
                     'sender_id': self.scope['user'].id,
-                    'sender_name': self.scope['user'].username
+                    'sender_name': self.scope['user'].username,
+                    'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
             active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
             await self.send(text_data=json.dumps({
@@ -158,7 +172,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'type': 'status.update',
                 'status': 'disconnected',
                 'sender_id': self.scope['user'].id,
-                'sender_name': self.scope['user'].username
+                'sender_name': self.scope['user'].username,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
         self._chats.remove_user(self.chat_ids, self.scope['user'].id)
         for chat_id in self.chat_ids:
@@ -206,7 +221,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                         'status': text_data_json['status'],
                         'timestamp': text_data_json['timestamp'],
                         'sender_id': text_data_json['sender_id'],
-                        'sender_name': text_data_json['sender_name']
+                        'sender_name': text_data_json['sender_name'],
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
         elif text_data_json['type'] == 'game.invite':
             await self.channel_layer.group_send(text_data_json['chat_id'],
@@ -218,6 +234,25 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'game_id': text_data_json['game_id'],
                     'timestamp': text_data_json['timestamp']
                 })
+
+    async def status_update(self, event):
+        if self.scope['user'].id == event['sender_id']:
+            return
+        await self.send(text_data=json.dumps({
+                    'type': 'status.update',
+                    'status': event['status'],
+                    'sender_id': event['sender_id'],
+                    'sender_name': event['sender_name'],
+                    'timestamp': event['timestamp']
+                    }))
+
+    async def manager_update(self, event):
+        # await database_sync_to_async(self._chats.update_manager_dicts())
+        await self.send(text_data=json.dumps({
+            'type': 'manager.update',
+            'users': self._chats.get_users_dict(),
+            'rooms': self._chats.get_rooms_dict()
+        }))
 
     async def plain_message(self, event):
         #need db call for messages to recently blocked users
@@ -236,18 +271,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp']
         }))
         await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
-
-    async def status_update(self, event):
-        # if self.scope['user'].id == event['sender_id']:
-        #     return
-        # print('status update sent to client')
-        await self.send(text_data=json.dumps({
-                    'type': 'status.update',
-                    'status': event['status'],
-                    'sender_id': event['sender_id'],
-                    'sender_name': event['sender_name'],
-                    'timestamp': event['timestamp']
-                    }))
 
     async def game_invite(self, event):
 
@@ -382,9 +405,9 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
             {
                 'type': 'status_update',
                 'status': 'disconnected',
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'sender': self.scope['user'].username,
                 'chat_id': self.chat_id,
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
         if not self._lobbies.rooms[self.chat_id]['participants']:
