@@ -43,7 +43,7 @@ const NavBar = (props) => {
 					<form class="form-inline ms-auto me-3">
 						<input class="form-control ms-auto" type="search" placeholder="Search" aria-label="Search"/>
 					</form>
-							<button
+							{props.me && <button
 								onClick={() => props.route("/me")}
 								className="rounded-circle btn me-3 ms-auto"
 							>
@@ -53,7 +53,7 @@ const NavBar = (props) => {
 									alt="profile"
 									width="30"
 								></img>
-							</button>
+							</button>}
 
 					{/* <Avatar img={props.me.avatar} size="50px"/> */}
 					{/* <h5 className="mx-auto">{props.me.username}</h5> */}

@@ -121,7 +121,6 @@ def unfriend(request, user : User) -> JsonResponse:
 
 @jwt_auth_required()
 def get_users_friends(request, user : User, id: int) -> JsonResponse:
-    logger.warn("we in")
     if request.method != "GET":
         return JsonResponse({"Error": "Wrong Request Method"}, status=400)
     try:

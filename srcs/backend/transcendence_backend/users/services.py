@@ -138,6 +138,8 @@ class UserService:
         user.blocked.add(user_to_block)
         FriendRequest.objects.filter(sender_id=user_to_block.id,
                                      receiver_id=user.id).delete()
+        FriendRequest.objects.filter(sender_id=user.id,
+                                        receiver_id=user_to_block.id).delete()
         return user_model_to_dict(user_to_block, me=user)
     
     @staticmethod

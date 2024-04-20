@@ -214,6 +214,7 @@ const User = (props) => {
             { user
             ?
             <div className="d-flex flex-column">
+                {}
                 <div className="d-flex gap-5">
                     <div className="text-center card py-3 px-4">
                         <div className="d-flex flex-row align-items-center justify-content-center">
