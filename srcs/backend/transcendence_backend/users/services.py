@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
-    def create_user(username: str, password:str, email:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
+    def create_user(username: str, password:str, email:str, intra_id=None, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
             avatar = settings.DEFAULT_AVATAR
             stats = StatService.create_stats()
             user = User.objects.create_user(username=username,
@@ -24,6 +24,7 @@ class UserService:
                                     email=email,
                                     avatar=avatar,
                                     stats=stats,
+                                    ft_intra_id=intra_id,
                                     is_staff=is_staff,
                                     is_superuser=is_superuser)
             return user_model_to_dict(user)
