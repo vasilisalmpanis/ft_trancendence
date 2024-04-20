@@ -167,7 +167,6 @@ class TournamentRunner(AsyncConsumer):
                     all_users.insert(0, self._tournaments[group]['stragler'])
                 pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
                 self._tournaments[group]['games'] = await self.create_games(group.removeprefix('t_'), pairs)
-                logger.warn(self._tournaments[group]['games'])
                 await self.channel_layer.group_send(
                     group,
                     {
@@ -205,7 +204,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.accept("Authorization")
         else:
             await self.accept()
-        logger.warn(f"{self.scope["user"]} {self.channel_name}")
         # gets tournament and user from scope
         user = self.scope['user']
         tournament = self.scope['tournament']
@@ -263,22 +261,19 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.send(text_data)
 
     async def disconnect(self, close_code):
-        # try:
-            user = self.scope['user']
-            tournament = self.scope['tournament']
-            group_name = str(tournament.id)
-            # self._groups.remove(group_name, user)
-            user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
-            self._groups.remove(group_name, user)
-            await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
-            await self.channel_layer.group_send(
-                't_' + group_name,
-                {
-                    'type': 'send_message',
-                    'message': {'user_left' : user_dict}
-                }
-            )
-            await asyncio.sleep(0.001)
-            await self.close()
-        # except Exception as e:
-        #     logger.error(f"Its here: {e}")
+        user = self.scope['user']
+        tournament = self.scope['tournament']
+        group_name = str(tournament.id)
+        # self._groups.remove(group_name, user)
+        user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
+        self._groups.remove(group_name, user)
+        await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
+        await self.channel_layer.group_send(
+            't_' + group_name,
+            {
+                'type': 'send_message',
+                'message': {'user_left' : user_dict}
+            }
+        )
+        await asyncio.sleep(0.001)
+        await self.close()

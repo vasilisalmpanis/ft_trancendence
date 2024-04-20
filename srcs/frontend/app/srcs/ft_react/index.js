@@ -193,12 +193,9 @@ class FiberNode {
       this.child && this.child.delete(domParent);
     }
     this.effect = null;
-    if (this.type instanceof Function)
-      console.log("DELETE", this.type.name, this.effects);
     if (this.effects) {
       this.effects.forEach(effect => {
           if (effect && effect.cleanup) {
-            console.log(this.type instanceof Function ? this.type.name : this.type, "CLEANUP ON DELETE");
             effect.cleanup();
           }
       });
@@ -407,9 +404,8 @@ class FTReact {
     const effectIdx = node.stId;
     const oldEffect = node.old && node.old.effects[effectIdx];
     const hasChangedDeps = oldEffect && oldEffect.deps ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i])) : true;
-    //console.log("DEPS: ", hasChangedDeps, deps, oldEffect);
     const effect = {
-      cleanup: null,//oldEffect ? oldEffect.cleanup : null,
+      cleanup: null,
       deps,
       callback,
       hasChangedDeps
@@ -417,31 +413,10 @@ class FTReact {
 
     if (!hasChangedDeps && oldEffect && oldEffect.cleanup) {
       effect.cleanup = oldEffect.cleanup;
-      // if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
-      //   oldEffect.cleanup();
-      // }
+
     }
-      //const effect = async () => {
-      //  let isActive = true; // Flag to track if the effect is still valid
-      //  const cleanup = callback(); // Execute the user-provided effect
-      //  // Check if the effect returns a cleanup function directly or from an async operation
-      //  if (cleanup instanceof Promise) {
-      //      cleanup.then(asyncCleanup => {
-      //          if (!isActive && asyncCleanup) {
-      //              asyncCleanup(); // Call the cleanup function if the component unmounted
-      //          }
-      //      });
-      //  } else if (typeof cleanup === 'function') {
-      //      node.effects[effectIdx] = { cleanup, deps }; // Store the cleanup function for later
-      //  }
-      //  // Define a cleanup function to update the flag if the component unmounts
-      //  return () => {
-      //      isActive = false;
-      //  };
-      //};
-      // console.log("cleanup is maybe null now", effect);
-      node.effects[effectIdx] = effect;
-    //}
+
+    node.effects[effectIdx] = effect;
     node.stId++;
   }
   /**

@@ -338,7 +338,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 			await self.accept("Authorization")
 		else:
 			await self.accept()
-		logger.warn(f"{self.scope["user"]} {self.channel_name}")
 		self.send(json.dumps({'message': 'Connected'}))
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:
