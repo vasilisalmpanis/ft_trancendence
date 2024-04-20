@@ -183,7 +183,6 @@ const User = (props) => {
         if (!user) {
             temp_user = await apiClient.get(`/users/${id}`);
             if (temp_user.error) {
-                console.log(temp_user.error);
                 if (temp_user.error === 404)
                     props.route("/users");
                 return;
@@ -246,7 +245,6 @@ const UserActionsLayout = (props) => {
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => console.log(`/chat/${props.user.id}`)}>Chat</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-danger" onClick={() => props.unfriend(props.user.id)}>Unfriend</button>}
                 {props.user.id !== props.me.id && <button className="btn btn-danger" onClick={() => props.block(props.user.id)}>Block User</button>}
-                {console.log(props.user)}
             </div>
     );
 }

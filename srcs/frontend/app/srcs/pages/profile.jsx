@@ -12,7 +12,6 @@ const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
 	const updateMe = async () => {
 		if (img && img instanceof Blob) {
-			console.log("update");
 			const reader = new FileReader();
     		reader.onload = async function(readerEvent) {
 				const base64 = readerEvent.target.result;
@@ -105,7 +104,7 @@ const FriendRequestLayout = (props) => {
 	const acceptRequest = async () => {
 		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
 		if (data.error)
-			console.log(data.error);
+			return ;
 		else {
 			props.setter(null);
 		}
@@ -114,7 +113,7 @@ const FriendRequestLayout = (props) => {
 	const declineRequest = async () => {
 		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
 		if (data.error)
-			console.log(data.error);
+			return ;
 		else {
 			props.setter(props.data.filter((request) => request.id !== props.request.id));
 		}

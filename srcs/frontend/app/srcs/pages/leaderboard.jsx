@@ -59,7 +59,6 @@ const Leaderboard = (props) => {
         setSkip(skip + limit);
     }
     const updateLeaderBoard = async () => {
-        console.log(skip);
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
         if (data.error === 401)
             return ;
