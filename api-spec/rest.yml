@@ -190,6 +190,7 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
 paths:
   /healthcheck:
     get:
@@ -323,7 +324,7 @@ paths:
       tags:
         - "Users"
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       responses:
         '200':
           description: "Currently logged in user"
