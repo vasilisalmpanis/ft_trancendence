@@ -19,8 +19,6 @@ def get_incoming_friend_requests(request, user : User) -> JsonResponse:
         return JsonResponse({"Error": "Wrong Request Method"}, status=400)
     try:
         friend_requests = FriendRequestService.get_user_friend_requests(user, "incoming")
-        if not friend_requests:
-            return JsonResponse({"status": "No friend requests"}, status=200)
         return JsonResponse(friend_requests, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
@@ -33,8 +31,6 @@ class FriendsView(View):
         """
         try:
             friend_requests = FriendRequestService.get_user_friend_requests(user, "sent")
-            if not friend_requests:
-                return JsonResponse({"status": "No friend requests"}, status=200)
             return JsonResponse(friend_requests, status=200, safe=False)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
@@ -57,6 +53,22 @@ class FriendsView(View):
             if friend_request:
                 return JsonResponse(model_to_dict(friend_request), status=201)
             return JsonResponse({"status": "Friend request not created"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": f"{e}"}, status=400)
+        
+    def put(self, request, user : User) -> JsonResponse:
+        """
+        Delete a friend request
+        body: {request_id}
+        """
+        data = json.loads(request.body)
+        request_id = data.get("request_id")
+        if not request_id:
+            return JsonResponse({"status": "error"}, status=400)
+        try:
+            if FriendRequestService.delete_friend_request(user, request_id):
+                return JsonResponse({"status": "Friend request deleted"}, status=200)
+            return JsonResponse({"status": "Friend request not deleted"}, status=400)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
 
@@ -103,5 +115,18 @@ def unfriend(request, user : User) -> JsonResponse:
         if removed_friend:
             return JsonResponse(user_model_to_dict(removed_friend), status=200)
         return JsonResponse({"status": "Friend not removed"}, status=400)
+    except Exception as e:
+        return JsonResponse({"status": f"{e}"}, status=400)
+    
+
+@jwt_auth_required()
+def get_users_friends(request, user : User, id: int) -> JsonResponse:
+    if request.method != "GET":
+        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+    try:
+        skip = int(request.GET.get("skip", 0))
+        limit = int(request.GET.get("limit", 10))
+        friends = UserService.get_friends(user, skip=skip, limit=limit, id=id)
+        return JsonResponse(friends, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)

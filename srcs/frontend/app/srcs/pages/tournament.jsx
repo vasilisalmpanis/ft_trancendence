@@ -7,8 +7,8 @@ const GameCard = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
 	return (
 		<div className="card gap-2 p-2">
-			<span>{`${props.data.player1} vs ${props.data.player2}`}</span>
-			{(me.username === props.data.player1 || me.username === props.data.player2) &&
+			<span>{`${props.data.player1.username} vs ${props.data.player2.username}`}</span>
+			{(me.username === props.data.player1.username || me.username === props.data.player2.username) &&
 				<button
 					className="btn btn-outline-primary"
 					onClick={()=>{props.route("/pong", {game_id: props.data.id, from: "/tournament"});}}

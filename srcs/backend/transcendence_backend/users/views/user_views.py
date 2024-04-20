@@ -4,7 +4,7 @@ from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
 from transcendence_backend.decorators   import jwt_auth_required
-from ..models                           import User, FriendRequest
+from ..models                           import User, FriendRequest, user_model_to_dict
 from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
 from jwt                                import JWT
@@ -70,14 +70,9 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
     User must be authenticated to receive data
     """
     try:
-        user = User.objects.get(id=id)
-        data = {
-            "user id" : user.id,
-            "username": user.username,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
-        }
+        data = UserService.get_user_by_id(user, id)
         return JsonResponse(data, safe=False)
-    except User.DoesNotExist:
+    except Exception as e:
         return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
 
 @require_http_methods(["GET"])
@@ -88,14 +83,9 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
     User must be authenticated to receive data
     """
     try:
-        user = User.objects.get(username=username)
-        data = {
-            "user id" : user.id,
-            "username": user.username,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8'),
-        }
+        data = UserService.get_user_by_username(user, username)
         return JsonResponse(data, safe=False)
-    except User.DoesNotExist:
+    except Exception as e:
         return JsonResponse({"error" : "User Doesn't Exist"}, status=404)
 
 @method_decorator(jwt_auth_required(), name="dispatch")
@@ -201,16 +191,6 @@ class BlockedUsersView(View):
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)
         
-
-def generate_2fa_qr_uri(username, secret, issuer_name="localhost"):
-    # Encode issuer name and username
-    issuer_name_encoded = urllib.parse.quote(issuer_name)
-    username_encoded = urllib.parse.quote(username)
-
-    # Format the URI
-    uri = f"otpauth://totp/{issuer_name_encoded}:{username_encoded}?secret={secret}&issuer={issuer_name_encoded}"
-
-    return uri
 
 @jwt_auth_required(second_factor=True)
 def verify_2fa_code(request, user : User) -> JsonResponse:

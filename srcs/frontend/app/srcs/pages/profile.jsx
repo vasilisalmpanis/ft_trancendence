@@ -1,14 +1,15 @@
-import ftReact			from "../ft_react";
-import { apiClient }	from "../api/api_client";
+import ftReact									from "../ft_react";
+import { apiClient }							from "../api/api_client";
 import {
 	C_PROFILE_HEADER,
 	C_PROFILE_USERNAME
-}						from "../conf/content_en";
-import BarLayout		from "../components/barlayout";
-import Alert			from "../components/alert";
-import Avatar			from "../components/avatar";
-import EditIcon			from "../components/edit_icon";
-import ClipboardIcon	from "../components/clipboard_icon";
+}												from "../conf/content_en";
+import BarLayout								from "../components/barlayout";
+import Alert									from "../components/alert";
+import Avatar									from "../components/avatar";
+import EditIcon									from "../components/edit_icon";
+import ClipboardIcon							from "../components/clipboard_icon";
+import StatsLayout								from "../components/statslayout";
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
@@ -30,10 +31,7 @@ const ProfileCard = (props) => {
 		}
 	}
 	return (
-		<div className="card" style="width: 18rem;">
-			<div className="card-body">
-				<h5 className="card-title">{C_PROFILE_HEADER}</h5>
-			</div>
+		<div className="card justify-content-center" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -45,6 +43,7 @@ const ProfileCard = (props) => {
 					>
 						<div>
 						<Avatar img={img}/>
+						<h5 className="">{props.data.username}</h5>
 						<span
 							className="btn translate-middle rounded-pill position-absolute badge rounded-circle bg-primary"
 							style={{
@@ -153,9 +152,11 @@ const ProfileCard = (props) => {
 									ev.preventDefault();
 									const code = ev.target[0].value;
 									const res = await apiClient.post("/2fa/verify", {"2fa_code": code});
+									// console.log('RESPONSE AFTER EVDERYTHING:', res);
 									if (res.status === '2FA Verified')
 									{
 										apiClient.authorize(res);
+										localStorage.setItem("2fa", true);
 										setTfaEnabled(true);
 									}
 									else if (res.error)
@@ -181,21 +182,96 @@ const ProfileCard = (props) => {
 	);
 }
 
+const IncomingRequests = (props) => {
+	return (
+		<div className="card" style="width: 20rem;">
+			<ul className="list-group list-group-flush">
+				<li className="list-group-item">
+					<h5 className="card-title">Friend Requests</h5>
+				</li>
+				{
+					props.data.map((request, i) => {
+						return (
+							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.data}/>
+						);
+					})
+				}
+			</ul>
+		</div>
+	);
+
+}
+
+const FriendRequestLayout = (props) => {
+	const acceptRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
+		if (data.error)
+			return ;
+		else {
+			props.setter(null);
+		}
+	};
+
+	const declineRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
+		if (data.error)
+			return ;
+		else {
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
+		}
+	};
+	return (
+		<li key={props.i} className="list-group-item d-flex">
+				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
+					<h5>From:</h5>
+					<h5 className="">{props.request.receiver.username}</h5>
+					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
+					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
+				</div>
+		</li>
+	)
+}
+
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
+	const [myStats, setMyStats] = ftReact.useState(null);
+	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
+	const getMyStats = async () => {
+		const data = await apiClient.get(`/users/${me.id}/stats`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !myStats)
+			setMyStats(data);
+	}
+	const getIncomingRequests = async () => {
+		const data = await apiClient.get(`/friendrequests/incoming`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !incomingRequests)
+			setIncomingRequests(data);
+	}
+	if (me && !myStats && !error)
+		getMyStats();
+	if (me && !incomingRequests && !error)
+		getIncomingRequests();
 	return (
 		<BarLayout route={props.route}>
 			{
-				me
-					? <ProfileCard data={me}/>
-					: error
-						? <Alert msg={error}/>
-						: (
-							<div className="spinner-grow" role="status">
-								<span className="visually-hidden">Loading...</span>
-				  			</div>
-						)
+				me && myStats && incomingRequests
+					? 	<div className="d-flex gap-5">
+							<div>
+								<ProfileCard data={me}/>
+							</div>
+							<div>
+								<StatsLayout data={myStats}/>
+							</div>
+
+							<div>
+								{/* <IncomingRequests data={incomingRequests} setter={setIncomingRequests}/> */}
+							</div>
+						</div>
+					: 	<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);

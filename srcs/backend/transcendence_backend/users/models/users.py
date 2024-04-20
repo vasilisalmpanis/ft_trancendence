@@ -1,4 +1,3 @@
-from enum import unique
 from typing                     import Any
 from django.db                  import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
@@ -6,6 +5,8 @@ from django.utils               import timezone
 from transcendence_backend.totp import get_totp_token
 from django.conf                import settings
 from cryptography.fernet        import Fernet
+import users
+import base64
 
 class UserManager(BaseUserManager):
     def create_user(self, username : str,
@@ -45,13 +46,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.CharField(max_length=255, blank=False)
     avatar = models.BinaryField(editable=True, max_length=1024*1024*20, unique=False, blank=True, null=True)
     token = models.CharField(max_length=255, null=True, blank=True)
+    stats = models.ForeignKey('stats.Stats', on_delete=models.CASCADE, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)
     is_2fa_enabled = models.BooleanField(default=False)
     is_user_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     ft_intra_id = models.IntegerField(null=True, blank=True)
-
     #When symmetrical=True (which is the default), Django won't 
     # use the related_name option to create a reverse relation. 
     # It automatically creates the reverse relation from "self" to "self" using the lowercased model name.
@@ -75,12 +76,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         verbose_name = 'User'
         verbose_name_plural = 'Users'
-import base64
-def user_model_to_dict(user : "User", avatar=True) -> dict[str, Any]:
+
+def user_model_to_dict(user : "User", avatar=True, me: User | None = None) -> dict[str, Any]:
     if not user:
-        return {}   
+        return {}
+    friend = False
+    if me and me.id == user.id:
+        friend = False
+    elif me and me.friends.filter(id=user.id).exists():
+        friend = True
+    elif me:
+        friend = users.services.FriendRequestService.friend_request_status(me, user)
     return {
         "id": user.id,
         "username": user.username,
         "avatar": base64.b64encode(user.avatar).decode('utf-8') if avatar else None,
+        "friend": friend,
     }

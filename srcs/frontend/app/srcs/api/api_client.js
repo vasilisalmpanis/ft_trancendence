@@ -6,6 +6,7 @@
 class ApiClient {
   constructor (baseUrl) {
     this.baseUrl = new URL(baseUrl);
+    this.route = null;
     if (typeof localStorage === 'undefined') {
       this.headers = {
         'Content-Type': 'application/json',
@@ -72,7 +73,16 @@ class ApiClient {
       });
     }
     try {
-      const response = await fetch(url, params);
+      let response = await fetch(url, params);
+      while (response.status === 401 && path !== '/auth/refresh' && path !== '/2fa/verify' && path !== '/auth/verify') {
+        const refresh = await this.refresh();
+        if (refresh.error === 401) {
+          this.unauthorize();
+          this.route('/signin');
+          return {error: 401};
+        }
+        response = await fetch(url, params);
+      }
       return await this.proceedResponse(response);
     } catch (error) {
       return {error: "no connection"};
@@ -80,23 +90,19 @@ class ApiClient {
   }
 
   async get (path, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'GET', null, query);
+    return await this.sendRequest(path, 'GET', null, query);
   }
 
   async post (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'POST', body, query);
+    return await this.sendRequest(path, 'POST', body, query);
   }
 
   async put (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'PUT', body, query);
+    return await this.sendRequest(path, 'PUT', body, query);
   }
 
   async delete (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'DELETE', body, query);
+    return await this.sendRequest(path, 'DELETE', body, query);
   }
 
   async authorize (payload, query = null) {
@@ -105,7 +111,6 @@ class ApiClient {
       response_body = payload;
     else {
       response_body = await this.sendRequest('auth', 'POST', payload, query);
-      console.log(response_body);
     }
     if (response_body.error)
       return response_body;
@@ -144,15 +149,19 @@ class ApiClient {
       return ;
     }
     this.headers['Authorization'] = `Bearer ${this.refresh_token}`;
-    const response = await this.sendRequest('auth/refresh', 'POST', null, null);
-    const response_body = await response.json();
-    const access_token = response_body.access_token;
+    const response = await this.sendRequest('auth/refresh', 'GET', null, null);
+    if (response.error)
+    {
+      return response;
+    }
+    const access_token = response.access_token;
     // dev only
     if (typeof localStorage === 'undefined') {
       this.headers['Authorization'] = `Bearer ${access_token}`;
       return response;
     }
-    localStorage.setItem('access_token', access_token);
+    let test = localStorage.setItem('access_token', access_token);
+    this.headers['Authorization'] = `Bearer ${access_token}`;
     return response;
   }
 
