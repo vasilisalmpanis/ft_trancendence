@@ -1,15 +1,21 @@
 import ftReact									from "../ft_react";
 import { apiClient }							from "../api/api_client";
+import {
+	C_PROFILE_HEADER,
+	C_PROFILE_USERNAME
+}												from "../conf/content_en";
 import BarLayout								from "../components/barlayout";
-import { C_PROFILE_HEADER, C_PROFILE_USERNAME } from "../conf/content_en";
 import Alert									from "../components/alert";
-import DeleteIcon								from "../components/delete_icon";
-import EditIcon									from "../components/edit_icon";
 import Avatar									from "../components/avatar";
+import EditIcon									from "../components/edit_icon";
+import ClipboardIcon							from "../components/clipboard_icon";
 import StatsLayout								from "../components/statslayout";
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
+	const [tfa, setTfa] = ftReact.useState("");
+	const [error, setError] = ftReact.useState("");
+	const [tfaEnabled, setTfaEnabled] = ftReact.useState(localStorage.getItem('2fa') === 'true');
 	const updateMe = async () => {
 		if (img && img instanceof Blob) {
 			const reader = new FileReader();
@@ -17,7 +23,7 @@ const ProfileCard = (props) => {
 				const base64 = readerEvent.target.result;
 				const resp = await apiClient.post("/users/me", {"avatar": base64});
 				if (resp.error)
-					console.log(error);
+					setError(resp.error);
 				else
 					localStorage.setItem("me", JSON.stringify(resp));
     		};
@@ -75,7 +81,103 @@ const ProfileCard = (props) => {
 						<button type="submit" className="btn btn-outline-primary">Save</button>
 					</form>
 				</li>
+				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
+				<li className="list-group-item">
+					{
+						tfaEnabled
+							? <button
+								className="btn btn-outline-primary w-100"
+								onClick={
+									async ()=>{
+										const res = await apiClient.delete("/2fa");
+										if (res.error)
+											setError(res.error)
+										else
+										{
+											localStorage.setItem("2fa", false);
+											setTfaEnabled(false);
+										}
+									}
+								}
+							>
+								Disable 2FA
+							</button>
+							: <button
+								data-bs-toggle="modal"
+								data-bs-target="#exampleModal"
+								className="btn btn-outline-primary w-100"
+								onClick={
+									async ()=>{
+										const res = await apiClient.post("/2fa");
+										if (res.error)
+											setError(res.error);
+										else if (res.secret) {
+											setTfa(res.secret);
+										}
+									}
+								}
+							>
+								Enable 2FA
+							</button>
+					}
+				</li>
+				{error && <Alert msg={error}/>}
 			</ul>
+			<div
+				className="modal fade"
+				id="exampleModal"
+				tabindex="-1"
+				aria-labelledby="exampleModalLabel"
+				aria-hidden="true"
+			>
+  				<div class="modal-dialog modal-dialog-centered">
+  					<div className="modal-content">
+  						<div className="modal-body">
+  							<h3
+								className="modal-title fs-5"
+								id="exampleModalLabel"
+							>
+									Add this secret to your authenticator app:
+							</h3>
+							<button
+								type="button"
+								className="f-inline-flex align-items-center btn btn-link text-decoration-none"
+								onClick={()=>{navigator.clipboard.writeText(tfa)}}
+							>
+								<span className="me-1 mb-1">{tfa}</span>
+								<ClipboardIcon/>
+							</button>
+							<form
+								onSubmit={async (ev)=>{
+									ev.preventDefault();
+									const code = ev.target[0].value;
+									const res = await apiClient.post("/2fa/verify", {"2fa_code": code});
+									// console.log('RESPONSE AFTER EVDERYTHING:', res);
+									if (res.status === '2FA Verified')
+									{
+										apiClient.authorize(res);
+										localStorage.setItem("2fa", true);
+										setTfaEnabled(true);
+									}
+									else if (res.error)
+										setError(res.error);
+								}}
+								className="d-flex flex-row gap-3 my-3"
+							>
+								<input
+									placeholder={"Code from authenticator app"}
+									className="form-control"
+									type="number"
+									max={999999}
+									required
+								/>
+								<button type="submit" className="btn btn-outline-primary">OK</button>
+							</form>
+							{error && <Alert msg={error}/>}
+  						</div>
+  					</div>
+  				</div>
+			</div>
 		</div>
 	);
 }

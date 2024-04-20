@@ -15,17 +15,6 @@ const Main = (props) => {
 				<div className="mb-3">
 					<button className="btn btn-primary" onClick={() => props.route("/signin")}>{C_MAIN_LOGIN}</button>
 				</div>
-				<div className="mb-3 d-flex justify-content-center">
-					<div className="d-flex border border-secondary rounded p-5 mr-3"> {/* Added mr-3 for right margin */}
-						<h5>Running</h5>
-					</div>
-					<div className="d-flex border border-secondary rounded p-5 mr-3"> {/* Added mr-3 for right margin */}
-						<h5>Running</h5>
-					</div>
-					<div className="d-flex border border-secondary rounded p-5">
-						<h5>Running</h5>
-					</div>
-				</div>
 			</div>
 		</BarLayout>
 	);

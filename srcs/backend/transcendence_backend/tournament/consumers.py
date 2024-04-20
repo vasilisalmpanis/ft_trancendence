@@ -57,7 +57,8 @@ class TournamentGroupManager(metaclass=SingletonMeta):
         self._groups.setdefault(group, {})
         if "users" not in self._groups[group]:
             self._groups[group]["users"] = []
-        self._groups[group]["users"].append(user)
+        if user not in self._groups[group].setdefault('users', []):
+            self._groups[group]["users"].append(user)
         return self._groups[group]
 
     def group_size(self, group: str):
@@ -68,7 +69,7 @@ class TournamentGroupManager(metaclass=SingletonMeta):
     def remove(self, group: str, user: str):
         if group not in self._groups:
             return
-        self._groups[group]["users"] = [user for user in self._groups[group]["users"] if user != user]
+        self._groups[group]["users"] = [u for u in self._groups[group]["users"] if u != user]
         if len(self._groups[group]["users"]) == 0:
             self._groups.pop(group)
     
@@ -165,7 +166,7 @@ class TournamentRunner(AsyncConsumer):
                 if self._tournaments[group]['stragler']:
                     all_users.insert(0, self._tournaments[group]['stragler'])
                 pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
-                self._tournaments[group]['games'] = await self.create_games(group.removesuffix('t_'), pairs)
+                self._tournaments[group]['games'] = await self.create_games(group.removeprefix('t_'), pairs)
                 await self.channel_layer.group_send(
                     group,
                     {
@@ -177,7 +178,7 @@ class TournamentRunner(AsyncConsumer):
                 )
 
     async def status_update(self, event):
-        gid = event['gid']
+        gid = 't_' + event['gid']
         name = event['name']
         if gid in self._tournaments:
             await self.channel_layer.send(
@@ -203,7 +204,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.accept("Authorization")
         else:
             await self.accept()
-
         # gets tournament and user from scope
         user = self.scope['user']
         tournament = self.scope['tournament']
@@ -275,5 +275,5 @@ class TournamentConsumer(AsyncWebsocketConsumer):
                 'message': {'user_left' : user_dict}
             }
         )
-        await asyncio.sleep(0.000001)
+        await asyncio.sleep(0.001)
         await self.close()

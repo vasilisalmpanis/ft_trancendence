@@ -77,16 +77,6 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
-
-
-
-
-
-
-
-
-
-
 def user_model_to_dict(user : "User", avatar=True, me: User | None = None) -> dict[str, Any]:
     if not user:
         return {}
@@ -100,6 +90,6 @@ def user_model_to_dict(user : "User", avatar=True, me: User | None = None) -> di
     return {
         "id": user.id,
         "username": user.username,
-        "avatar": base64.b64encode(user.avatar).decode('utf-8') if user.avatar else None,
+        "avatar": base64.b64encode(user.avatar).decode('utf-8') if avatar else None,
         "friend": friend,
     }

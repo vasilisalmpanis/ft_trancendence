@@ -4,10 +4,10 @@ from typing         import Dict, Any, List
 from .models        import Pong, pong_model_to_dict    
 from users.models   import User, user_model_to_dict
 from django.db.models import Q
+from tournament.models import Tournament
 import logging
 
 logger = logging.getLogger(__name__)
-
 
 def join_game(user , game_id : int):
     '''Joins user to game'''
@@ -168,7 +168,11 @@ class PongService:
         if game.player2 is None:
             raise Exception('Game is not full')
         if game.status != 'finished' and score1 < game.max_score and score2 < game.max_score:
-            game.delete()
+            try:
+                Tournament.objects.get(games__in=[game.id])
+            except Exception as e:
+                logger.warn(str(e))
+                game.delete()
             return pong_model_to_dict(game)
         if game.status == 'finished':
             return pong_model_to_dict(game)

@@ -31,6 +31,14 @@ const NavBar = (props) => {
 							: "Games"}
 					</button>
 					<button
+						onClick={() => props.route("/tournaments")}
+						className="btn me-3"
+					>
+						{window.location.pathname === "/tournaments" ? 
+							<b className="border-bottom">Tournaments</b>
+							: "Tournaments"}
+					</button>
+					<button
 						onClick={() => props.route("/users")}
 						className="btn me-3"
 					>

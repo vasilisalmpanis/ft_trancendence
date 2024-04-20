@@ -40,14 +40,19 @@ class ApiClient {
   }
 
   async proceedResponse(response) {
+    let data = await response.json();
     if (response.ok)
     {
-      let data = await response.json();
       if (data.message)
         return {error: data.message};
       return data;
     }
-    else {
+    else
+    {
+      if (data.Error)
+      return {error: data.Error};
+      else if (data.status)
+        return {error: data.status};
       return {error: response.status}
     }
   }
@@ -69,7 +74,7 @@ class ApiClient {
     }
     try {
       let response = await fetch(url, params);
-      while (response.status === 401 && path !== 'auth/refresh') {
+      while (response.status === 401 && path !== '/auth/refresh' && path !== '/2fa/verify' && path !== '/auth/verify') {
         const refresh = await this.refresh();
         if (refresh.error === 401) {
           this.unauthorize();
@@ -80,29 +85,24 @@ class ApiClient {
       }
       return await this.proceedResponse(response);
     } catch (error) {
-      // console.error("HIIIIII");
       return {error: "no connection"};
     }
   }
 
   async get (path, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'GET', null, query);
+    return await this.sendRequest(path, 'GET', null, query);
   }
 
   async post (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'POST', body, query);
+    return await this.sendRequest(path, 'POST', body, query);
   }
 
   async put (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'PUT', body, query);
+    return await this.sendRequest(path, 'PUT', body, query);
   }
 
   async delete (path, body, query) {
-    const url = new URL(path, this.baseUrl);
-    return await this.sendRequest(url, 'DELETE', body, query);
+    return await this.sendRequest(path, 'DELETE', body, query);
   }
 
   async authorize (payload, query = null) {
@@ -119,11 +119,16 @@ class ApiClient {
     this.headers['Authorization'] = `Bearer ${access_token}`;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
+    if (!JSON.parse(atob(access_token.split(".")[1]))["is_authenticated"])
+    {
+      localStorage.setItem('2fa', true);
+      return {"ok": "2fa"}
+    }
     const me = await this.get("/users/me");
     if (me.error)
       return me;
     localStorage.setItem("me", JSON.stringify(me));
-    return {"ok": true};
+    return {"ok": "true"};
   }
 
   unauthorize () {

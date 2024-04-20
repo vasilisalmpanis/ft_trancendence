@@ -111,8 +111,12 @@ const Pong = (props) => {
 					if (
 						(data.Problem && data.Problem === 'Connecting to game')
 						|| (data.error && data.error === 'Game is full')
-					)
-						props.route("/games");
+					) {
+						if (history.state && history.state.from)
+							props.route(history.state.from);
+						else
+							props.route("/games");
+					}
 					if (data.start)
 					{
 						console.log(data.start);
