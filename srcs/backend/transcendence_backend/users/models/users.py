@@ -82,5 +82,5 @@ def user_model_to_dict(user : "User", avatar=True) -> dict[str, Any]:
     return {
         "id": user.id,
         "username": user.username,
-        "avatar": base64.b64encode(user.avatar).decode('utf-8') if user.avatar else None,
+        "avatar": base64.b64encode(user.avatar).decode('utf-8') if avatar else None,
     }

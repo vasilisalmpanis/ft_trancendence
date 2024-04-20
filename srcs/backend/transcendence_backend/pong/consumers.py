@@ -302,7 +302,7 @@ class PongRunner(AsyncConsumer):
 		await database_sync_to_async(pause_game)(int(gid))
 		if gid in self._games:
 			self._games[gid]._pause()
-			self.channel_layer.group_send(gid, {'type': 'update.game.state', 'text': json.dumps({"status": "Paused"})})
+			await self.channel_layer.group_send(gid, {'type': 'update.game.state', 'text': json.dumps({"status": "Paused"})})
 
 	async def resume_game(self, message: ControlMsg) -> None:
 		'''Resume game'''
@@ -338,6 +338,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 			await self.accept("Authorization")
 		else:
 			await self.accept()
+		logger.warn(f"{self.scope["user"]} {self.channel_name}")
 		self.send(json.dumps({'message': 'Connected'}))
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:

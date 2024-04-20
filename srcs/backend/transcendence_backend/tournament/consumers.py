@@ -69,7 +69,7 @@ class TournamentGroupManager(metaclass=SingletonMeta):
     def remove(self, group: str, user: str):
         if group not in self._groups:
             return
-        self._groups[group]["users"] = [user for user in self._groups[group]["users"] if user != user]
+        self._groups[group]["users"] = [u for u in self._groups[group]["users"] if u != user]
         if len(self._groups[group]["users"]) == 0:
             self._groups.pop(group)
     
@@ -205,7 +205,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.accept("Authorization")
         else:
             await self.accept()
-
+        logger.warn(f"{self.scope["user"]} {self.channel_name}")
         # gets tournament and user from scope
         user = self.scope['user']
         tournament = self.scope['tournament']
@@ -263,19 +263,22 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         await self.send(text_data)
 
     async def disconnect(self, close_code):
-        user = self.scope['user']
-        tournament = self.scope['tournament']
-        group_name = str(tournament.id)
-        # self._groups.remove(group_name, user)
-        user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
-        self._groups.remove(group_name, user)
-        await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
-        await self.channel_layer.group_send(
-            't_' + group_name,
-            {
-                'type': 'send_message',
-                'message': {'user_left' : user_dict}
-            }
-        )
-        await asyncio.sleep(0.000001)
-        await self.close()
+        # try:
+            user = self.scope['user']
+            tournament = self.scope['tournament']
+            group_name = str(tournament.id)
+            # self._groups.remove(group_name, user)
+            user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
+            self._groups.remove(group_name, user)
+            await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
+            await self.channel_layer.group_send(
+                't_' + group_name,
+                {
+                    'type': 'send_message',
+                    'message': {'user_left' : user_dict}
+                }
+            )
+            await asyncio.sleep(0.001)
+            await self.close()
+        # except Exception as e:
+        #     logger.error(f"Its here: {e}")

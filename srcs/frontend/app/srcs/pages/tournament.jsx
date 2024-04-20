@@ -1,15 +1,19 @@
-import Avatar		from "../components/avatar";
-import BarLayout	from "../components/barlayout";
-import ftReact		from "../ft_react";
+import * as bootstrap	from 'bootstrap';
+import ftReact			from "../ft_react";
+import Avatar			from "../components/avatar";
+import BarLayout		from "../components/barlayout";
 
 const GameCard = (props) => {
+	const me = JSON.parse(localStorage.getItem("me"));
 	return (
 		<div className="card gap-2 p-2">
 			<span>{`${props.data.player1} vs ${props.data.player2}`}</span>
-			<button
-				className="btn btn-outline-primary"
-				onClick={()=>{props.route("/pong", {game_id: props.data.id, from: "/tournament"});}}
-			>JOIN</button>
+			{(me.username === props.data.player1 || me.username === props.data.player2) &&
+				<button
+					className="btn btn-outline-primary"
+					onClick={()=>{props.route("/pong", {game_id: props.data.id, from: "/tournament"});}}
+				>JOIN</button>
+			}
 		</div>
 	);
 };
@@ -23,43 +27,53 @@ const UserCard = (props) => {
 	)
 };
 
-let ws = null;
+let tws = null;
 const Tournament = (props) => {
 	const [games, setGames] = ftReact.useState(null);
 	const [users, setUsers] = ftReact.useState([]);
-	const cleanup = () => {
-		console.log("cleanup");
-		ws && ws.close();
-		ws = null;
+	const [winner, setWinner] = ftReact.useState(null);
+	const cleanup_ws = () => {
+		console.log("cleanup_ws");
+		tws && tws.close();
+		tws = null;
 	};
-	//ftReact.useEffect(()=>{
-		if (!history.state)
-			props.route("/tournaments");
-		if (!ws) {
-			ws = new WebSocket(
+	if (!history.state)
+		props.route("/tournaments");
+	ftReact.useEffect(()=>{
+		if (!tws) {
+			tws = new WebSocket(
 				`ws://${window.location.hostname}:8000/tournament`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		};
-		if (ws) {
-			ws.addEventListener('message', ev => {
+		if (tws) {
+			tws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
-				console.log("ws msg: ", data);
+				//console.log("ws msg: ", data);
 				if ('users' in data)
-					setUsers([...users,
-				 ...data.users])
+					setUsers([...data.users])
 				if ('message' in data && 'games' in data['message'])
 				{
-					console.log("setGames");
 					setGames([...data.message.games])
 				}
 				else if ('message' in data && 'user_joined' in data['message']) {
-					setUsers([...users, data['message']['user_joined']]);
+					const new_user = data['message']['user_joined'];
+					if (!users.find(user => user.id === new_user.id))
+						setUsers([...users, new_user]);
+				}
+				else if ('message' in data && 'user_left' in data['message']) {
+					const left_user = data['message']['user_left'];
+					setUsers([...users.filter(user => user.id !== left_user.id)]);
+				}
+				else if ('message' in data && 'winner' in data['message']) {
+					setWinner(data['message']['winner']);
+					const winnerModal = new bootstrap.Modal('#winnerModal', {});
+					winnerModal.show();
 				}
 			});
-		}
-		//return cleanup;
-	//},[]);
+	 	}
+		return cleanup_ws;
+	},[users, games, winner]);
 	return (
 		<BarLayout route={props.route}>
 			<h3>It's a tournament {history.state?.name}</h3>
@@ -70,6 +84,25 @@ const Tournament = (props) => {
 			<div>
 				<h5 className="mt-3">Active users:</h5>
 				{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
+			</div>
+			<button className="btn btn-primary-outline" onClick={()=>{
+				if (tws) {
+					tws.close();
+					tws = null;
+				}
+			}}>CLOSE</button>
+			<div
+				className="modal fade"
+				id="winnerModal"
+				tabindex="-1"
+				aria-labelledby="exampleModalLabel"
+				aria-hidden="true"
+			>
+				<div className="modal-dialog modal-dialog-centered">
+					<div className="modal-content">
+						{winner ? <span>Winner: {winner.username}</span> : "No winner"}
+					</div>
+				</div>
 			</div>
 		</BarLayout>
 	);

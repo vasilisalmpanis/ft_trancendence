@@ -193,9 +193,12 @@ class FiberNode {
       this.child && this.child.delete(domParent);
     }
     this.effect = null;
+    if (this.type instanceof Function)
+      console.log("DELETE", this.type.name, this.effects);
     if (this.effects) {
       this.effects.forEach(effect => {
           if (effect && effect.cleanup) {
+            console.log(this.type instanceof Function ? this.type.name : this.type, "CLEANUP ON DELETE");
             effect.cleanup();
           }
       });
@@ -402,19 +405,22 @@ class FTReact {
   useEffect(callback, deps) {
     const node = this._currentNode;
     const effectIdx = node.stId;
-    const oldEffect = node.old && node.effects[effectIdx];
+    const oldEffect = node.old && node.old.effects[effectIdx];
     const hasChangedDeps = oldEffect && oldEffect.deps ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i])) : true;
+    //console.log("DEPS: ", hasChangedDeps, deps, oldEffect);
     const effect = {
-      cleanup: null,
+      cleanup: null,//oldEffect ? oldEffect.cleanup : null,
       deps,
       callback,
       hasChangedDeps
     };
 
-    if (hasChangedDeps) {
-      if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
-        oldEffect.cleanup();
-      }
+    if (!hasChangedDeps && oldEffect && oldEffect.cleanup) {
+      effect.cleanup = oldEffect.cleanup;
+      // if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
+      //   oldEffect.cleanup();
+      // }
+    }
       //const effect = async () => {
       //  let isActive = true; // Flag to track if the effect is still valid
       //  const cleanup = callback(); // Execute the user-provided effect
@@ -433,8 +439,9 @@ class FTReact {
       //      isActive = false;
       //  };
       //};
+      // console.log("cleanup is maybe null now", effect);
       node.effects[effectIdx] = effect;
-    }
+    //}
     node.stId++;
   }
   /**
