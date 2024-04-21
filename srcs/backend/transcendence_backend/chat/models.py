@@ -39,7 +39,7 @@ def chat_model_to_dict(chat, user) -> Dict[Any,Any]:
 
 class Message(models.Model):
     id = models.AutoField(primary_key=True)
-    chat_id = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="messages")
     timestamp = models.DateTimeField(default=timezone.now)
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="messages")
     read = models.BooleanField(default=False)
@@ -56,7 +56,7 @@ def message_model_to_dict(message) -> dict:
     """
     return {
         "id": message.id,
-        "chat_id": message.chat_id.id,
+        "chat_id": message.chat.id,
         "timestamp": message.timestamp,
         "sender": message.sender.username,
         "read": message.read,

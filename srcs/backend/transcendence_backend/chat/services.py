@@ -1,7 +1,9 @@
-from .models        import Chat, Message, chat_model_to_dict, message_model_to_dict
-from users.models   import User
-from typing         import List, Dict
+from .models            import Chat, Message, chat_model_to_dict, message_model_to_dict
+from users.models       import User
+from typing             import List, Dict
 
+from channels.layers    import get_channel_layer
+from asgiref.sync       import async_to_sync
 
 
 class ChatService:
@@ -39,6 +41,12 @@ class ChatService:
         chat = Chat.objects.create(name=name)
         chat.participants.add(sender)
         chat.participants.add(receiver)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'manager.update',
+            'status': 'chat_id {chat.id} created',
+            'sender_id': sender.id,
+        })
         return chat_model_to_dict(chat, sender)
     
     @staticmethod
@@ -52,9 +60,15 @@ class ChatService:
         if chat:
             response = chat_model_to_dict(chat, user)
             chat.delete()
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)('0', {
+                'type': 'manager.update',
+                'status': 'chat_id {chat_id} deleted',
+                'sender_id': user.id,
+            })
             return response
         return {}
-    
+
     @staticmethod
     def get_chats(user : User, skip : int = 0, limit : int = 10) -> List[Dict[str, str]]:
         """
@@ -81,7 +95,7 @@ class MessageService:
         chat = Chat.objects.filter(id=chat_id, participants__id=user.id).first()
         if chat:
             message = Message.objects.create(
-                chat_id=chat,
+                chat=chat,
                 sender=user,
                 content=content
             )
@@ -96,7 +110,7 @@ class MessageService:
         :param message_id: int
         :return: bool
         """
-        message = Message.objects.filter(id=message_id, chat_id__participants__id=user.id).first()
+        message = Message.objects.filter(id=message_id, chat__participants__id=user.id).first()
         if not message:
             return False
         if user.username == message.sender.username:
@@ -106,8 +120,8 @@ class MessageService:
         return True
 
     @staticmethod
-    def get_messages(chat_id, skip=0, limit=10) -> list:
-        messages = Message.objects.filter(chat_id=chat_id).order_by("-timestamp")[skip:skip+limit]
+    def get_messages(chat_id : int, skip=0, limit=10) -> list:
+        messages = Message.objects.filter(chat__id=chat_id).order_by("-timestamp")[skip:skip+limit]
         return [
             message_model_to_dict(message)
             for message in messages
@@ -122,7 +136,7 @@ class MessageService:
         :param state: str
         :return: list
         """
-        messages = Message.objects.filter(chat_id=chat_id, read=state).exclude(sender_id=user.id)
+        messages = Message.objects.filter(chat__id=chat_id, read=state, chat__participants__id=user.id)
         return [
             message_model_to_dict(message) 
             for message in messages]

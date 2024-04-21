@@ -7,6 +7,8 @@ from django.conf                import settings
 from cryptography.fernet        import Fernet
 from transcendence_backend.totp import get_totp_token
 from typing                     import Any, Dict, List
+from channels.layers            import get_channel_layer
+from asgiref.sync               import async_to_sync
 from stats.services             import StatService
 import os
 import base64
@@ -113,6 +115,12 @@ class UserService:
         friend = user.friends.get(id=friend_id)
         if not friend:
             raise Exception("You are not friends with this user")
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'manager.update',
+            'status': 'unfriended friend_id {friend_id}',
+            'sender_id': user.id,
+        })
         user.friends.remove(friend)
         friend.friends.remove(user)
         return friend
@@ -137,6 +145,12 @@ class UserService:
         if user.id == user_to_block.id:
             raise Exception("You cannot block yourself")
         user.blocked.add(user_to_block)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+            'type': 'manager.update',
+            'status': 'user {user_id} blocked',
+            'sender_id': user.id,
+        })
         FriendRequest.objects.filter(sender_id=user_to_block.id,
                                      receiver_id=user.id).delete()
         FriendRequest.objects.filter(sender_id=user.id,
@@ -159,7 +173,13 @@ class UserService:
         if user.id == user_to_unblock.id:
             raise Exception("You cannot unblock yourself")
         user.blocked.remove(user_to_unblock)
-        return user_model_to_dict(user_to_unblock, me=user)
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)('0', {
+        'type': 'manager.update',
+        'status': 'user {user_id} unblocked',
+        'sender_id': user.id,
+        })
+        return user_model_to_dict(user_to_unblock)
     
     @staticmethod
     def get_blocked_users(user : User, skip : int = 0, limit : int = 10) -> List[Dict[str,Any]]:
