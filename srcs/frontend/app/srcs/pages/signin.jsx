@@ -19,7 +19,7 @@ const Signin = (props) => {
 		const handleQuery = async () => {
 			let queryDict = new URLSearchParams(location.search);
 			if (queryDict.has("access_token")) {
-				const res = apiClient.authorize({
+				const res = await apiClient.authorize({
 					access_token: queryDict.get("access_token"),
 					refresh_token: queryDict.get("refresh_token")
 				});
@@ -28,7 +28,10 @@ const Signin = (props) => {
 				else {
 					queryDict.delete("access_token");
 					queryDict.delete("refresh_token");
-					props.route("/");
+					if (res["ok"] === "true")
+						props.route("/");
+					else if (res["ok"] === "2fa")
+						props.route("/2fa");
 				}
 			}
 		}
@@ -42,8 +45,15 @@ const Signin = (props) => {
 			username: username,
 			password: password
 		});
-		if (resp)
-			resp.error ? setError(resp.error) : props.route("/");
+		if (resp) {
+			console.log(resp);
+			if (resp.error)
+				setError(resp.error);
+			else if (resp["ok"] === "true")
+				props.route("/");
+			else if (resp["ok"] === "2fa")
+				props.route("/2fa");
+		}
 	};
 	return (
 		<Layout>

@@ -2,6 +2,21 @@
  * Naive implementation of React-like library
  */
 
+const requestIdleCallback =
+      window.requestIdleCallback ||
+      function (cb) {
+        var start = Date.now()
+        return setTimeout(function () {
+          cb({
+            didTimeout: false,
+            timeRemaining: function () {
+              return Math.max(0, 50 - (Date.now() - start))
+            },
+          })
+        }, 1)
+  };
+
+
 const isEvent = key => key.startsWith("on");
 const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];
@@ -364,9 +379,19 @@ class FTReact {
     actions.forEach(action => {
       hook.state = action instanceof Function ? action(hook.state) : action;
     });
+    // console.log("render", node.type instanceof Function ? node.type.name: node.type, hook);
+    // console.log("rndr", hook, oldHook);
     const setState = action => {
       hook.queue.push(action);
-      this._scheduleUpdate(node);
+      // console.log("setState", hook, oldHook);
+      node.states.forEach(hook => {
+        hook.queue.forEach(action => {
+          hook.state = typeof action === 'function' ? action(hook.state) : action;
+        });
+        hook.queue = [];
+        this._scheduleUpdate(node);
+    });
+
     };
     node.states[node.stId] = hook;
     node.stId++;
@@ -392,8 +417,8 @@ class FTReact {
   useEffect(callback, deps) {
     const node = this._currentNode;
     const effectIdx = node.stId;
-    const oldEffect = node.old && node.effects[effectIdx];
-    const hasChangedDeps = oldEffect && oldEffect.deps ? deps.every((dep, i) => !Object.is(dep, oldEffect.deps[i])) : true;
+    const oldEffect = node.old && node.old.effects[effectIdx];
+    const hasChangedDeps = oldEffect && oldEffect.deps ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i])) : true;
     const effect = {
       cleanup: null,
       deps,
@@ -401,30 +426,12 @@ class FTReact {
       hasChangedDeps
     };
 
-    if (hasChangedDeps) {
-      if (oldEffect && oldEffect.cleanup && oldEffect.cleanup instanceof Function) {
-        oldEffect.cleanup();
-      }
-      //const effect = async () => {
-      //  let isActive = true; // Flag to track if the effect is still valid
-      //  const cleanup = callback(); // Execute the user-provided effect
-      //  // Check if the effect returns a cleanup function directly or from an async operation
-      //  if (cleanup instanceof Promise) {
-      //      cleanup.then(asyncCleanup => {
-      //          if (!isActive && asyncCleanup) {
-      //              asyncCleanup(); // Call the cleanup function if the component unmounted
-      //          }
-      //      });
-      //  } else if (typeof cleanup === 'function') {
-      //      node.effects[effectIdx] = { cleanup, deps }; // Store the cleanup function for later
-      //  }
-      //  // Define a cleanup function to update the flag if the component unmounts
-      //  return () => {
-      //      isActive = false;
-      //  };
-      //};
-      node.effects[effectIdx] = effect;
+    if (!hasChangedDeps && oldEffect && oldEffect.cleanup) {
+      effect.cleanup = oldEffect.cleanup;
+
     }
+
+    node.effects[effectIdx] = effect;
     node.stId++;
   }
   /**

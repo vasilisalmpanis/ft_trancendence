@@ -1,23 +1,29 @@
-import ftReact		from "../ft_react";
-import { apiClient } from "../api/api_client";
-import BarLayout from "../components/barlayout";
-import { C_PROFILE_HEADER, C_PROFILE_USERNAME } from "../conf/content_en";
-import Alert from "../components/alert";
-import DeleteIcon from "../components/delete_icon";
-import EditIcon from "../components/edit_icon";
-import Avatar from "../components/avatar";
+import ftReact									from "../ft_react";
+import { apiClient }							from "../api/api_client";
+import {
+	C_PROFILE_HEADER,
+	C_PROFILE_USERNAME
+}												from "../conf/content_en";
+import BarLayout								from "../components/barlayout";
+import Alert									from "../components/alert";
+import Avatar									from "../components/avatar";
+import EditIcon									from "../components/edit_icon";
+import ClipboardIcon							from "../components/clipboard_icon";
+import StatsLayout								from "../components/statslayout";
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
+	const [tfa, setTfa] = ftReact.useState("");
+	const [error, setError] = ftReact.useState("");
+	const [tfaEnabled, setTfaEnabled] = ftReact.useState(localStorage.getItem('2fa') === 'true');
 	const updateMe = async () => {
 		if (img && img instanceof Blob) {
-			console.log("update");
 			const reader = new FileReader();
     		reader.onload = async function(readerEvent) {
 				const base64 = readerEvent.target.result;
 				const resp = await apiClient.post("/users/me", {"avatar": base64});
 				if (resp.error)
-					console.log(error);
+					setError(resp.error);
 				else
 					localStorage.setItem("me", JSON.stringify(resp));
     		};
@@ -25,10 +31,7 @@ const ProfileCard = (props) => {
 		}
 	}
 	return (
-		<div className="card" style="width: 18rem;">
-			<div className="card-body">
-				<h5 className="card-title">{C_PROFILE_HEADER}</h5>
-			</div>
+		<div className="card justify-content-center" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -40,6 +43,7 @@ const ProfileCard = (props) => {
 					>
 						<div>
 						<Avatar img={img}/>
+						<h5 className="">{props.data.username}</h5>
 						<span
 							className="btn translate-middle rounded-pill position-absolute badge rounded-circle bg-primary"
 							style={{
@@ -78,26 +82,196 @@ const ProfileCard = (props) => {
 					</form>
 				</li>
 				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
+				<li className="list-group-item">
+					{
+						tfaEnabled
+							? <button
+								className="btn btn-outline-primary w-100"
+								onClick={
+									async ()=>{
+										const res = await apiClient.delete("/2fa");
+										if (res.error)
+											setError(res.error)
+										else
+										{
+											localStorage.setItem("2fa", false);
+											setTfaEnabled(false);
+										}
+									}
+								}
+							>
+								Disable 2FA
+							</button>
+							: <button
+								data-bs-toggle="modal"
+								data-bs-target="#exampleModal"
+								className="btn btn-outline-primary w-100"
+								onClick={
+									async ()=>{
+										const res = await apiClient.post("/2fa");
+										if (res.error)
+											setError(res.error);
+										else if (res.secret) {
+											setTfa(res.secret);
+										}
+									}
+								}
+							>
+								Enable 2FA
+							</button>
+					}
+				</li>
+				{error && <Alert msg={error}/>}
 			</ul>
+			<div
+				className="modal fade"
+				id="exampleModal"
+				tabindex="-1"
+				aria-labelledby="exampleModalLabel"
+				aria-hidden="true"
+			>
+  				<div class="modal-dialog modal-dialog-centered">
+  					<div className="modal-content">
+  						<div className="modal-body">
+  							<h3
+								className="modal-title fs-5"
+								id="exampleModalLabel"
+							>
+									Add this secret to your authenticator app:
+							</h3>
+							<button
+								type="button"
+								className="f-inline-flex align-items-center btn btn-link text-decoration-none"
+								onClick={()=>{navigator.clipboard.writeText(tfa)}}
+							>
+								<span className="me-1 mb-1">{tfa}</span>
+								<ClipboardIcon/>
+							</button>
+							<form
+								onSubmit={async (ev)=>{
+									ev.preventDefault();
+									const code = ev.target[0].value;
+									const res = await apiClient.post("/2fa/verify", {"2fa_code": code});
+									// console.log('RESPONSE AFTER EVDERYTHING:', res);
+									if (res.status === '2FA Verified')
+									{
+										apiClient.authorize(res);
+										localStorage.setItem("2fa", true);
+										setTfaEnabled(true);
+									}
+									else if (res.error)
+										setError(res.error);
+								}}
+								className="d-flex flex-row gap-3 my-3"
+							>
+								<input
+									placeholder={"Code from authenticator app"}
+									className="form-control"
+									type="number"
+									max={999999}
+									required
+								/>
+								<button type="submit" className="btn btn-outline-primary">OK</button>
+							</form>
+							{error && <Alert msg={error}/>}
+  						</div>
+  					</div>
+  				</div>
+			</div>
 		</div>
 	);
 }
 
+const IncomingRequests = (props) => {
+	return (
+		<div className="card" style="width: 20rem;">
+			<ul className="list-group list-group-flush">
+				<li className="list-group-item">
+					<h5 className="card-title">Friend Requests</h5>
+				</li>
+				{
+					props.data.map((request, i) => {
+						return (
+							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.data}/>
+						);
+					})
+				}
+			</ul>
+		</div>
+	);
+
+}
+
+const FriendRequestLayout = (props) => {
+	const acceptRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
+		if (data.error)
+			return ;
+		else {
+			props.setter(null);
+		}
+	};
+
+	const declineRequest = async () => {
+		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
+		if (data.error)
+			return ;
+		else {
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
+		}
+	};
+	return (
+		<li key={props.i} className="list-group-item d-flex">
+				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
+					<h5>From:</h5>
+					<h5 className="">{props.request.receiver.username}</h5>
+					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
+					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
+				</div>
+		</li>
+	)
+}
+
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
+	const [myStats, setMyStats] = ftReact.useState(null);
+	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
+	const getMyStats = async () => {
+		const data = await apiClient.get(`/users/${me.id}/stats`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !myStats)
+			setMyStats(data);
+	}
+	const getIncomingRequests = async () => {
+		const data = await apiClient.get(`/friendrequests/incoming`);
+		if (data.error)
+			setError(data.error);
+		else if (data && !incomingRequests)
+			setIncomingRequests(data);
+	}
+	if (me && !myStats && !error)
+		getMyStats();
+	if (me && !incomingRequests && !error)
+		getIncomingRequests();
 	return (
 		<BarLayout route={props.route}>
 			{
-				me
-					? <ProfileCard data={me}/>
-					: error
-						? <Alert msg={error}/>
-						: (
-							<div className="spinner-grow" role="status">
-								<span className="visually-hidden">Loading...</span>
-				  			</div>
-						)
+				me && myStats && incomingRequests
+					? 	<div className="d-flex gap-5">
+							<div>
+								<ProfileCard data={me}/>
+							</div>
+							<div>
+								<StatsLayout data={myStats}/>
+							</div>
+
+							<div>
+								{/* <IncomingRequests data={incomingRequests} setter={setIncomingRequests}/> */}
+							</div>
+						</div>
+					: 	<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);

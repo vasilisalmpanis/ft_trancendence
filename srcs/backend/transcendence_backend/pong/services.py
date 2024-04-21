@@ -4,7 +4,10 @@ from typing         import Dict, Any, List
 from .models        import Pong, pong_model_to_dict    
 from users.models   import User, user_model_to_dict
 from django.db.models import Q
+from tournament.models import Tournament
+import logging
 
+logger = logging.getLogger(__name__)
 
 def join_game(user , game_id : int):
     '''Joins user to game'''
@@ -52,33 +55,63 @@ class PongService:
         @param limit: int
         @return: JsonResponse with game schema
         """
+        users_blocked_by_me = user.blocked.all()
+        users_blocked_me = User.objects.filter(blocked=user)
+        order_by = ['-timestamp', 'id']
+        if type.lower() not in ['all', 'pending', 'finished', 'running', 'paused']:
+            raise Exception('Invalid type')
         if me:
             if type == 'all':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).order_by('-timestamp')[skip:skip+limit]
-            elif type == 'pending':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'finished':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'running':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='running').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'paused':
-                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                    order_by(*order_by).\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
-                raise Exception('Invalid type')
+                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                    filter(status='pending').\
+                    order_by(*order_by).\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         else:
             if type == 'all':
-                games = Pong.objects.order_by('-timestamp')[skip:skip+limit]
-            elif type == 'pending':
-                games = Pong.objects.filter(status='pending').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'finished':
-                games = Pong.objects.filter(status='finished').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'running':
-                games = Pong.objects.filter(status='running').order_by('-timestamp')[skip:skip+limit]
-            elif type == 'paused':
-                games = Pong.objects.filter(status='paused').order_by('-timestamp')[skip:skip+limit]
+                games = Pong.objects.order_by(*order_by).\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
-                raise Exception('Invalid type')
+                games = Pong.objects.filter(status='pending').\
+                    order_by(*order_by).\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         return [pong_model_to_dict(game) for game in games]
+    
+    @staticmethod
+    def get_user_games(id: int, type : str, skip : int, limit : int, me: User) -> List[Dict[Any, Any]]:
+        """
+        Returns the games of the user
+        @param id: int
+        @param type: str
+        @param skip: int
+        @param limit: int
+        @return: JsonResponse with game schema
+        """
+
+        user = User.objects.filter(id=id).first()
+
+        if user is None:
+            raise Exception('User not found')
+        users_blocked_by_me = user.blocked.all()
+        users_blocked_me = User.objects.filter(blocked=user)
+        order_by = ['-timestamp', 'id']
+        if user.blocked.filter(id=me.id).exists() or me.blocked.filter(id=user.id).exists():
+            raise Exception('User blocked')
+        if type.upper() not in ['ALL', 'PENDING', 'FINISHED', 'RUNNING', 'PAUSED']:
+            raise Exception('Invalid type')
+        if type == 'all':
+            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                order_by(*order_by).\
+                exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        else:
+            games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                filter(status=type.lower()).\
+                order_by(*order_by).\
+                exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+        return [pong_model_to_dict(game, me) for game in games]
     
     @staticmethod
     def check_user_already_joined(user) -> bool:
@@ -124,25 +157,30 @@ class PongService:
         @param game_id: int
         @return: JsonResponse with game schema
         """
+        score1 = 0
+        score2 = 0
         if result is not None:
             score1 = result['s1']
             score2 = result['s2']
-            left = result['left']
-            right = result['right']
-        else:
-            score1 = 0
-            score2 = 0
-            left = None
-            right = None
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
             raise Exception('Game not found')
         if game.player2 is None:
             raise Exception('Game is not full')
+        if game.status != 'finished' and score1 < game.max_score and score2 < game.max_score:
+            try:
+                Tournament.objects.get(games__in=[game.id])
+            except Exception as e:
+                logger.warn(str(e))
+                game.delete()
+            return pong_model_to_dict(game)
+        if game.status == 'finished':
+            return pong_model_to_dict(game)
         game.score1 = score1
         game.score2 = score2
         game.status = 'finished'
         game.save()
+        logger.warn(f'Game {game_id} finished with score {score1} - {score2}')
         if score1 > score2:
             return user_model_to_dict(game.player1, avatar=False)
         elif score1 < score2:

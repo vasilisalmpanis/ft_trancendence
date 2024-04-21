@@ -1,7 +1,7 @@
 from django.http                    import JsonResponse
 from django.core.signing            import Signer, BadSignature
 from django.shortcuts               import redirect
-from users.models                   import User
+from users.models                   import User, user_model_to_dict
 from stats.models                   import Stats
 from django.db.models               import Q
 from jwt                            import JWT
@@ -86,7 +86,7 @@ def handle_redir(request) -> JsonResponse:
         else:
             return JsonResponse({'status': 'Failed to fetch userdata'}, status=404)
     else:
-        return JsonResponse({'status': 'Failed to obtain access token'}, status=response.status_code)
+        return JsonResponse({'status': 'Failed to obtain access token'}, status=response_raw.status)
 
 def fetch_user_data(access_token):
     """
@@ -117,13 +117,16 @@ def get_or_create_user(user_data):
     Builds new user oder returns existing user fitting user_data
     :return: user object
     """
+    logger.warn(user_data)
     try:
-        user = User.objects.get(Q(ft_intra_id=user_data['id']) & Q(email=user_data['email']))
+        user = User.objects.get(Q(ft_intra_id=user_data['id']) | Q(email=user_data['email']))
+        user = user_model_to_dict(user)
     except User.DoesNotExist:
+        logger.warn('exception')
         if not user_data['login'] or not user_data['email']:
             return None
         try:
-            UserService.create_user(user_data['login'], user_data['email'], user_data['id'])
+            user = UserService.create_user(user_data['login'], settings.RANDOM_OAUTH_USER_PASSWORD, user_data['email'], intra_id=user_data["id"])
         except Exception as e:
             logger.error(f'Failed to create user: {e}')
             return None
@@ -135,6 +138,7 @@ def login_ft_oauth_user(user, redir='http://localhost:8080/signin'):
     :return: JSON element containing token pair
     """
     jwt = JWT(settings.JWT_SECRET)
+    user = User.objects.get(id=user.get('id', None))
     user.is_user_active = True
     UserService.update_last_login(user)
     access_token = create_token(jwt=jwt, 

@@ -1,4 +1,7 @@
 from datetime                   import datetime
+import re
+import stat
+from urllib import request
 from .models                    import User, FriendRequest, user_model_to_dict, friend_request_model_to_dict
 from django.conf                import settings
 from cryptography.fernet        import Fernet
@@ -9,18 +12,23 @@ from asgiref.sync               import async_to_sync
 from stats.services             import StatService
 import os
 import base64
+import logging
+
+logger = logging.getLogger(__name__)
 
 class UserService:
     @staticmethod
-    def create_user(username: str, password:str, email:str, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
+    def create_user(username: str, password:str, email:str, intra_id=None, is_staff:bool = False, is_superuser:bool = False) -> Dict[str,Any]:
             avatar = settings.DEFAULT_AVATAR
+            stats = StatService.create_stats()
             user = User.objects.create_user(username=username,
                                     password=password,
                                     email=email,
                                     avatar=avatar,
+                                    stats=stats,
+                                    ft_intra_id=intra_id,
                                     is_staff=is_staff,
                                     is_superuser=is_superuser)
-            StatService.create_stats(user)
             return user_model_to_dict(user)
 
 
@@ -39,8 +47,8 @@ class UserService:
         # Intersection of users who haven't blocked me and users whom I haven't blocked
         users = users_not_blocked_by_me.intersection(users_not_blocked_me)[skip:skip+limit]
         data = [
-            user_model_to_dict(user)
-            for user in users
+            user_model_to_dict(user_element, me=user)
+            for user_element in users
         ]
         return data
 
@@ -72,7 +80,7 @@ class UserService:
         return user_model_to_dict(user)
 
     @staticmethod
-    def get_friends(user, skip : int = 0, limit : int = 10) -> list[dict[str,Any]]:
+    def get_friends(user, skip : int = 0, limit : int = 10, id: int | None = None) -> list[dict[str,Any]]:
         """
         Get friends of a user
         :param user: User instance
@@ -80,11 +88,21 @@ class UserService:
         :param limit: int
         :return: list[User]
         """
-        friends = user.friends.all()[skip:skip+limit]
-        return [
-            user_model_to_dict(friend)
-            for friend in friends
-        ]
+        if id:
+            temp_user = User.objects.get(id=id)
+            if not user:
+                raise Exception("User not found")
+            friends = temp_user.friends.all()[skip:skip+limit]
+            return [
+                user_model_to_dict(friend, me=user)
+                for friend in friends
+            ]
+        else:
+            friends = user.friends.all()[skip:skip+limit]
+            return [
+                user_model_to_dict(friend)
+                for friend in friends
+            ]
     
     @staticmethod
     def unfriend(user : User, friend_id : int) -> User:
@@ -135,7 +153,9 @@ class UserService:
         })
         FriendRequest.objects.filter(sender_id=user_to_block.id,
                                      receiver_id=user.id).delete()
-        return user_model_to_dict(user_to_block)
+        FriendRequest.objects.filter(sender_id=user.id,
+                                        receiver_id=user_to_block.id).delete()
+        return user_model_to_dict(user_to_block, me=user)
     
     @staticmethod
     def unblock(user : User, user_id : int) -> Dict[str,Any]:
@@ -172,10 +192,44 @@ class UserService:
         """
         blocked_users = user.blocked.all()[skip:skip+limit]
         return [
-                user_model_to_dict(user)
-                for user in blocked_users
+                user_model_to_dict(user_element, me=user)
+                for user_element in blocked_users
         ]
+    
+    @staticmethod
+    def get_user_by_id(me: User, id: int) -> Dict[str,Any]:
+        """
+        Get user by id
+        :param user: User instance
+        :param id: int
+        :return: User instance
+        """
+        requested_user = User.objects.get(id=id)
+        if not me:
+            raise Exception("User not found")
+        if me.blocked.filter(id=requested_user.id).exists():
+            raise Exception("User blocked")
+        if (requested_user.blocked.filter(id=me.id).exists()):
+            raise Exception("User blocked you")
+        return user_model_to_dict(requested_user, me=me)
 
+    @staticmethod
+    def get_user_by_username(me: User, username: str) -> Dict[str,Any]:
+        """
+        Get user by id
+        :param user: User instance
+        :param id: int
+        :return: User instance
+        """
+        requested_user = User.objects.get(username=username)
+        if not me:
+            raise Exception("User not found")
+        if me.blocked.filter(id=requested_user.id).exists():
+            raise Exception("User blocked")
+        if (requested_user.blocked.filter(id=me.id).exists()):
+            raise Exception("User blocked you")
+        return user_model_to_dict(requested_user, me=me)
+    
     @staticmethod
     def update_last_login(user : User) -> User:
         """
@@ -305,12 +359,27 @@ class FriendRequestService:
             raise Exception("You already sent a friend request to this user")
         if receiver.blocked.filter(id=sender.id).exists():
             raise Exception("Blocked")
+        if FriendRequest.objects.filter(sender=receiver, receiver=sender).exists():
+            raise Exception("Friend request already exists")
         friend_request = FriendRequest.objects.create(
             sender=sender,
             receiver=receiver,
             message=message
         )
         return friend_request
+    
+    @staticmethod
+    def friend_request_status(sender: User, receiver: User) -> str:
+        """
+        Get the status of a friend request
+        :param sender: User instance
+        :param receiver: User instance
+        :return: str
+        """
+        friend_request = FriendRequest.objects.filter(sender=sender, receiver=receiver)
+        if friend_request.exists():
+            return friend_request.first().status
+        return "NOT_SENT"
     
     @staticmethod
     def accept_friend_request(user : User, request_id : int) -> bool:
@@ -320,6 +389,7 @@ class FriendRequestService:
         :param request_id: int
         :return: bool
         """
+        logger.warn("Accepting friend request %d", request_id)
         friend_request = FriendRequest.objects.get(id=request_id, receiver=user)
         if not friend_request:
             raise Exception("Friend request does not exist")
@@ -363,10 +433,15 @@ class FriendRequestService:
         :param request_id: int
         :return: bool
         """
-        friend_request = FriendRequest.objects.get(id=request_id, sender=user)
-        if friend_request:
-            friend_request.delete()
-            return True
-        else:
-            raise Exception("Friend request does not exist")
+        try:
+            friend_request = FriendRequest.objects.filter(sender=user, receiver_id=request_id).firs
+            if friend_request:
+                friend_request.delete()
+                return True
+            else:
+                logger.warn("Friend request does not exist")
+                raise Exception("Friend request does not exist")
+        except Exception as e:
+            logger.error(f"Error deleting friend request: {e}")
+            raise Exception("Error deleting friend request")
         

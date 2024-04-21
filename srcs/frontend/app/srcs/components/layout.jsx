@@ -9,6 +9,7 @@ const Layout = (props) => (
 		mb-3
 		justify-content-center
 		align-items-center
+		p-1
 		h-100
 	">
 		{props.children}

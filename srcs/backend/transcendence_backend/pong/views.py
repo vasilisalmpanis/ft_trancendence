@@ -29,6 +29,7 @@ class PongView(View):
             games = PongService.get_games(user, type, skip, limit, me)
             return JsonResponse(games, status=200, safe=False)
         except Exception as e:
+            logger.warning(str(e))
             return JsonResponse({'Error': str(e)}, status=400)
         
     
@@ -75,5 +76,26 @@ def get_game_by_id(request,user : User, game_id) -> JsonResponse:
     try:
         game = PongService.get_game_by_id(game_id)
         return JsonResponse(game, status=200)
+    except Exception as e:
+        return JsonResponse({'Error': str(e)}, status=400)
+    
+
+@jwt_auth_required()
+def get_user_games(request, user: User, id: int) -> JsonResponse:
+    """
+    Returns the games of the user
+    @param request: HttpRequest
+    @param user: User
+    @param id: int
+    @return: JsonResponse with game schema
+    """
+    type = str(request.GET.get('type', ''))
+    skip = int(request.GET.get('skip', 0))
+    limit = int(request.GET.get('limit', 10))
+    if type == '':
+        type = 'all'
+    try:
+        games = PongService.get_user_games(id, type, skip, limit, user)
+        return JsonResponse(games, status=200, safe=False)
     except Exception as e:
         return JsonResponse({'Error': str(e)}, status=400)
