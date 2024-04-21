@@ -115,21 +115,21 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
             for participant in chat.participants.all():
                 if participant.id in self.users:
                     self.add_participant_to_room(chat_id, participant.id, self.users[participant.id]['channel_name'])
-    
-    def update_manager_dicts(self):
+
+    async def update_manager_dicts(self):
         """
-        Updates the manager dicts with the current state of rooms and users
+        Updates the manager dicts with the current state of rooms
         """
+        self.rooms = {}
         for user in self.users:
-            self.users[user]['status'] = 'online'
+            chat_ids = await database_sync_to_async(self.get_chat_ids)(user)
+            await database_sync_to_async(self.add_user)(user, self.users[user]['username'], self.users[user]['channel_name'], chat_ids)
     
     #debugging
     def get_users_dict(self):
         return self.users
     def get_rooms_dict(self):
         return self.rooms
-
-#todo: what happens when user gets blocked while in chat?
 
 class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
@@ -139,9 +139,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         await self.accept()
         try:
             self.chat_ids = await database_sync_to_async(self._chats.get_chat_ids)(self.scope['user'].id)
-            await database_sync_to_async(self._chats.add_user)(
-                self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
-
+            await database_sync_to_async(self._chats.add_user)(self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
             for chat_id in self.chat_ids:
                 await self.channel_layer.group_add(str(chat_id), self.channel_name)
             await self.channel_layer.group_send('0', 
@@ -154,9 +152,10 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 })
             active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
             await self.send(text_data=json.dumps({
-                    'type': 'update_for_connecting_client',
-                    'status': 'connected',
-                    'active_friends_ids': active_friends
+                    'type': 'client.update',
+                    'status': 'client connected',
+                    'active_friends_ids': active_friends,
+                    'chat_ids': self.chat_ids,
                     }))
         except Exception as e:
             await self.send(text_data=json.dumps({
@@ -190,7 +189,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         if text_data_json['type'] == 'plain.message':
             try:
                 if text_data_json['chat_id'] == "0":
-                    raise ValueError('Sending plain messages through global chat is dissallowed.')
+                    raise ValueError('Sending plain messages in global chat is dissallowed.')
                 # if chat_id is not in rooms, update rooms list and add both users to the room
                 if self._chats.rooms.get(text_data_json['chat_id']) is None:
                     await database_sync_to_async(self._chats.update_rooms_dict)(text_data_json['chat_id'])
@@ -205,10 +204,10 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     {
                         'type': 'plain.message',
                         'chat_id': message.chat.id,
-                        'message_id': message.id,
                         'sender_id': message.sender.id,
                         'sender_name': message.sender.username,
                         'content': message.content,
+                        'message_id': message.id,
                         'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     })
             except Exception as e:
@@ -247,7 +246,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     }))
 
     async def manager_update(self, event):
-        # await database_sync_to_async(self._chats.update_manager_dicts())
+        await self._chats.update_manager_dicts()
         await self.send(text_data=json.dumps({
             'type': 'manager.update',
             'users': self._chats.get_users_dict(),
@@ -255,16 +254,11 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def plain_message(self, event):
-        #need db call for messages to recently blocked users
-        friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'all')
-        if event['sender_id'] not in friends or self.scope['user'].id == event['sender_id']:
-            return
         if self.scope['user'].id == event['sender_id']:
             return
         await self.send(text_data=json.dumps({
             'type': 'plain.message',
             'chat_id': event['chat_id'],
-            'message_id': event['message_id'],
             'sender_id': event['sender_id'],
             'sender_name': event['sender_name'],
             'content': event['content'],
@@ -273,10 +267,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
 
     async def game_invite(self, event):
-
-        #need db call for invites to recently blocked users
-        friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'all')
-        if event['sender_id'] not in friends or self.scope['user'].id == event['sender_id']:
+        if self.scope['user'].id == event['sender_id']:
             return
         await self.send(text_data=json.dumps({
             'type': 'game.invite',
@@ -452,7 +443,6 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(update_message))
 
     async def plain_message(self, event):
-        ## potentially neccessary for frontend to see also own messages
         if self.scope['user'].username == event['sender']:
             return
         await self.send(text_data=json.dumps({
@@ -474,14 +464,3 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
                 'player2': event['player2'],
             }))
 
-
-### python server connection to test second chat member
-### from websockets.sync.client import connect
-### url = "ws://localhost:8000/ws/chat/dm/"
-### access_token = "
-### ws = connect(url, additional_headers={ "Authorization" : f'Bearer {access_token}'})
-### while True:
-###     print(ws.recv())
-###self.close()
-###ws.send("Hello")
-###ws.close()
