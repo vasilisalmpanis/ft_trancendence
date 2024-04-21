@@ -1,4 +1,3 @@
-from asyncio import sleep
 from channels.generic.websocket     import AsyncWebsocketConsumer
 from channels.db                    import database_sync_to_async
 from datetime                       import datetime
@@ -7,7 +6,6 @@ from typing                         import Dict, TypeVar, List
 from .models                        import Chat
 from tournament.models              import Tournament
 from .services                      import MessageService
-from logging                        import Logger
 import json
 
 T = TypeVar('T')
