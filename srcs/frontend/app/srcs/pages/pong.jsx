@@ -1,34 +1,9 @@
 import ftReact	from "../ft_react";
 import Layout 	from "../components/layout";
 import BarLayout from "../components/barlayout";
+import Platform from "../components/platform";
+import Score 	from "../components/score";
 
-const Score = (props) => (
-	<div style={{
-		marginTop: "10px",
-		textAlign: "center",
-	}}>
-		<span id="score-board">{`${props.score.s1} : ${props.score.s1}`}</span>
-	</div>
-);
-
-const Platform = (props) => {
-	const style = {
-		width: "10px",
-		height: "20%",
-		backgroundColor: "royalblue",
-		position: "absolute",
-		top: `${props.y}%`,
-	};
-	let id = "pl-left";
-	if (props.right) {
-		id = "pl-right";
-		style.right = "1%";
-	} else
-		style.left = "1%";
-	return (
-		<div id={id} style={style}/>
-	);
-}
 let ws = null;
 
 const Pong = (props) => {

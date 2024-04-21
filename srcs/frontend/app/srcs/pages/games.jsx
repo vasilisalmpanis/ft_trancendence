@@ -15,12 +15,22 @@ const CreateGame = (props) => {
 		props.route("/pong", {game_id: data.id});
 	}
 	return (
-		<button
-			className="btn btn-outline-primary mb-3"
-			onClick={createGame}
-		>
-			Create new game
-		</button>
+		<div className="d-flex flex-column gap-2">
+			<button
+				className="btn btn-outline-primary mb-3"
+				onClick={()=>{
+					props.route("/local-game");
+				}}
+			>
+				Play Locally
+			</button>
+			<button
+				className="btn btn-outline-primary mb-3"
+				onClick={createGame}
+			>
+				Create new game
+			</button>
+		</div>
 	);
 }
 

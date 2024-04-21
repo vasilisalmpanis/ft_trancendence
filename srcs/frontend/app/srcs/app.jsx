@@ -18,6 +18,7 @@ import Leaderboard			from './pages/leaderboard';
 import User					from './pages/user';
 import UserFriendsLayout 	from './pages/user_friends';
 import ReRoutePage			from './pages/reroute';
+import LocalGame			from './pages/local_game';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -42,6 +43,7 @@ const App = (props) => {
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
 				<Route auth path="/user" element={<User/>}/>
 				<Route auth path="/2fa" element={<TFA/>}/>
+				<Route auth path="/local-game" element={<LocalGame/>}/>
 				<Route fallback auth path="/" element={<Main/>}/>
 			</Router>
 		</div>
