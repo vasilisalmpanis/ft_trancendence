@@ -16,6 +16,7 @@ const ReRoutePage = (props) => {
     };
     if (!uselessState)
         getState();
+    
     return (
         <BarLayout route={props.route}>
             {

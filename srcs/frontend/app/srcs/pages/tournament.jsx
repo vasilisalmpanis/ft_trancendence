@@ -2,6 +2,7 @@ import * as bootstrap	from 'bootstrap';
 import ftReact			from "../ft_react";
 import Avatar			from "../components/avatar";
 import BarLayout		from "../components/barlayout";
+import { apiClient } from '../api/api_client';
 
 const GameCard = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
@@ -11,7 +12,7 @@ const GameCard = (props) => {
 			{(me.username === props.data.player1.username || me.username === props.data.player2.username) &&
 				<button
 					className="btn btn-outline-primary"
-					onClick={()=>{props.route("/pong", {game_id: props.data.id, from: "/tournament"});}}
+					onClick={()=>{props.route("/pong", {game_id: props.data.id});}}
 				>JOIN</button>
 			}
 		</div>
@@ -27,18 +28,34 @@ const UserCard = (props) => {
 	)
 };
 
+const FinishedTournament = (props) => {
+	console.log(props.data);
+	return (
+		<div className='d-flex flex-column gap-2'> 
+			<h3>{props.data.name}</h3>
+			{props.data.player_ids.map(player=>(
+				<div className="card gap-2 p-2" style={{backgroundColor: player.id == props.data.winner ? 'green' : 'inherit'}}>
+					<span>{player.username}</span>
+				</div>
+			))}
+		</div>
+	);
+};
+
 let tws = null;
 const Tournament = (props) => {
 	const [games, setGames] = ftReact.useState(null);
 	const [users, setUsers] = ftReact.useState([]);
 	const [winner, setWinner] = ftReact.useState(null);
+	const [tour, setTour] = ftReact.useState(null);
+	if (!history.state)
+		props.route("/tournaments");
+	const id = history.state.id;
 	const cleanup_ws = () => {
 		console.log("cleanup_ws");
 		tws && tws.close();
 		tws = null;
 	};
-	if (!history.state)
-		props.route("/tournaments");
 	ftReact.useEffect(()=>{
 		if (!tws) {
 			tws = new WebSocket(
@@ -71,39 +88,62 @@ const Tournament = (props) => {
 					winnerModal.show();
 				}
 			});
-	 	}
+			// tws.addEventListener('error', ev=>{
+			// 	if (!tour)
+			// 	return;
+			// if (tour && tour.status == 'closed')
+			// 	return;
+			// getTour();
+			// // props.route("/tournaments");
+			// })
+		}
+		const getTour = async () => {
+			const resp = await apiClient.get(`/tournaments/${id}`)
+			console.log("setting tournament ", resp);
+			setTour(resp);
+		};
+		if (!tour) {
+			getTour();
+		}
 		return cleanup_ws;
 	},[users, games, winner]);
 	return (
 		<BarLayout route={props.route}>
-			<h3>It's a tournament {history.state?.name}</h3>
-			<div>
-				<h5 className="mt-3">Games:</h5>
-				{games && games.length ? games.map(game => <GameCard route={props.route} data={game}/>) : <span>waiting games</span>}
-			</div>
-			<div>
-				<h5 className="mt-3">Active users:</h5>
-				{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
-			</div>
-			<button className="btn btn-primary-outline" onClick={()=>{
-				if (tws) {
-					tws.close();
-					tws = null;
-				}
-			}}>CLOSE</button>
-			<div
-				className="modal fade"
-				id="winnerModal"
-				tabindex="-1"
-				aria-labelledby="exampleModalLabel"
-				aria-hidden="true"
-			>
-				<div className="modal-dialog modal-dialog-centered">
-					<div className="modal-content">
-						{winner ? <span>Winner: {winner.username}</span> : "No winner"}
+			{tour
+			? (tour.winner
+				? <FinishedTournament data={tour}/>
+				: <div>
+					<h3>It's a tournament {tour.name}</h3>
+					<div>
+						<h5 className="mt-3">Games:</h5>
+						{games && games.length ? games.map(game => <GameCard route={props.route} data={game}/>) : <span>waiting games</span>}
 					</div>
-				</div>
-			</div>
+					<div>
+						<h5 className="mt-3">Active users:</h5>
+						{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
+					</div>
+					<button className="btn btn-primary-outline" onClick={()=>{
+						if (tws) {
+							tws.close();
+							tws = null;
+						}
+					}}>CLOSE</button>
+					<div
+						className="modal fade"
+						id="winnerModal"
+						tabindex="-1"
+						aria-labelledby="exampleModalLabel"
+						aria-hidden="true"
+					>
+						<div className="modal-dialog modal-dialog-centered">
+							<div className="modal-content">
+								{winner ? <span>Winner: {winner.username}</span> : "No winner"}
+							</div>
+						</div>
+					</div>
+				</div>)
+			: <span>loading...</span>
+			}
 		</BarLayout>
 	);
 };
