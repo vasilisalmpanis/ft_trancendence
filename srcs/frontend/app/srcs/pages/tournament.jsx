@@ -29,7 +29,6 @@ const UserCard = (props) => {
 };
 
 const FinishedTournament = (props) => {
-	console.log(props.data);
 	return (
 		<div className='d-flex flex-column gap-2'> 
 			<h3>{props.data.name}</h3>
@@ -97,16 +96,19 @@ const Tournament = (props) => {
 			// // props.route("/tournaments");
 			// })
 		}
+		return cleanup_ws;
+	},[users, games, winner]);
+	ftReact.useEffect(async () => {
+
 		const getTour = async () => {
 			const resp = await apiClient.get(`/tournaments/${id}`)
 			console.log("setting tournament ", resp);
 			setTour(resp);
 		};
 		if (!tour) {
-			getTour();
+			await getTour();
 		}
-		return cleanup_ws;
-	},[users, games, winner]);
+	},[tour]);
 	return (
 		<BarLayout route={props.route}>
 			{tour

@@ -54,7 +54,6 @@ const CreateTournament = (props) => {
 
 const TournamentCard = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
-	console.log(props.data, me);
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
@@ -78,7 +77,6 @@ const TournamentCard = (props) => {
 								if (!props.data.player_ids.includes(me.id)) {
 									const resp = await apiClient.put("/tournaments", {tournament_id: props.data.id});
 									if (resp.error) {
-										console.log(resp);
 										return ;
 									}
 								}

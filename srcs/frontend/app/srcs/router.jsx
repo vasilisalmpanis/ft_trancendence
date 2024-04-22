@@ -4,8 +4,7 @@ import ftReact			from "./ft_react";
 const useRouter = () => {
 	const [path, setPath] = ftReact.useState(location.pathname);
 	const route = (newPath, state) => {
-        console.log("routing to ", newPath, "with state", state);
-		if (newPath !== window.location.pathname) {
+		if (newPath !== path) {
             if (!state)
                 state = {};
             state.from = {path: window.location.pathname, state: window.history.state};
