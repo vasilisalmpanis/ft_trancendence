@@ -87,14 +87,11 @@ const Tournament = (props) => {
 					winnerModal.show();
 				}
 			});
-			// tws.addEventListener('error', ev=>{
-			// 	if (!tour)
-			// 	return;
-			// if (tour && tour.status == 'closed')
-			// 	return;
-			// getTour();
-			// // props.route("/tournaments");
-			// })
+			const hideModal = () => {
+				setTour(null);
+			}
+			document.getElementById("winnerModal")?.removeEventListener('hide.bs.modal', hideModal);
+			document.getElementById("winnerModal")?.addEventListener('hide.bs.modal', hideModal);
 		}
 		return cleanup_ws;
 	},[users, games, winner]);
@@ -102,7 +99,6 @@ const Tournament = (props) => {
 
 		const getTour = async () => {
 			const resp = await apiClient.get(`/tournaments/${id}`)
-			console.log("setting tournament ", resp);
 			setTour(resp);
 		};
 		if (!tour) {
