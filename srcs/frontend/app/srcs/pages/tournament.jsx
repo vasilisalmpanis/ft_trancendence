@@ -135,12 +135,22 @@ const Tournament = (props) => {
 					>
 						<div className="modal-dialog modal-dialog-centered">
 							<div className="modal-content">
-								{winner ? <span>Winner: {winner.username}</span> : "No winner"}
+								<div className="modal-header">
+			      					<h1 className="modal-title fs-5" id="gameoverModalLabel">Tournament is finished</h1>
+			      					<button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			      				</div>
+								<div className="modal-body">
+			        				<h2>{winner ? <span>Winner: {winner.username}</span> : "No winner"}</h2>
+			    				</div>
 							</div>
 						</div>
 					</div>
 				</div>)
-			: <span>loading...</span>
+			: (
+				<div className="spinner-grow" role="status">
+					<span className="visually-hidden">Loading...</span>
+				  </div>
+			)
 			}
 		</BarLayout>
 	);
