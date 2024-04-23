@@ -103,8 +103,8 @@ const GameCard = (props) => {
             <td>
                 <div className="d-flex flex-row gap-2 justify-content-center">
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                        <Avatar img={"https://dictionary.cambridge.org/no/images/thumb/green_noun_001_07350.jpg?version=5.0.389"} size="25px" />
-                        <Avatar img={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJXj5X04MSo1E4chQQ6ZS-WT6ChJDB7FE7cpsv3rQiA&s"} size="25px" />
+                        <div style={{borderRadius: '100%', backgroundColor: 'green', width: '1.5rem', height: '1.5rem'}}/>
+                        <div style={{borderRadius: '100%', backgroundColor: 'red', width: '1.5rem', height: '1.5rem'}}/>
                     </div>
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                         <span>{`${props.data.score1}`}</span>
@@ -116,8 +116,8 @@ const GameCard = (props) => {
             <td>
                 <div className="d-flex flex-row gap-2 justify-content-center">
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                        <Avatar img={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJXj5X04MSo1E4chQQ6ZS-WT6ChJDB7FE7cpsv3rQiA&s"} size="25px" />
-                        <Avatar img={"https://dictionary.cambridge.org/no/images/thumb/green_noun_001_07350.jpg?version=5.0.389"} size="25px" />
+                        <div style={{borderRadius: '100%', backgroundColor: 'red', width: '1.5rem', height: '1.5rem'}}/>
+                        <div style={{borderRadius: '100%', backgroundColor: 'green', width: '1.5rem', height: '1.5rem'}}/>
                     </div>
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                         <span>{`${props.data.score1}`}</span>

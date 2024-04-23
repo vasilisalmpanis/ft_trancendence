@@ -237,28 +237,32 @@ const Profile = (props) => {
 	const [myStats, setMyStats] = ftReact.useState(null);
 	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
-	const getMyStats = async () => {
-		const data = await apiClient.get(`/users/${me.id}/stats`);
-		if (data.error)
+	ftReact.useEffect(async () => {
+		const getMyStats = async () => {
+			const data = await apiClient.get(`/users/${me.id}/stats`);
+			if (data.error)
+				setError(data.error);
+			else if (data && !myStats)
+				setMyStats(data);
+		}
+		if (me && !myStats && !error)
+			await getMyStats();
+	},[myStats]);
+	ftReact.useEffect(async () => {
+		const getIncomingRequests = async () => {
+			const data = await apiClient.get(`/friendrequests/incoming`);
+			if (data.error)
 			setError(data.error);
-		else if (data && !myStats)
-			setMyStats(data);
-	}
-	const getIncomingRequests = async () => {
-		const data = await apiClient.get(`/friendrequests/incoming`);
-		if (data.error)
-			setError(data.error);
-		else if (data && !incomingRequests)
+			else if (data && !incomingRequests)
 			setIncomingRequests(data);
-	}
-	if (me && !myStats && !error)
-		getMyStats();
-	if (me && !incomingRequests && !error)
-		getIncomingRequests();
+		}
+		if (me && !incomingRequests && !error)
+			getIncomingRequests();
+	},[incomingRequests]);
 	return (
 		<BarLayout route={props.route}>
 			{
-				me && myStats && incomingRequests
+				me && myStats
 					? 	<div className="d-flex gap-5">
 							<div>
 								<ProfileCard data={me}/>
