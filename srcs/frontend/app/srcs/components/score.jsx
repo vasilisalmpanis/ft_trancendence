@@ -5,7 +5,7 @@ const Score = (props) => (
 		marginTop: "10px",
 		textAlign: "center",
 	}}>
-		<span id="score-board">{`${props.score.s1} : ${props.score.s1}`}</span>
+		<span id="score-board">{`${props.score.s1} : ${props.score.s2}`}</span>
 	</div>
 );
 
