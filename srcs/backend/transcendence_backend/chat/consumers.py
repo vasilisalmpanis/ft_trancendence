@@ -4,6 +4,7 @@ from datetime                       import datetime
 from threading                      import Lock
 from typing                         import Dict, TypeVar, List
 from .models                        import Chat
+from users.models                   import User
 from tournament.models              import Tournament
 from .services                      import MessageService
 import json
