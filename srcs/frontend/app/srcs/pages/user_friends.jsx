@@ -13,7 +13,7 @@ const UserFriendsLayout = (props) => {
     const [friends, setFriends] = ftReact.useState(null);
     const [user, setUser] = ftReact.useState(null);
     const me = JSON.parse(localStorage.getItem("me"));
-    const id = window.location.pathname.split("/").pop();
+    const id = window.history.state.id;
     const addFriend = async (user_id) => {
         const res = await apiClient.post(`/friendrequests` ,{receiver_id: user_id});
         if (res.error) {

@@ -39,7 +39,7 @@ const App = (props) => {
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
 				<Route auth path="/tournaments/{id}" element={<Tournament/>}/>
 				<Route auth path="/leaderboard" element={<Leaderboard/>}/>
-				<Route auth path="/user-friends" element={<UserFriendsLayout/>}/>
+				<Route auth path="/user-friends/{id}" element={<UserFriendsLayout/>}/>
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
 				<Route auth path="/2fa" element={<TFA/>}/>
 				<Route fallback auth path="/" element={<Main/>}/>

@@ -183,6 +183,19 @@ const ProfileCard = (props) => {
 }
 
 const IncomingRequests = (props) => {
+	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
+	const [error, setError] = ftReact.useState("");
+	ftReact.useEffect(async () => {
+		const getIncomingRequests = async () => {
+			const data = await apiClient.get(`/friendrequests/incoming`);
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setIncomingRequests([...data]);
+		}
+		if (!incomingRequests && !error)
+			getIncomingRequests();
+	},[incomingRequests]);
 	return (
 		<div className="card" style="width: 20rem;">
 			<ul className="list-group list-group-flush">
@@ -190,11 +203,14 @@ const IncomingRequests = (props) => {
 					<h5 className="card-title">Friend Requests</h5>
 				</li>
 				{
-					props.data.map((request, i) => {
+					incomingRequests && incomingRequests.length
+
+					? incomingRequests.map((request, i) => {
 						return (
-							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.data}/>
+							<FriendRequestLayout request={request} i={i} setter={setIncomingRequests} data={incomingRequests}/>
 						);
 					})
+					: <span>Nobody wants to be a friend with you</span>
 				}
 			</ul>
 		</div>
@@ -224,7 +240,7 @@ const FriendRequestLayout = (props) => {
 		<li key={props.i} className="list-group-item d-flex">
 				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
 					<h5>From:</h5>
-					<h5 className="">{props.request.receiver.username}</h5>
+					<h5 className="">{props.request.sender.username}</h5>
 					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
 					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
 				</div>
@@ -234,45 +250,21 @@ const FriendRequestLayout = (props) => {
 
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
-	const [myStats, setMyStats] = ftReact.useState(null);
-	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
-	const [error, setError] = ftReact.useState("");
-	ftReact.useEffect(async () => {
-		const getMyStats = async () => {
-			const data = await apiClient.get(`/users/${me.id}/stats`);
-			if (data.error)
-				setError(data.error);
-			else if (data && !myStats)
-				setMyStats(data);
-		}
-		if (me && !myStats && !error)
-			await getMyStats();
-	},[myStats]);
-	ftReact.useEffect(async () => {
-		const getIncomingRequests = async () => {
-			const data = await apiClient.get(`/friendrequests/incoming`);
-			if (data.error)
-			setError(data.error);
-			else if (data && !incomingRequests)
-			setIncomingRequests(data);
-		}
-		if (me && !incomingRequests && !error)
-			getIncomingRequests();
-	},[incomingRequests]);
 	return (
 		<BarLayout route={props.route}>
 			{
-				me && myStats
-					? 	<div className="d-flex gap-5">
-							<div>
-								<ProfileCard data={me}/>
-							</div>
-							<div>
-								<StatsLayout data={myStats}/>
-							</div>
-
-							<div>
-								{/* <IncomingRequests data={incomingRequests} setter={setIncomingRequests}/> */}
+				me
+					? 	<div className="d-grid">
+							<div className="row justify-content-center text-center align-items-start g-3">
+								<div className="col d-flex justify-content-center">
+									<ProfileCard data={me}/>
+								</div>
+								<div className="col d-flex justify-content-center">
+									<StatsLayout user_id={me.id}/>
+								</div>
+								<div className="col d-flex justify-content-center">
+									<IncomingRequests/>
+								</div>
 							</div>
 						</div>
 					: 	<button className="spinner-grow" role="status"></button>
