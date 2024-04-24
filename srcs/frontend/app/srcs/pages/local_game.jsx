@@ -8,7 +8,7 @@ import Score 	from "../components/score";
 const Pong = (props) => {
     const [wins, setWins] = ftReact.useState("");
     const maxScore = 10;
-    let maxAngle = 5 * Math.PI / 12;
+    let maxAngle = 4 * Math.PI / 12;
 	let pl = 40;
 	let pr = 40;
 	let leftPlatformDirection = '';

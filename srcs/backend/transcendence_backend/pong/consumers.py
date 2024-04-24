@@ -1,3 +1,4 @@
+from locale import normalize
 from threading										import Lock
 from logging										import Logger
 from typing											import Literal, Dict, List, TypeVar, TypedDict, NotRequired, Any
@@ -131,6 +132,7 @@ class PongState:
 		self._y = 50
 		self._pl = 40
 		self._pr = 40
+		self._max_angle = 4 * math.pi / 12
 		self._score_l = 0
 		self._score_r = 0
 		self._angle = 45
@@ -186,7 +188,7 @@ class PongState:
 
 	def _move(self) -> None:
 		self._x += math.cos(self._angle)
-		self._y += math.sin(self._angle)
+		self._y += -math.sin(self._angle)
 		if self.pl_s == 'up' and self._pl > 0:
 			self._pl -= 2
 			self._pl_c = True
@@ -203,7 +205,9 @@ class PongState:
 	def _check_collisions(self) -> None:
 		if self._x <= 1:
 			if self._pl - 1 < self._y < self._pl + 21:
-				self._angle = self._angle - 180
+				relativeIntersectY = (self._pl + 10) - self._y
+				normalizedRelativeIntersectionY = relativeIntersectY / 10
+				self._angle = normalizedRelativeIntersectionY * self._max_angle
 				self._x = 2
 			else:
 				self._x = 97
@@ -211,7 +215,9 @@ class PongState:
 				self._score_c = True
 		elif self._x >= 99:
 			if self._pr - 1 < self._y < self._pr + 21:
-				self._angle = self._angle - 180
+				relativeIntersectY = (self._pr + 10) - self._y
+				normalizedRelativeIntersectionY = relativeIntersectY / 10
+				self._angle = math.pi - normalizedRelativeIntersectionY * self._max_angle
 				self._x = 98
 			else:
 				self._x = 3
