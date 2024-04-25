@@ -1,6 +1,6 @@
-from locale import normalize
 from threading										import Lock
 from logging										import Logger
+import time
 from typing											import Literal, Dict, List, TypeVar, TypedDict, NotRequired, Any
 from asgiref.sync									import sync_to_async
 from .services										import PongService, join_game, pause_game, resume_game
@@ -10,6 +10,7 @@ from channels.db									import database_sync_to_async
 import math
 import json
 import asyncio
+import time
 
 logger = Logger(__name__)
 
@@ -167,6 +168,7 @@ class PongState:
 		self._pl_c = False
 		self._pr_c = False
 		self._score_c = False
+		time.sleep(0.001)
 		return data
 	
 	def get_results(self) -> Dict[str, Any]:
