@@ -8,14 +8,14 @@ class Game:
     def __init__(self, stdsrc, game_id: int) -> None:
         self.client = client.NetworkClient()
         self.game_id: int = game_id
-        self.stdscr = stdsrc
+        self.stdscr: object = stdsrc
         self.stdscr.clear()
         self.ball_x: int = 50
         self.ball_y: int = 50
         self.left_paddle_y: int = 40
         self.right_paddle_y: int = 40
         self.left_paddle_x: int = 2
-        self.side = "left"
+        self.side: str = "left"
         self.score_x: int = 0
         self.score_y: int = 0
         self.update_dimensions()
@@ -39,7 +39,7 @@ class Game:
             return
         self.running = True
 
-    def waiting_room(self):
+    def waiting_room(self) -> None:
         global  cl
         while True:
             self.update_dimensions()
@@ -59,19 +59,19 @@ class Game:
                 self.running = False
                 raise Exception("Game Closed")
 
-    def update_dimensions(self):
+    def update_dimensions(self) -> None:
         self.sh = self.stdscr.getmaxyx()[0]
         self.sw = self.stdscr.getmaxyx()[1]
         self.paddle_height = self.sh // 5
         self.right_paddle_x = self.sw - 3
 
 
-    def run(self):
+    def run(self) -> None:
         while self.running:
             self.update()
             self.render()
 
-    def update(self, ):
+    def update(self) -> None:
         data = json.loads(self.ws.recv())
         if 'status' in data:
             if data['status'] == 'paused':
@@ -105,7 +105,7 @@ class Game:
             self.running = False
         
 
-    def render(self):
+    def render(self) -> None:
         self.stdscr.clear()
         self.update_dimensions()
         for i in range(self.paddle_height):
