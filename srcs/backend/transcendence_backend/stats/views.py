@@ -41,7 +41,6 @@ def leaderBoard(request, user : User) -> JsonResponse:
             stats = StatService.leaderboard(user, skip, limit, order)
             return JsonResponse(stats, status=200, safe=False)
         except Exception as e:
-            logger.warning(f"Error: {e}")
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "wrong request method"}, status=400)

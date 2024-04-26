@@ -38,7 +38,6 @@ def validate_jwt(payload : Dict, second_factor : bool, **kwargs) -> User:
     if isa is None:
         raise Exception("Invalid Token")
     isa = datetime.strptime(isa, '%Y-%m-%d %H:%M:%S')
-    logger.warning(f"User: {user.username} Last Login: {user.last_login} ISA: {isa}")
     user_last_login = datetime.strptime(user.last_login.strftime("%Y-%m-%d %H:%M:%S"), '%Y-%m-%d %H:%M:%S')
     if isa < user_last_login or user.is_user_active != True:
         raise Exception("User not active")

@@ -11,6 +11,7 @@ import math
 import json
 import asyncio
 import time
+import random
 
 logger = Logger(__name__)
 
@@ -215,6 +216,7 @@ class PongState:
 				self._x = 97
 				self._score_r += 1
 				self._score_c = True
+				self._restart_ball()
 		elif self._x >= 99:
 			if self._pr - 1 < self._y < self._pr + 21:
 				relativeIntersectY = (self._pr + 10) - self._y
@@ -225,12 +227,21 @@ class PongState:
 				self._x = 3
 				self._score_l += 1
 				self._score_c = True
+				self._restart_ball()
 		elif self._y <= 1:
 			self._angle = -self._angle
 			self._y = 2
 		elif self._y >= 99:
 			self._angle = -self._angle
 			self._y = 98
+	
+	def _restart_ball(self) -> None:
+		self._x = 50
+		self._y = random.randint(30, 70)
+		if random.randint(0, 1):
+			self._angle = random.randint(int(3 * math.pi / 4),  int(5 * math.pi / 4))
+		else:
+			self._angle = random.randint(- int(math.pi / 4),  int(math.pi / 4))
 	
 	def _pause(self) -> None:
 		self._paused = True
@@ -260,7 +271,7 @@ class PongRunner(AsyncConsumer):
 			self._games[gid] = PongState(left, right, max_score)
 			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
 		except Exception as e:
-			logger.error(f"Error: {e}")
+			return
   
 	async def stop_game(self, message: ControlMsg) -> None:
 		try:
@@ -300,7 +311,7 @@ class PongRunner(AsyncConsumer):
 				del self._games[gid]
 				self.channel_layer
 		except Exception as e:
-			logger.warn(f"Error: {e}")
+			return
 
 	async def update_platform(self, data: ControlMsg) -> None:
 		'''Moves platforms in game'''
@@ -355,9 +366,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 		await self.send(message['text'])
 
 	async def disconnect(self, close_code) -> None:
-		logger.warn("disconnect..")
 		gid = self._groups.get_group_name(self.channel_name)
-		group_channels = self._groups.groups.get(gid, [])
 		self._groups.remove_channel(self.channel_name)
 		if self._groups.group_empty(gid):
 			await self.channel_layer.send(
@@ -409,7 +418,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 			else:
 				gid = self._groups.get_group_name(self.channel_name)
 				if gid == '':
-					logger.error("No game id")
 					return
 				data['d'] = self._groups.side(gid, self.channel_name)
 				text_data = json.dumps(data)
@@ -422,7 +430,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 							}
 						)
 		except Exception as e:
-			logger.error(f"Error: {e}")
 			return await self.send(json.dumps({'error': str(e)}))
 		
 

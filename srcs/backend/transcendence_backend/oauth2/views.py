@@ -100,7 +100,6 @@ def fetch_user_data(access_token):
     conn = http.client.HTTPSConnection('api.intra.42.fr')
     conn.request('GET', '/v2/me', headers=user_headers)
     data_response_raw = conn.getresponse()
-    logger.warn(data_response_raw)
 
     if data_response_raw.status == 200:
         data_response = json.loads(data_response_raw.read().decode('utf-8'))
@@ -117,18 +116,15 @@ def get_or_create_user(user_data):
     Builds new user oder returns existing user fitting user_data
     :return: user object
     """
-    logger.warn(user_data)
     try:
         user = User.objects.get(Q(ft_intra_id=user_data['id']) | Q(email=user_data['email']))
         user = user_model_to_dict(user)
     except User.DoesNotExist:
-        logger.warn('exception')
         if not user_data['login'] or not user_data['email']:
             return None
         try:
             user = UserService.create_user(user_data['login'], settings.RANDOM_OAUTH_USER_PASSWORD, user_data['email'], intra_id=user_data["id"])
         except Exception as e:
-            logger.error(f'Failed to create user: {e}')
             return None
     return user
 
