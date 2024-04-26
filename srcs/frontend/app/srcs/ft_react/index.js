@@ -200,6 +200,13 @@ class FiberNode {
   }
   delete(domParent) {
     //console.log("  VNode.delete", this, domParent);
+    if (this.effects) {
+      this.effects.forEach(effect => {
+          if (effect && effect.cleanup) {
+            effect.cleanup();
+          }
+      });
+    };
     if (this.dom && domParent.contains(this.dom)) {
       domParent.removeChild(this.dom);
       this.dom = null;
@@ -208,13 +215,6 @@ class FiberNode {
       this.child && this.child.delete(domParent);
     }
     this.effect = null;
-    if (this.effects) {
-      this.effects.forEach(effect => {
-          if (effect && effect.cleanup) {
-            effect.cleanup();
-          }
-      });
-    };
   }
   update(ftReact) {
     //console.log("  VNode.update", this);

@@ -13,10 +13,10 @@ class Singleton(metaclass=SingletonMeta):
     state = UNAUTHORIZED
     
     def unauthorize(self):
-        self.state = False
+        self.state = UNAUTHORIZED
 
     def authorize(self):
-        self.state = True
+        self.state = AUTHORIZED
 
 
 def get_input(stdscr, prompt, password=False):

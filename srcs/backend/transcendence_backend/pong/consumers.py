@@ -1,5 +1,6 @@
 from threading										import Lock
 from logging										import Logger
+import time
 from typing											import Literal, Dict, List, TypeVar, TypedDict, NotRequired, Any
 from asgiref.sync									import sync_to_async
 from .services										import PongService, join_game, pause_game, resume_game
@@ -9,6 +10,8 @@ from channels.db									import database_sync_to_async
 import math
 import json
 import asyncio
+import time
+import random
 
 logger = Logger(__name__)
 
@@ -131,6 +134,7 @@ class PongState:
 		self._y = 50
 		self._pl = 40
 		self._pr = 40
+		self._max_angle = 4 * math.pi / 12
 		self._score_l = 0
 		self._score_r = 0
 		self._angle = 45
@@ -165,6 +169,7 @@ class PongState:
 		self._pl_c = False
 		self._pr_c = False
 		self._score_c = False
+		time.sleep(0.001)
 		return data
 	
 	def get_results(self) -> Dict[str, Any]:
@@ -186,7 +191,7 @@ class PongState:
 
 	def _move(self) -> None:
 		self._x += math.cos(self._angle)
-		self._y += math.sin(self._angle)
+		self._y += -math.sin(self._angle)
 		if self.pl_s == 'up' and self._pl > 0:
 			self._pl -= 2
 			self._pl_c = True
@@ -203,26 +208,40 @@ class PongState:
 	def _check_collisions(self) -> None:
 		if self._x <= 1:
 			if self._pl - 1 < self._y < self._pl + 21:
-				self._angle = self._angle - 180
+				relativeIntersectY = (self._pl + 10) - self._y
+				normalizedRelativeIntersectionY = relativeIntersectY / 10
+				self._angle = normalizedRelativeIntersectionY * self._max_angle
 				self._x = 2
 			else:
 				self._x = 97
 				self._score_r += 1
 				self._score_c = True
+				self._restart_ball()
 		elif self._x >= 99:
 			if self._pr - 1 < self._y < self._pr + 21:
-				self._angle = self._angle - 180
+				relativeIntersectY = (self._pr + 10) - self._y
+				normalizedRelativeIntersectionY = relativeIntersectY / 10
+				self._angle = math.pi - normalizedRelativeIntersectionY * self._max_angle
 				self._x = 98
 			else:
 				self._x = 3
 				self._score_l += 1
 				self._score_c = True
+				self._restart_ball()
 		elif self._y <= 1:
 			self._angle = -self._angle
 			self._y = 2
 		elif self._y >= 99:
 			self._angle = -self._angle
 			self._y = 98
+	
+	def _restart_ball(self) -> None:
+		self._x = 50
+		self._y = random.randint(30, 70)
+		if random.randint(0, 1):
+			self._angle = random.randint(int(3 * math.pi / 4),  int(5 * math.pi / 4))
+		else:
+			self._angle = random.randint(- int(math.pi / 4),  int(math.pi / 4))
 	
 	def _pause(self) -> None:
 		self._paused = True
@@ -252,7 +271,7 @@ class PongRunner(AsyncConsumer):
 			self._games[gid] = PongState(left, right, max_score)
 			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
 		except Exception as e:
-			logger.error(f"Error: {e}")
+			return
   
 	async def stop_game(self, message: ControlMsg) -> None:
 		try:
@@ -292,7 +311,7 @@ class PongRunner(AsyncConsumer):
 				del self._games[gid]
 				self.channel_layer
 		except Exception as e:
-			logger.warn(f"Error: {e}")
+			return
 
 	async def update_platform(self, data: ControlMsg) -> None:
 		'''Moves platforms in game'''
@@ -347,9 +366,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 		await self.send(message['text'])
 
 	async def disconnect(self, close_code) -> None:
-		logger.warn("disconnect..")
 		gid = self._groups.get_group_name(self.channel_name)
-		group_channels = self._groups.groups.get(gid, [])
 		self._groups.remove_channel(self.channel_name)
 		if self._groups.group_empty(gid):
 			await self.channel_layer.send(
@@ -401,7 +418,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 			else:
 				gid = self._groups.get_group_name(self.channel_name)
 				if gid == '':
-					logger.error("No game id")
 					return
 				data['d'] = self._groups.side(gid, self.channel_name)
 				text_data = json.dumps(data)
@@ -414,7 +430,6 @@ class PongConsumer(AsyncWebsocketConsumer):
 							}
 						)
 		except Exception as e:
-			logger.error(f"Error: {e}")
 			return await self.send(json.dumps({'error': str(e)}))
 		
 

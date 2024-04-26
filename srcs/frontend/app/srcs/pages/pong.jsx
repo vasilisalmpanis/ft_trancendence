@@ -57,8 +57,10 @@ const Pong = (props) => {
 	};
 	const keyRelease = (event) => {
 		if (ws && ws.readyState === WebSocket.OPEN) {
+			console.log(event.key)
 			if (event.key === 'ArrowUp' && platformDirection === 'up')
 			{
+
 				ws.send(JSON.stringify({"message": "stop", "d": me}));
 				platformDirection = '';
 			}

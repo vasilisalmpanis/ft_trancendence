@@ -171,7 +171,6 @@ class PongService:
             try:
                 Tournament.objects.get(games__in=[game.id])
             except Exception as e:
-                logger.warn(str(e))
                 game.delete()
             return pong_model_to_dict(game)
         if game.status == 'finished':
@@ -180,7 +179,6 @@ class PongService:
         game.score2 = score2
         game.status = 'finished'
         game.save()
-        logger.warn(f'Game {game_id} finished with score {score1} - {score2}')
         if score1 > score2:
             return user_model_to_dict(game.player1, avatar=False)
         elif score1 < score2:

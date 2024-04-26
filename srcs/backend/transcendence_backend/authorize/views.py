@@ -43,7 +43,6 @@ def login_user(request) -> JsonResponse:
     :param request: Request object
     :return: JsonResponse
     """
-    logger.warning(datetime.now())
     if request.method == "GET":
         return JsonResponse({"Login": "Wrong Request Method"}, status=200)
     data = json.loads(request.body)

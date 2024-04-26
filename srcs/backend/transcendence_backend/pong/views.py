@@ -29,7 +29,6 @@ class PongView(View):
             games = PongService.get_games(user, type, skip, limit, me)
             return JsonResponse(games, status=200, safe=False)
         except Exception as e:
-            logger.warning(str(e))
             return JsonResponse({'Error': str(e)}, status=400)
         
     

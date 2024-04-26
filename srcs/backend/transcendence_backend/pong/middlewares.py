@@ -59,7 +59,6 @@ class AuthMiddleware:
 
             except Exception as e:
                 scope["user"] = None
-                logger.warn(f"Error: {e}")
                 return JsonResponse({'error': 'Authorization header required'}, status=401)
         else:
             return JsonResponse({'error': 'Authorization header required'}, status=401)

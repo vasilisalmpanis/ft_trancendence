@@ -389,7 +389,6 @@ class FriendRequestService:
         :param request_id: int
         :return: bool
         """
-        logger.warn("Accepting friend request %d", request_id)
         friend_request = FriendRequest.objects.get(id=request_id, receiver=user)
         if not friend_request:
             raise Exception("Friend request does not exist")
@@ -439,9 +438,7 @@ class FriendRequestService:
                 friend_request.delete()
                 return True
             else:
-                logger.warn("Friend request does not exist")
                 raise Exception("Friend request does not exist")
         except Exception as e:
-            logger.error(f"Error deleting friend request: {e}")
             raise Exception("Error deleting friend request")
         

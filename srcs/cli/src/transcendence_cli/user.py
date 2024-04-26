@@ -1,6 +1,7 @@
+from transcendence_cli                      import client as cl
+from transcendence_cli                      import utils
+from transcendence_cli.messages             import *
 import json
-from transcendence_cli  import client as cl
-from transcendence_cli  import utils
 
 def change_username(stdscr):
     '''Changes username of currently logged in user'''
@@ -9,14 +10,16 @@ def change_username(stdscr):
     except Exception as e:
         return
     client = cl.NetworkClient()
-    respone = client.request("/users/me", "POST", body=json.dumps({"username": new_username}))
-    stdscr.clear()
-    if respone.status == 200:
-        stdscr.addstr(2, 1, "Username changed successfully")
+    status = utils.Singleton()
+    response = client.request("/users/me", "POST", body=json.dumps({"username": new_username}))
+    if response.status == 401:
+        status.state = utils.UNAUTHORIZED
+        message(stdscr, ACCESS_EXPIRED)
+        return
+    if response.status == 200:
+        message(stdscr, USERNAME_CHANGED)
     else:
-        stdscr.addstr(2, 1, "An error occurred. Please try again")
-    stdscr.refresh()
-    stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)
 
         
 def change_password(stdscr):
@@ -26,14 +29,16 @@ def change_password(stdscr):
     except Exception as e:
         return
     client = cl.NetworkClient()
-    respone = client.request("/users/me", "POST", body=json.dumps({"password": password}))
-    stdscr.clear()
-    if respone.status == 200:
-        stdscr.addstr(2, 1, "Password changed successfully")
+    status = utils.Singleton()
+    response = client.request("/users/me", "POST", body=json.dumps({"password": password}))
+    if response.status == 401:
+        status.state = utils.UNAUTHORIZED
+        message(stdscr, ACCESS_EXPIRED)
+        return
+    if response.status == 200:
+        message(stdscr, PASSWORD_CHANGED)
     else:
-        stdscr.addstr(2, 1, "An error occurred. Please try again")
-    stdscr.refresh()
-    stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)
         
 def change_email(stdscr):
     '''Changes email of currently logged in user'''
@@ -42,32 +47,37 @@ def change_email(stdscr):
     except Exception as e:
         return
     client = cl.NetworkClient()
-    respone = client.request("/users/me", "POST", body=json.dumps({"email": email}))
-    stdscr.clear()
-    if respone.status == 200:
-        stdscr.addstr(2, 1, "Email changed successfully")
+    status = utils.Singleton()
+    response = client.request("/users/me", "POST", body=json.dumps({"email": email}))
+    if response.status == 401:
+        status.state = utils.UNAUTHORIZED
+        message(stdscr, ACCESS_EXPIRED)
+        return
+    if response.status == 200:
+        message(stdscr, EMAIL_CHANGED)
     else:
-        stdscr.addstr(2, 1, "An error occurred. Please try again")
-    stdscr.refresh()
-    stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)
         
 def delete_account(stdscr):
     '''Deletes the account'''
     '''Changes username of currently logged in user'''
     client = cl.NetworkClient()
+    status = utils.Singleton()
     response = client.request(path="/users/me", method="DELETE")
-    stdscr.clear()
+    if response.status == 401:
+        status.state = utils.UNAUTHORIZED
+        message(stdscr, ACCESS_EXPIRED)
+        return
     if response.status == 200:
-        stdscr.addstr(2, 1, "User Deleted successfully")
+        message(stdscr, USER_DELETED)
         logout(stdscr)
     else:
-        stdscr.addstr(2, 1, "An error occurred. Please try again")
-    stdscr.refresh()
-    stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)
 
 def create_account(stdscr):
     client = cl.NetworkClient()
     '''Creates a new account'''
+    status = utils.Singleton()
     try:
         username = utils.get_input(stdscr, "Enter a username: ")
         password = utils.get_input(stdscr, "Enter a password: ", password=True)
@@ -77,20 +87,18 @@ def create_account(stdscr):
     response = client.request("/users", "POST", body=json.dumps({"username": username,
                                                                  "password": password,
                                                                  "email": email}))
-    stdscr.clear()
+    if response.status == 401:
+        status.state = utils.UNAUTHORIZED
+        message(stdscr, ACCESS_EXPIRED)
+        return
     if response.status < 300:
-        stdscr.addstr(2, 1, "Account created successfully")
+        message(stdscr, ACCOUNT_CREATED)
     elif response.status >= 400:
-        stdscr.addstr(2, 1, response.text)
-    stdscr.refresh()
-    stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)
 
 def exit(stdscr):
     '''Exits the program'''
-    stdscr.clear()
-    stdscr.addstr(1, 1, "Goodbye!")
-    stdscr.refresh()
-    stdscr.getch()
+    message(stdscr, "Goodbye!")
     client = cl.NetworkClient()
     status = utils.Singleton()
     if status.state == utils.AUTHORIZED:
@@ -105,7 +113,4 @@ def logout(stdscr):
         status.unauthorize()
         client.logout()
     except Exception as e:
-        stdscr.clear()
-        stdscr.addstr(1, 1, str(e))
-        stdscr.refresh()
-        stdscr.getch()
+        message(stdscr, ERROR_MESSAGE)

@@ -267,7 +267,8 @@ const Profile = (props) => {
 								</div>
 							</div>
 						</div>
-					: 	<button className="spinner-grow" role="status"></button>
+					:
+						<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);

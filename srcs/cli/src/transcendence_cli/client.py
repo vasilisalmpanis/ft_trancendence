@@ -1,12 +1,16 @@
 
-from typing                         import Dict
-import http.client  as http
-from transcendence_cli import utils
+from typing             import Dict, Union, List, Any, Tuple
+from transcendence_cli  import utils
+import http.client      as http
 import json
 
 
 class Response:
-    def __init__(self, response : http.HTTPResponse):
+    status: int
+    body: List[Any] | Dict[str, Any]
+    header: List[Tuple[str, str]]
+    reason: str
+    def __init__(self, response : http.HTTPResponse) -> None:
         if not response:
             self.status = 500
             self.body = {"error": "Internal Server Error"}
@@ -22,16 +26,18 @@ class Response:
     def text(self) -> str:
         return json.dumps(self.body)
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Response(status={self.status}, reason={self.reason}, body={self.body})"
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Response(status={self.status}, reason={self.reason}, body={self.body})"
 
 
 
 class NetworkClient(metaclass=utils.SingletonMeta):
         headers : Dict[str, str]
+        access_token : str
+        refresh_token : str
         def __init__(self):
             self.headers = {"Accept": "application/json"}
             self.access_token = None
@@ -62,7 +68,7 @@ class NetworkClient(metaclass=utils.SingletonMeta):
                 connection.close()
             return Response(None)
     
-        def authenticate(self, username : str, password : str) -> Response:
+        def authenticate(self, username: str, password: str) -> Response:
             response = self.request("/auth", "POST", json.dumps({"username": username,
                                                                  "password": password}))
             if response.status == 200:
@@ -88,7 +94,7 @@ class NetworkClient(metaclass=utils.SingletonMeta):
                 self.refresh_token = None
                 self.headers.pop("Authorization", None)
 
-        def verify_2fa(self, code : str) -> Response:
+        def verify_2fa(self, code: str) -> Response:
             response = self.request("/auth/verify", "POST", json.dumps({"2fa_code": code}))
             if response.status == 200:
                 self.access_token = response.body["access_token"]

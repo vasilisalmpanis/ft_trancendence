@@ -15,12 +15,22 @@ const CreateGame = (props) => {
 		props.route("/pong", {game_id: data.id});
 	}
 	return (
-		<button
-			className="btn btn-outline-primary mb-3"
-			onClick={createGame}
-		>
-			Create new game
-		</button>
+		<div className="d-flex flex-column gap-2">
+			<button
+				className="btn btn-outline-primary mb-3"
+				onClick={()=>{
+					props.route("/local-game");
+				}}
+			>
+				Play Locally
+			</button>
+			<button
+				className="btn btn-outline-primary mb-3"
+				onClick={createGame}
+			>
+				Create new game
+			</button>
+		</div>
 	);
 }
 
@@ -63,8 +73,10 @@ const Games = (props) => {
 		let data = await apiClient.get("/games", {type: "paused", me: true});
 		if (data.error === 401)
 			return ;
-		else if (data.error)
+		else if (data.error) {
 			setError(data.error);
+			return ;
+		}
 		if (data.length)
 			props.route("/pong", {game_id: data[0].id});
 		data = await apiClient.get("/games", {type: "pending"});

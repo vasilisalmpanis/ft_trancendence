@@ -74,9 +74,10 @@ class ApiClient {
     }
     try {
       let response = await fetch(url, params);
-      while (response.status === 401 && path !== '/auth/refresh' && path !== '/2fa/verify' && path !== '/auth/verify') {
+      while (response.status === 401 && path !== 'auth/refresh' && path !== '2fa/verify' && path !== 'auth/verify') {
         const refresh = await this.refresh();
-        if (refresh.error === 401) {
+        console.log(path, response.status, refresh)
+        if (refresh.error === 'User not active') {
           this.unauthorize();
           this.route('/signin');
           return {error: 401};

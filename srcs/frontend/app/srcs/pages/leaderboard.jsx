@@ -47,8 +47,13 @@ const Leaderboard = (props) => {
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
+        console.log(data);
         if (data.error === 401)
             return ;
+        else if (data.error === "no connection") {
+            setError("No connection");
+            return ;
+        }
         let temp = [];
         for (let i = 0; i < data.length; i++)
         {
@@ -77,34 +82,39 @@ const Leaderboard = (props) => {
         getLeaderboard();
     return (
         <BarLayout route={props.route}>
-            <div className="pt-5">
-                <h1>Leaderboard</h1>
-                <table className="table table-bordered rounded">
-                <thead>
-                    <tr>
-                    <th scope="col">User</th>
-                    <th scope="col">Games Won</th>
-                    <th scope="col">Games Lost</th>
-                    <th scope="col">Games Played</th>
-                    <th scope="col">Total Points</th>
-                    <th scope="col">Winstreak</th>
-                    </tr>
-                </thead>
-                    <tbody>
-                        {lbItems  ? lbItems : 
-                        error
-                                ? <Alert msg={error}/>
-                                : (
-                                    <div className="spinner-grow" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                    </div>
-                                )}
-                    </tbody>
-                </table>
-                {lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
-                    updateLeaderBoard();
-                }}>Load more</button>}
-            </div>
+            {
+                lbItems 
+                ? 
+                <div className="pt-5">
+                    <h1>Leaderboard</h1>
+                    <table className="table table-bordered rounded">
+                    <thead>
+                        <tr>
+                        <th scope="col">User</th>
+                        <th scope="col">Games Won</th>
+                        <th scope="col">Games Lost</th>
+                        <th scope="col">Games Played</th>
+                        <th scope="col">Total Points</th>
+                        <th scope="col">Winstreak</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                            {lbItems}
+                        </tbody>
+                    </table>
+                    {lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
+                        updateLeaderBoard();
+                    }}>Load more</button>}
+                </div>
+                : error
+                ?
+                <Alert msg={error}/>
+                : (
+                    <div className="spinner-grow" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                )
+            }
         </BarLayout>
     );
 }
