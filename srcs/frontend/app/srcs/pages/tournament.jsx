@@ -42,11 +42,54 @@ const FinishedTournament = (props) => {
 };
 
 let tws = null;
+let tchws = null;
+
+const LiveChat = ({msgs, chat_id, updateMsgs}) => {
+	return (
+		<div>
+			<div className='d-flex flex-column align-items-start'>
+				{msgs && 
+					msgs.map((msg) => (
+						<div><strong className='text-success'>{msg.sender}:</strong> {msg.content}</div>
+					))
+				}
+			</div>
+			<form
+				onSubmit={(ev)=>{
+					ev.preventDefault();
+					const msg = ev.target[0].value;
+					if (tchws) {
+						tchws.send(JSON.stringify({
+							chat_id: chat_id,
+							type: "plain.message",
+							content: msg
+						}));
+						updateMsgs(msg);
+						ev.target[0].value = "";
+					}
+				}}
+			>
+				<input
+					className="form-control"
+					required
+				/>
+				<button
+					type="submit"
+					className="btn btn-primary w-100"
+				>
+					SEND
+				</button>
+			</form>
+		</div>
+	);
+}
+
 const Tournament = (props) => {
 	const [games, setGames] = ftReact.useState(null);
 	const [users, setUsers] = ftReact.useState([]);
 	const [winner, setWinner] = ftReact.useState(null);
 	const [tour, setTour] = ftReact.useState(null);
+	const [msgs, setMsgs] = ftReact.useState([]);
 	if (!history.state)
 		props.route("/tournaments");
 	const id = history.state.id;
@@ -54,6 +97,11 @@ const Tournament = (props) => {
 		console.log("cleanup_ws");
 		tws && tws.close();
 		tws = null;
+		tchws && tchws.close();
+		tchws = null;
+	};
+	const updateMsgs = (msg) => {
+		setMsgs([...msgs, {content: msg, sender: 'me'}]);
 	};
 	ftReact.useEffect(()=>{
 		if (!tws) {
@@ -93,8 +141,23 @@ const Tournament = (props) => {
 			document.getElementById("winnerModal")?.removeEventListener('hide.bs.modal', hideModal);
 			document.getElementById("winnerModal")?.addEventListener('hide.bs.modal', hideModal);
 		}
+		if (!tchws) {
+			tchws = new WebSocket(
+				`ws://${window.location.hostname}:8000/ws/chat/tournament/${id}/`,
+				["Authorization", localStorage.getItem("access_token")]
+			);
+		}
+		if (tchws) {
+			tchws.addEventListener('message', ev => {
+				const data = JSON.parse(ev.data);
+				if ("content" in data) {
+					setMsgs([...msgs, data]);
+				}
+				
+			});
+		}
 		return cleanup_ws;
-	},[users, games, winner]);
+	},[users, games, winner, msgs]);
 	ftReact.useEffect(async () => {
 
 		const getTour = async () => {
@@ -120,12 +183,8 @@ const Tournament = (props) => {
 						<h5 className="mt-3">Active users:</h5>
 						{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
 					</div>
-					<button className="btn btn-primary-outline" onClick={()=>{
-						if (tws) {
-							tws.close();
-							tws = null;
-						}
-					}}>CLOSE</button>
+					<br/>
+					<LiveChat msgs={msgs} chat_id={id} updateMsgs={updateMsgs}/>
 					<div
 						className="modal fade"
 						id="winnerModal"
@@ -149,7 +208,7 @@ const Tournament = (props) => {
 			: (
 				<div className="spinner-grow" role="status">
 					<span className="visually-hidden">Loading...</span>
-				  </div>
+				</div>
 			)
 			}
 		</BarLayout>

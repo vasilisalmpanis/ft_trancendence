@@ -350,7 +350,10 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
     _lobbies = TournamentChatroomManager()
 
     async def connect(self):
-        await self.accept()
+        if self.scope.get('auth_protocol', False):
+            await self.accept("Authorization")
+        else:
+            await self.accept()
         self.chat_id = self.scope['url_route']['kwargs']['tournament_id']
         if await database_sync_to_async(self._lobbies.is_tournament_in_db)(self.chat_id) is False:
             await self.send(text_data=json.dumps({
@@ -444,7 +447,7 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
             return
         await self.send(text_data=json.dumps({
                 'type': 'plain.message',
-                'tournament_id': event['id'],
+                'tournament_id': event['chat_id'],
                 'timestamp': event['timestamp'],
                 'sender': event['sender'],
                 'content': event['content'],
