@@ -64,7 +64,7 @@ const GameCard = (props) => {
                     <div className="ml-auto">
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <button className="btn" onClick={() => {
-                                        props.route(`/reroute?path=user&id=${props.data.player1.id}`);
+                                        props.route(`/reroute?path=users&id=${props.data.player1.id}`);
                                         }}>
                                     <div>
                                         <Avatar img={props.data.player1.avatar} size="50px" />
@@ -79,7 +79,7 @@ const GameCard = (props) => {
                             {props.data.player2 && 
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <button className="btn" onClick={() => {
-                                            props.route(`/reroute?path=user&id=${props.data.player2.id}`);
+                                            props.route(`/reroute?path=users&id=${props.data.player2.id}`);
                                             }}>
                                     <div>
                                         <Avatar img={props.data.player2.avatar} size="50px" />
@@ -103,8 +103,8 @@ const GameCard = (props) => {
             <td>
                 <div className="d-flex flex-row gap-2 justify-content-center">
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                        <Avatar img={"https://dictionary.cambridge.org/no/images/thumb/green_noun_001_07350.jpg?version=5.0.389"} size="25px" />
-                        <Avatar img={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJXj5X04MSo1E4chQQ6ZS-WT6ChJDB7FE7cpsv3rQiA&s"} size="25px" />
+                        <div style={{borderRadius: '100%', backgroundColor: 'green', width: '1.5rem', height: '1.5rem'}}/>
+                        <div style={{borderRadius: '100%', backgroundColor: 'red', width: '1.5rem', height: '1.5rem'}}/>
                     </div>
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                         <span>{`${props.data.score1}`}</span>
@@ -116,8 +116,8 @@ const GameCard = (props) => {
             <td>
                 <div className="d-flex flex-row gap-2 justify-content-center">
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
-                        <Avatar img={"https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTdJXj5X04MSo1E4chQQ6ZS-WT6ChJDB7FE7cpsv3rQiA&s"} size="25px" />
-                        <Avatar img={"https://dictionary.cambridge.org/no/images/thumb/green_noun_001_07350.jpg?version=5.0.389"} size="25px" />
+                        <div style={{borderRadius: '100%', backgroundColor: 'red', width: '1.5rem', height: '1.5rem'}}/>
+                        <div style={{borderRadius: '100%', backgroundColor: 'green', width: '1.5rem', height: '1.5rem'}}/>
                     </div>
                     <div className="d-flex flex-column align-items-center justify-content-center gap-1">
                         <span>{`${props.data.score1}`}</span>
@@ -150,14 +150,16 @@ const User = (props) => {
     const [user, setUser] = ftReact.useState(null);
     const [friends, setFriends] = ftReact.useState(null);
     const me = JSON.parse(localStorage.getItem("me"));
-    const id = window.location.pathname.split("/").pop();
+
+    // const id = window.location.pathname.split("/").pop();
+    const id = window.history.state.id;
     const addFriend = async (user_id) => {
         const res = await apiClient.post(`/friendrequests` ,{receiver_id: user_id});
         if (res.error) {
             setError(res.error);
             return;
         }
-        props.route(`/reroute?path=user&id=${id}`);
+        props.route(`/reroute?path=users&id=${id}`);
     };
     const unfriend = async (user_id) => {
         const res = await apiClient.post(`/unfriend` ,{friend_id: user_id});
@@ -165,7 +167,7 @@ const User = (props) => {
             setError(res.error);
             return;
         }
-        props.route(`/reroute?path=user&id=${id}`);
+        props.route(`/reroute?path=users&id=${id}`);
     };
     const block = async(user_id) => {
         const res = await apiClient.post(`/block` ,{user_id: user_id});
@@ -276,7 +278,7 @@ const UsersFriendsLayout = (props) => (
 const UserFriend = (props) => (
     <div key={props.i} className="d-flex flex-row align-items-center justify-content-center border-bottom">
         <button className="btn" onClick={() => {
-                                            props.route(`/reroute?path=user&id=${props.friend.id}`);
+                                            props.route(`/reroute?path=users&id=${props.friend.id}`);
                                             }}>
             <div className="d-flex flex-row align-items-center justify-content-center">
                 <div>

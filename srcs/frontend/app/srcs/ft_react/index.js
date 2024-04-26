@@ -307,12 +307,12 @@ class FTReact {
   }
 
   /** @private */
-  _commit() {
+  async _commit() {
     //console.log("FTReact.commit");
     this._deletions.forEach(el => el.commit());
     this._deletions = [];
     this._root.child && this._root.child.commit();
-    this._runEffects();
+    await this._runEffects();
     this._newChanges = false;
   }
   /** @private */
@@ -351,7 +351,7 @@ class FTReact {
   }
 
   /** @private */
-  _renderLoop(deadline) {
+  async _renderLoop(deadline) {
     const queue = [...this._updateQueue];
     let shouldYield = false;
     if (!this._nextTask)
@@ -364,7 +364,7 @@ class FTReact {
     }
     if (!this._nextTask && this._newChanges) {
       this._printCommit();
-      this._commit();
+      await this._commit();
     }
     requestIdleCallback(this._renderLoop);
   }
@@ -398,18 +398,31 @@ class FTReact {
     return [hook.state, setState];
   }
   /** @private */
-  _runEffects() {
+  async _runEffects() {
     let nextNode = this._root;
     while (nextNode) {
       if (nextNode.effects) {
-        nextNode.effects.forEach(effect => {
+        for (let i = 0; i < nextNode.effects.length; i++) {
+          const effect = nextNode.effects[i];
+          if (!effect)
+            continue;
           if (effect.hasChangedDeps) {
             if (effect.cleanup && effect.cleanup instanceof Function) {
               effect.cleanup();
             }
-            effect.cleanup = effect.callback() || null;
+            effect.cleanup = await effect.callback() || null;
           }
-        });
+        }
+        // nextNode.effects.forEach(async (effect) => {
+        //   if (effect.hasChangedDeps) {
+        //     if (effect.cleanup && effect.cleanup instanceof Function) {
+        //       effect.cleanup();
+        //     }
+        //     effect.callback instanceof Promise
+        //       ? effect.cleanup = await effect.callback() || null
+        //       : effect.cleanup = effect.callback() || null
+        //   }
+        // });
       }
       nextNode = this._getNextNode(nextNode);
     }

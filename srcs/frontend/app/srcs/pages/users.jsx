@@ -11,7 +11,7 @@ import Avatar from "../components/avatar";
 const UserCard = (props) => {
 	return (
 		<div className="card mb-2" style="width: 18rem;">
-			<button className="btn" onClick={() => props.route(`/user/${props.data.id}`)}>
+			<button className="btn" onClick={() => props.route(`/users/${props.data.id}`)}>
 				<ul className="list-group list-group-flush">
 					<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3">
 						<Avatar img={props.data.avatar} size={"20%"}/>

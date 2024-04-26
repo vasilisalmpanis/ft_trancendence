@@ -15,7 +15,7 @@ const LeaderboardCard = (props) => {
                     <button
                         className="btn"
                         onClick={() => {
-                            props.route(`/user/${user.id}`);
+                            props.route(`/users/${user.id}`);
                         }}
                     >
                         <div className="d-flex align-items-center">

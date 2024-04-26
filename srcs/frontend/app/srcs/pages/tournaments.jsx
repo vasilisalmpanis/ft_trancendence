@@ -13,7 +13,7 @@ const CreateTournament = (props) => {
 		else
 		{
 			await props.updateTournaments();
-			props.route("/tournament", {tournament_id: data.id, name: data.name});
+			props.route(`/tournaments/${data.id}`);
 		}
 	}
 	return (
@@ -54,11 +54,10 @@ const CreateTournament = (props) => {
 
 const TournamentCard = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
-	console.log(props.data, me);
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
-				<li className="list-group-item d-inline-flex align-items-baseline">
+				<li className="list-group-item d-inline-flex align-items-baseline" onClick={()=> {props.route(`/tournaments/${props.data.id}`);}}>
 					{props.data.name}
 					{props.data.player_ids.includes(me.id) && props.data.status !== 'closed' &&
 						<button
@@ -78,11 +77,10 @@ const TournamentCard = (props) => {
 								if (!props.data.player_ids.includes(me.id)) {
 									const resp = await apiClient.put("/tournaments", {tournament_id: props.data.id});
 									if (resp.error) {
-										console.log(resp);
 										return ;
 									}
 								}
-								props.route("/tournament", {tournament_id: props.data.id, name: props.data.name});
+								// props.route(`/tournaments/${props.data.id}`);
 							}}
 						>
 							JOIN
