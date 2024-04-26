@@ -67,7 +67,7 @@ class PongService:
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
-                    filter(status='pending').\
+                    filter(status=type.lower()).\
                     order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         else:
@@ -75,7 +75,7 @@ class PongService:
                 games = Pong.objects.order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:
-                games = Pong.objects.filter(status='pending').\
+                games = Pong.objects.filter(status=type.lower()).\
                     order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         return [pong_model_to_dict(game) for game in games]

@@ -34,13 +34,13 @@ const App = (props) => {
 				<Route auth path="/me" element={<Profile/>}/>
 				<Route auth path="/pong" element={<Pong/>}/>
 				<Route auth path="/users" element={<Users/>}/>
+				<Route auth path="/users/{id}" element={<User/>}/>
 				<Route auth path="/games" element={<Games/>}/>
 				<Route auth path="/tournaments" element={<Tournaments/>}/>
-				<Route auth path="/tournament" element={<Tournament/>}/>
+				<Route auth path="/tournaments/{id}" element={<Tournament/>}/>
 				<Route auth path="/leaderboard" element={<Leaderboard/>}/>
-				<Route auth path="/user-friends" element={<UserFriendsLayout/>}/>
+				<Route auth path="/user-friends/{id}" element={<UserFriendsLayout/>}/>
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
-				<Route auth path="/user" element={<User/>}/>
 				<Route auth path="/2fa" element={<TFA/>}/>
 				<Route fallback auth path="/" element={<Main/>}/>
 			</Router>

@@ -3,15 +3,11 @@ import ftReact			from "./ft_react";
 
 const useRouter = () => {
 	const [path, setPath] = ftReact.useState(location.pathname);
-    
-	// window.onpopstate = (ev) => console.log(ev);
 	const route = (newPath, state) => {
-		if (newPath !== window.location.pathname) {
-			//if (!state && window.history.state && window.history.prevState)
-			//	state = window.history.state.prevState;
-			//else if (!state)
-			//	state = {};
-			//state.prevState = state;
+		if (newPath !== path) {
+            if (!state)
+                state = {};
+            state.from = {path: window.location.pathname, state: window.history.state};
 			window.history.pushState(state, '', newPath);
 			setPath(newPath);
 		}
@@ -21,7 +17,7 @@ const useRouter = () => {
 		() => window.addEventListener('popstate', onPopState);
 	const stopListening =
 		() => window.removeEventListener('popstate', onPopState);
-	return [path, route, startListening, stopListening];
+	return [route, path, startListening, stopListening];
 }
 
 export const Route = (props) => {
@@ -29,14 +25,36 @@ export const Route = (props) => {
 	return props.element;
 }
 
+const matchRoute = (route, path) => {
+    if (route.includes('{')) {
+        if (route.substr(0, route.lastIndexOf("/")) === path.substr(0, path.lastIndexOf("/"))) {
+            const propertyName = route.substring(route.lastIndexOf("{") + 1, route.lastIndexOf("}"));
+            const propertyValue = path.substr(path.lastIndexOf('/') + 1);
+            let state = history.state;
+            if (!state)
+                state = {};
+            state[propertyName] = propertyValue;
+            window.history.pushState(state, '');
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        if (path.includes('?'))
+            return route === path.substr(0, path.lastIndexOf('?'));
+        return route === path;
+    }
+}
+
 const RouterIn = (props) => {
-    const [path, route, startListening] = useRouter();
+    const [route, path, startListening] = useRouter();
     if (apiClient.route === null)
         apiClient.route = route;
     startListening();
     let child = props.routes.find(
         route => {
-            return route.props.path && path.startsWith(route.props.path)}
+            return route.props.path && matchRoute(route.props.path, path);
+        }
     ) || null;
     const login =
         props.routes.find(route => route.props.login)

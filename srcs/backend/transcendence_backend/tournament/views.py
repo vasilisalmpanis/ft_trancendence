@@ -77,3 +77,11 @@ class TournamentView(View):
             return JsonResponse(tournament, safe=False)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+        
+@jwt_auth_required()
+def get_tournament_by_id(request, user: User, id: int):
+    try:
+        data = TournamentService.tournament_by_id(id)
+        return JsonResponse(data, safe=False, status=200)
+    except Tournament.DoesNotExist:
+        return JsonResponse({'error': 'tournament not found'}, safe=False, status=404)

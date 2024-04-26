@@ -5,7 +5,7 @@ const b64toBlob = (base64) =>
 
 const Avatar = (props) => {
 	const [blob, setBlob] = ftReact.useState(null);
-	ftReact.useEffect(()=>{
+	ftReact.useEffect(async ()=>{
 		const fetchBlob = async (image) => {
 			let img = image.startsWith("data:")
 				? image
@@ -15,13 +15,13 @@ const Avatar = (props) => {
 		if (props.img && typeof(props.img) === 'string' && !blob)
 		{
 			if (props.img.startsWith("data"))
-				fetchBlob(props.img);
+				await fetchBlob(props.img);
 			//else if (props.img.startsWith("http"))
 			//	setBlob(props.img)
 		}
 		else if (props.img && props.img instanceof Blob && (blob !== props.img))
 			setBlob(props.img);
-	},[]);
+	},[props.img]);
 	return (
 		<img
 			loading="lazy"
