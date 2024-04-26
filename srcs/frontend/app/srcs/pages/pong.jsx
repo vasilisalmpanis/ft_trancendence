@@ -1,12 +1,39 @@
-import ftReact	from "../ft_react";
-import Layout 	from "../components/layout";
-import BarLayout from "../components/barlayout";
-import Platform from "../components/platform";
-import Score 	from "../components/score";
+import * as bootstrap	from 'bootstrap';
+import ftReact			from "../ft_react";
+import Layout 			from "../components/layout";
+import BarLayout		from "../components/barlayout";
 
+const Score = (props) => (
+	<div style={{
+		marginTop: "10px",
+		textAlign: "center",
+	}}>
+		<span id="score-board">{`${props.score.s1} : ${props.score.s2}`}</span>
+	</div>
+);
+
+const Platform = (props) => {
+	const style = {
+		width: "10px",
+		height: "20%",
+		backgroundColor: "royalblue",
+		position: "absolute",
+		top: `${props.y}%`,
+	};
+	let id = "pl-left";
+	if (props.right) {
+		id = "pl-right";
+		style.right = "1%";
+	} else
+		style.left = "1%";
+	return (
+		<div id={id} style={style}/>
+	);
+}
 let ws = null;
 
 const Pong = (props) => {
+	const [winner, setWinner] = ftReact.useState(false);
 	let ball = {x: 50, y: 50};
 	let score = {s1: 0, s2: 0};
 	let pl = 40;
@@ -46,6 +73,9 @@ const Pong = (props) => {
 		console.log("cleanup");
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
+		document.removeEventListener("touchmove", touchMove);
+		document.removeEventListener("touchend", touchEnd);
+		document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
 		ws && ws.close();
 		ws = null;
 	}
@@ -63,6 +93,12 @@ const Pong = (props) => {
 		}
 		prevYCoordinate = currentYCoordinate;
 	}
+	const hideModal = (ev) => {
+		if (history.state && history.state.from && history.state.from.path)
+			props.route(history.state.from.path, history.state.from.state);
+		else
+			props.route("/games");
+	}
 
 	const touchEnd = (ev) => {
 		platformDirection = '';
@@ -71,7 +107,12 @@ const Pong = (props) => {
 	ftReact.useEffect(()=>{
 		if (!ws) {
 			if (!history.state || !history.state.game_id)
-				props.route("/games");
+			{
+				if (history.state && history.state.from)
+					props.route(history.state.from.path, history.state.from.state);
+				else
+					props.route("/games");
+			}
 			else
 			{
 				ws = new WebSocket(
@@ -88,16 +129,21 @@ const Pong = (props) => {
 						|| (data.error && data.error === 'Game is full')
 					) {
 						if (history.state && history.state.from)
-							props.route(history.state.from);
+							props.route(history.state.from.path, history.state.from.state);
 						else
 							props.route("/games");
 					}
-					if (data.start)
+					else if (data.status && data.status === 'Game over') {
+						if ((score.s1 > score.s2 && me === 'left') || (score.s1 < score.s2 && me === 'right'))
+							setWinner(true);
+						(new bootstrap.Modal('#gameoverModal', {})).show();
+					}
+					else if (data.start)
 					{
 						console.log(data.start);
 						return ;
 					}
-					if (data.side === 'right')
+					else if (data.side === 'right')
 					{
 						me = 'right';
 						return ;
@@ -115,10 +161,11 @@ const Pong = (props) => {
 				document.addEventListener('keyup', keyRelease);
 				document.addEventListener("touchmove", touchMove);
 				document.addEventListener("touchend", touchEnd);
+				document.getElementById("gameoverModal").addEventListener('hide.bs.modal', hideModal);
 			}
 		};
 		return cleanup;
-	},[])
+	},[winner])
 	let pl_dom = null;
 	let pr_dom = null;
 	let ball_dom = null;
@@ -163,6 +210,20 @@ const Pong = (props) => {
 				}}/>
 				<Platform y={pl}/>
 				<Platform right y={pr}/>
+			</div>
+
+			<div className="modal fade" id="gameoverModal" tabindex="-1" aria-labelledby="gameoverModalLabel" aria-hidden="true">
+			  <div className="modal-dialog modal-dialog-centered">
+			    <div className="modal-content">
+			      <div className="modal-header">
+			        <h1 className="modal-title fs-5" id="gameoverModalLabel">Game over</h1>
+			        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			      </div>
+			      <div className="modal-body">
+			        <h2>{winner ? "YOU WIN!" : "YOU LOSE!"}</h2>
+			      </div>
+			    </div>
+			  </div>
 			</div>
 		</BarLayout>
 	);

@@ -46,7 +46,6 @@ const Signin = (props) => {
 			password: password
 		});
 		if (resp) {
-			console.log(resp);
 			if (resp.error)
 				setError(resp.error);
 			else if (resp["ok"] === "true")

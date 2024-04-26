@@ -1,6 +1,6 @@
 import re
 from .models            import Tournament, tournament_model_to_dict
-from users.models       import User
+from users.models       import User, user_model_to_dict
 from django.db.models   import Q
 from typing             import List, Dict, Any, Union
 
@@ -84,3 +84,18 @@ class TournamentService:
         tournament.players.add(user)
         tournament.save()
         return tournament_model_to_dict(tournament)
+    
+    @staticmethod
+    def tournament_by_id(id: int):
+        tournament = Tournament.objects.get(id=id)
+        return {
+        'id': tournament.id,
+        'name': tournament.name,
+        'description': tournament.description,
+        'max_players': tournament.max_players,
+        'max_points': tournament.max_points,
+        'status': tournament.status,
+        'winner': tournament.winner.id if tournament.winner else None,
+        'created_at': tournament.created_at,
+        'player_ids': [user_model_to_dict(player, avatar=False) for player in tournament.players.all()]
+    }
