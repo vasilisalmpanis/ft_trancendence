@@ -267,10 +267,7 @@ const Profile = (props) => {
 								</div>
 							</div>
 						</div>
-					: 	error 
-						?
-						<Alert msg={error}/>
-						:
+					:
 						<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
