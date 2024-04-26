@@ -271,7 +271,11 @@ const Profile = (props) => {
 								{/* <IncomingRequests data={incomingRequests} setter={setIncomingRequests}/> */}
 							</div>
 						</div>
-					: 	<button className="spinner-grow" role="status"></button>
+					: 	error 
+						?
+						<Alert msg={error}/>
+						:
+						<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);
