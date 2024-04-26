@@ -151,7 +151,6 @@ class ApiClient {
     }
     this.headers['Authorization'] = `Bearer ${this.refresh_token}`;
     const response = await this.sendRequest('auth/refresh', 'GET', null, null);
-    console.log(response);
     if (response.error)
     {
       return response;
