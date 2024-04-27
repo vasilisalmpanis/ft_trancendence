@@ -5,7 +5,7 @@ import BarLayout		from "../components/barlayout";
 import { apiClient } from '../api/api_client';
 
 const GameCard = (props) => {
-	const me = JSON.parse(localStorage.getItem("me"));
+	const me = props.me;
 	return (
 		<div className="card gap-2 p-2">
 			<span>{`${props.data.player1.username} vs ${props.data.player2.username}`}</span>
@@ -33,7 +33,10 @@ const FinishedTournament = (props) => {
 		<div className='d-flex flex-column gap-2'> 
 			<h3>{props.data.name}</h3>
 			{props.data.player_ids.map(player=>(
-				<div className="card gap-2 p-2" style={{backgroundColor: player.id == props.data.winner ? 'green' : 'inherit'}}>
+				<div
+					className="card gap-2 p-2"
+					style={{backgroundColor: player.id == props.data.winner ? 'green' : 'inherit'}}
+				>
 					<span>{player.username}</span>
 				</div>
 			))}
@@ -44,15 +47,44 @@ const FinishedTournament = (props) => {
 let tws = null;
 let tchws = null;
 
-const LiveChat = ({msgs, chat_id, updateMsgs}) => {
+const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 	return (
-		<div>
-			<div className='d-flex flex-column align-items-start'>
+		<div
+			className='border border-success-subtle border-opacity-25 rounded'
+			style={{maxWidth: "18rem"}}
+		>
+			<div
+				className='d-flex flex-column align-items-start p-2 text-wrap text-start overflow-y-scroll'
+				style={{maxHeight: "20rem", scrollbarWidth: "thin"}}
+			>
 				{msgs && 
 					msgs.map((msg) => (
-						<div><strong className='text-success'>{msg.sender}:</strong> {msg.content}</div>
+						msg.game
+						? <div className="text-center w-100">
+							<a
+								className='link-info link-underline-info'
+								style={{cursor: "pointer"}}
+								onClick={()=>{route("/pong", {game_id: msg.game.id})}}
+							>
+								Join game with {me.id === msg.game.player1.id ? msg.game.player2.username : msg.game.player1.username}
+							</a>
+						</div>
+						: <div className={msg.content ? '' : 'text-center w-100'}>
+							<strong
+								className={
+									msg.content
+										? msg.sender === 'me' ? 'text-info' :'text-success'
+										: 'text-secondary'
+								}
+							>
+								{msg.sender}:
+							</strong> <span className="text-secondary">
+								{msg.content ? msg.content : msg.status}
+							</span>
+						</div>
 					))
 				}
+				<div id="msgs-end" style={{visibility: "hidden"}}/>
 			</div>
 			<form
 				onSubmit={(ev)=>{
@@ -69,22 +101,27 @@ const LiveChat = ({msgs, chat_id, updateMsgs}) => {
 					}
 				}}
 			>
-				<input
-					className="form-control"
-					required
-				/>
-				<button
-					type="submit"
-					className="btn btn-primary w-100"
-				>
-					SEND
-				</button>
+				<div className="input-group">
+					<input
+						required
+						type="text"
+						className="form-control"
+						placeholder="New message"
+						aria-describedby="button-addon2"
+					/>
+					<button
+						className="btn btn-outline-secondary"
+						type="submit"
+						id="button-addon2"
+					>Send</button>
+				</div>
 			</form>
 		</div>
 	);
 }
 
 const Tournament = (props) => {
+	const me =  JSON.parse(localStorage.getItem("me"));
 	const [games, setGames] = ftReact.useState(null);
 	const [users, setUsers] = ftReact.useState([]);
 	const [winner, setWinner] = ftReact.useState(null);
@@ -102,6 +139,10 @@ const Tournament = (props) => {
 	};
 	const updateMsgs = (msg) => {
 		setMsgs([...msgs, {content: msg, sender: 'me'}]);
+		setTimeout(
+			() => document.getElementById("msgs-end")?.scrollIntoView(),
+			100
+		);
 	};
 	ftReact.useEffect(()=>{
 		if (!tws) {
@@ -118,6 +159,11 @@ const Tournament = (props) => {
 					setUsers([...data.users])
 				if ('message' in data && 'games' in data['message'])
 				{
+					data.message.games.forEach(game=>{
+						if (me.id === game.player1.id || me.id === game.player2.id)
+							setMsgs([...msgs, {game: game}])
+						console.log(game);
+					})
 					setGames([...data.message.games])
 				}
 				else if ('message' in data && 'user_joined' in data['message']) {
@@ -150,10 +196,13 @@ const Tournament = (props) => {
 		if (tchws) {
 			tchws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
-				if ("content" in data) {
+				if ("content" in data || 'status' in data) {
 					setMsgs([...msgs, data]);
-				}
-				
+					setTimeout(
+						() => document.getElementById("msgs-end")?.scrollIntoView(),
+						100
+					);
+				};
 			});
 		}
 		return cleanup_ws;
@@ -177,14 +226,23 @@ const Tournament = (props) => {
 					<h3>It's a tournament {tour.name}</h3>
 					<div>
 						<h5 className="mt-3">Games:</h5>
-						{games && games.length ? games.map(game => <GameCard route={props.route} data={game}/>) : <span>waiting games</span>}
+						{games && games.length
+							? games.map(game => <GameCard route={props.route} data={game} me={me}/>)
+							: <span>waiting games</span>
+						}
 					</div>
 					<div>
 						<h5 className="mt-3">Active users:</h5>
 						{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
 					</div>
 					<br/>
-					<LiveChat msgs={msgs} chat_id={id} updateMsgs={updateMsgs}/>
+					<LiveChat
+						msgs={msgs}
+						chat_id={id}
+						updateMsgs={updateMsgs}
+						route={props.route}
+						me={me}
+					/>
 					<div
 						className="modal fade"
 						id="winnerModal"
@@ -210,7 +268,7 @@ const Tournament = (props) => {
 					<span className="visually-hidden">Loading...</span>
 				</div>
 			)
-			}
+		}
 		</BarLayout>
 	);
 };
