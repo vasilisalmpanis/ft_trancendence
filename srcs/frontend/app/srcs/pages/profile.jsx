@@ -11,6 +11,44 @@ import EditIcon									from "../components/edit_icon";
 import ClipboardIcon							from "../components/clipboard_icon";
 import StatsLayout								from "../components/statslayout";
 
+
+const BlockedUsers = (props) => {
+	const unblockUser = async (user_id) => {
+		const data = await apiClient.put(`/block`, {user_id: user_id});
+		if (data.error)
+			return ;
+		else
+			props.setter(null);
+	}
+	return (
+		<div className="card" style="width: 20rem;">
+			<ul className="list-group list-group-flush">
+				<li className="list-group-item">
+					<h5 className="card-title">Blocked Users</h5>
+				</li>
+				{
+					// error ?
+					// 	<span>{error}</span>
+					// :
+						(props.users && props.users.length)
+							?
+							props.users.map((user) => {
+								return (
+									<li className="list-group-item d-flex justify-content-between align-items-center">
+										<Avatar img={user.avatar} size="50px"/>
+										<span className="">{user.username}</span>
+										<button className="btn btn-primary" onClick={() => unblockUser(user.id)}>Unblock</button>
+									</li>
+							)}
+							)
+							:
+							<span>No blocked users</span>
+				}
+			</ul>
+		</div>
+	)
+}
+
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
 	const [tfa, setTfa] = ftReact.useState("");
@@ -31,7 +69,7 @@ const ProfileCard = (props) => {
 		}
 	}
 	return (
-		<div className="card justify-content-center" style="width: 18rem;">
+		<div className="justify-content-center" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -81,7 +119,7 @@ const ProfileCard = (props) => {
 						<button type="submit" className="btn btn-outline-primary">Save</button>
 					</form>
 				</li>
-				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
+				{/* <li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li> */}
 				<li className="list-group-item">
 					{
 						tfaEnabled
@@ -155,8 +193,8 @@ const ProfileCard = (props) => {
 									// console.log('RESPONSE AFTER EVDERYTHING:', res);
 									if (res.status === '2FA Verified')
 									{
-										apiClient.authorize(res);
-										localStorage.setItem("2fa", true);
+										apiClient.authorize(res, null, true);
+										// localStorage.setItem("2fa", true);
 										setTfaEnabled(true);
 									}
 									else if (res.error)
@@ -183,19 +221,6 @@ const ProfileCard = (props) => {
 }
 
 const IncomingRequests = (props) => {
-	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
-	const [error, setError] = ftReact.useState("");
-	ftReact.useEffect(async () => {
-		const getIncomingRequests = async () => {
-			const data = await apiClient.get(`/friendrequests/incoming`);
-			if (data.error)
-				setError(data.error);
-			else if (data && data.length)
-				setIncomingRequests([...data]);
-		}
-		if (!incomingRequests && !error)
-			getIncomingRequests();
-	},[incomingRequests]);
 	return (
 		<div className="card" style="width: 20rem;">
 			<ul className="list-group list-group-flush">
@@ -203,14 +228,14 @@ const IncomingRequests = (props) => {
 					<h5 className="card-title">Friend Requests</h5>
 				</li>
 				{
-					incomingRequests && incomingRequests.length
-
-					? incomingRequests.map((request, i) => {
+					props.requests && props.requests.length
+					?
+					props.requests.map((request, i) => {
 						return (
-							<FriendRequestLayout request={request} i={i} setter={setIncomingRequests} data={incomingRequests}/>
+							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.requests}/>
 						);
 					})
-					: <span>Nobody wants to be a friend with you</span>
+					: <span>You have no pending requests</span>
 				}
 			</ul>
 		</div>
@@ -227,45 +252,114 @@ const FriendRequestLayout = (props) => {
 			props.setter(null);
 		}
 	};
-
 	const declineRequest = async () => {
 		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
 		if (data.error)
 			return ;
 		else {
-			props.setter(props.data.filter((request) => request.id !== props.request.id));
+			props.setter(null);
 		}
 	};
 	return (
-		<li key={props.i} className="list-group-item d-flex">
-				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
-					<h5>From:</h5>
-					<h5 className="">{props.request.sender.username}</h5>
+		<li key={props.i} className="list-group-item d-flex justify-content-between align-items-center">
+				{/* <div className="d-flex flex-row my-2 my-lg-0 justify-content-between"> */}
+					<h6 className="">{props.request.sender.username}</h6>
 					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
 					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
-				</div>
+				{/* </div> */}
 		</li>
 	)
 }
 
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
+	const [blockedUsers, setBlockedUsers] = ftReact.useState(null);
+	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
+	const [outgoingRequests, setOutgoingRequests] = ftReact.useState(null);
+	const [stats, setStats] = ftReact.useState(null);
+	const [error, setError] = ftReact.useState("");
+	ftReact.useEffect(() => {
+		const getMyStats = async () => {
+			const data = await apiClient.get(`/users/${me.id}/stats`);
+			if (data.error)
+				setError(data.error);
+			else if (data && !stats)
+				setStats(data);
+		}
+		if (!stats && !error)
+			getMyStats();
+	},[stats]);
+	ftReact.useEffect(() => {
+		const getBlockedUsers = async () => {
+			let data = await apiClient.get(`/block`);
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setBlockedUsers([...data]);
+			else if (data.status === 'No blocked users')
+				setBlockedUsers([]);
+		}
+		if (!blockedUsers && !error)
+			getBlockedUsers();
+	}
+	,[blockedUsers]);
+	ftReact.useEffect(() => {
+		const getIncomingRequests = async () => {
+			const data = await apiClient.get(`/friendrequests/incoming`);
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setIncomingRequests([...data]);
+		}
+		if (!incomingRequests && !error)
+			getIncomingRequests();
+	},[incomingRequests]);
+	ftReact.useEffect(() => {
+		const getOutgoingRequests = async () => {
+			const data = await apiClient.get(`/friendrequests`);
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setOutgoingRequests([...data]);
+		}
+		if (!outgoingRequests && !error)
+			getOutgoingRequests();
+	},[outgoingRequests]);
 	return (
 		<BarLayout route={props.route}>
 			{
 				me
 					? 	<div className="d-grid">
-							<div className="row justify-content-center text-center align-items-start g-3">
+							<div className="row border rounded justify-content-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>
 								</div>
-								<div className="col d-flex justify-content-center">
-									<StatsLayout user_id={me.id}/>
-								</div>
-								<div className="col d-flex justify-content-center">
-									<IncomingRequests/>
+								<div className="col d-flex align-items-center">
+									{stats && <StatsLayout stats={stats}/>}
 								</div>
 							</div>
+							{error 
+							? 
+							<Alert msg={error}/>
+							:
+								!incomingRequests && !outgoingRequests && !blockedUsers
+								?
+									<button className="spinner-grow" role="status"></button>
+								:
+								<div className="row justify-content-center">
+									<div className="col-lg-4 d-flex justify-content-center mt-2">
+									{console.log('rerender:')}
+									<IncomingRequests requests={incomingRequests} setter={setIncomingRequests}/>
+									</div>
+									{/* {console.log(outgoingRequests, 'OUTGOING REQUESTS')} */}
+									<div className="col-lg-4 d-flex justify-content-center mt-2">
+									<OutgoingRequests requests={outgoingRequests} setter={setOutgoingRequests}/>
+									</div>
+									<div className="col-lg-4 d-flex justify-content-center mt-2">
+									{blockedUsers && <BlockedUsers users={blockedUsers} setter={setBlockedUsers}/>}
+									</div>
+								</div>
+							}
 						</div>
 					:
 						<button className="spinner-grow" role="status"></button>
@@ -274,4 +368,25 @@ const Profile = (props) => {
 	);
 }
 
+const OutgoingRequests = (props) => {
+	return (
+		<div className="card" style="width: 20rem;">
+			<ul className="list-group list-group-flush">
+				<li className="list-group-item">
+					<h5 className="card-title">Sent Requests</h5>
+				</li>
+				{
+					props.requests && props.requests.length
+					?
+					props.requests.map((request, i) => {
+						return (
+							<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.requests}/>
+						);
+					})
+					: <span>You sent no friend requests</span>
+				}
+			</ul>
+		</div>
+	);
+}
 export default Profile;

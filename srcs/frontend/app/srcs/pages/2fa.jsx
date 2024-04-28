@@ -19,7 +19,7 @@ const TFA = (props) => {
 		if (resp.error)
 			setError(resp.error);
 		else {
-			const res = await apiClient.authorize(resp);
+			const res = await apiClient.authorize(resp, null, true);
 			if (res.ok && res.ok === 'true')
 				props.route("/");
 		}

@@ -5,6 +5,9 @@ import BarLayout from "../components/barlayout";
 import Platform from "../components/platform";
 import Score 	from "../components/score";
 
+
+let gameRunning;
+
 const Pong = (props) => {
     const [wins, setWins] = ftReact.useState("");
     const maxScore = 10;
@@ -45,6 +48,7 @@ const Pong = (props) => {
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
+        gameRunning = false;
 	}
     const hideModal = () => {
         props.route("/games");
@@ -75,6 +79,7 @@ const Pong = (props) => {
         // document.addEventListener("touchend", touchEnd);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
         document.getElementById("gameoverModal")?.addEventListener('hide.bs.modal', hideModal);
+        gameRunning = true;
         if (wins === "")
             requestAnimationFrame(gameLoop);
         return cleanup;
@@ -88,9 +93,11 @@ const Pong = (props) => {
     let ballx = 50;
     let bally = 50;
     let angle = 45;
+    let speed = 1;
+    let speedIncrease = 0.05;
     const move = () => {
-        ballx = Math.cos(angle) + ballx;
-        bally = -Math.sin(angle) + bally;
+        ballx = Math.cos(angle) * speed + ballx;
+        bally = -Math.sin(angle) * speed + bally;
         if (leftPlatformDirection === 'up')
             pl = Math.max(0, pl - 1);
         else if (leftPlatformDirection === 'down')
@@ -105,6 +112,7 @@ const Pong = (props) => {
         return Math.random() * (max - min) + min;
       }
     const restartBall = () => {
+        speed = 1;
         ballx = 50;
         bally = Math.random() * 100;
         let randNum = Math.random();
@@ -122,6 +130,7 @@ const Pong = (props) => {
                 let normalizedRelativeIntersectionY = (relativeIntersectY / 10); // 10 is half of the platform height
                 angle = normalizedRelativeIntersectionY * maxAngle;
 				ballx = 2;
+                speed = speed + speedIncrease;
             }
 			else
             {
@@ -138,6 +147,7 @@ const Pong = (props) => {
                 let normalizedRelativeIntersectionY = (relativeIntersectY / 10); // 10 is half of the platform height
                 angle = Math.PI - normalizedRelativeIntersectionY * maxAngle;
 				ballx = 98;
+                speed = speed + speedIncrease;
             }
 			else {
 				ballx = 3;
@@ -167,7 +177,8 @@ const Pong = (props) => {
 			pl_dom = document.getElementById("pl-left");
 			pr_dom = document.getElementById("pl-right");
 			ball_dom = document.getElementById("ball");
-			score_board = document.getElementById("score-board");
+			
+            
 		}
         if (left_score === maxScore || right_score === maxScore) {
             new bootstrap.Modal('#gameoverModal', {}).show();
@@ -177,7 +188,8 @@ const Pong = (props) => {
                 setWins("Left player wins!");
             return ;
         }
-		requestAnimationFrame(gameLoop);
+        if (gameRunning)
+    		requestAnimationFrame(gameLoop);
 	}
 	return (
 		<BarLayout route={props.route}>
