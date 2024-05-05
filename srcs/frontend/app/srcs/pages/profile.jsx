@@ -237,7 +237,7 @@ const FriendRequestLayout = (props) => {
 		}
 	};
 	return (
-		<li key={props.i} className="list-group-item d-flex">
+		<li className="list-group-item d-flex">
 				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
 					<h5>From:</h5>
 					<h5 className="">{props.request.sender.username}</h5>
@@ -254,7 +254,7 @@ const Profile = (props) => {
 		<BarLayout route={props.route}>
 			{
 				me
-					? 	<div className="d-grid">
+				? 	<div className="d-grid">
 							<div className="row justify-content-center text-center align-items-start g-3">
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>

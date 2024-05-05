@@ -162,7 +162,6 @@ const Tournament = (props) => {
 					data.message.games.forEach(game=>{
 						if (me.id === game.player1.id || me.id === game.player2.id)
 							setMsgs([...msgs, {game: game}])
-						console.log(game);
 					})
 					setGames([...data.message.games])
 				}

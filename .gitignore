@@ -11,6 +11,7 @@ package-lock.json
 # C extensions
 *.so
 .eslintrc.json
+test*
 
 package-lock.json
 node_modules

@@ -31,6 +31,7 @@ const Platform = (props) => {
 	);
 }
 let ws = null;
+let running = true;
 
 const Pong = (props) => {
 	const [winner, setWinner] = ftReact.useState(false);
@@ -78,6 +79,7 @@ const Pong = (props) => {
 		document.removeEventListener("touchmove", touchMove);
 		document.removeEventListener("touchend", touchEnd);
 		document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
+		running = false;
 		ws && ws.close();
 		ws = null;
 	}
@@ -117,6 +119,7 @@ const Pong = (props) => {
 			}
 			else
 			{
+				running = true;
 				ws = new WebSocket(
 					`ws://${window.location.hostname}:8000/ws`,
 					["Authorization", localStorage.getItem("access_token")]
@@ -185,7 +188,8 @@ const Pong = (props) => {
 			ball_dom = document.getElementById("ball");
 			score_board = document.getElementById("score-board");
 		}
-		requestAnimationFrame(gameLoop);
+		if (running)
+			requestAnimationFrame(gameLoop);
 	}
 	requestAnimationFrame(gameLoop);
 	return (

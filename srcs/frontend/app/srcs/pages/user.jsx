@@ -47,7 +47,7 @@ const GameLayout = (props) => (
                 <tbody>
                     {props.games.map((game, i) => {
                         return (
-                                <GameCard key={i} data={game} route={props.route} setter={props.setter}/>
+                                <GameCard data={game} route={props.route} setter={props.setter}/>
                         )
                     })}
                 </tbody>
@@ -265,7 +265,7 @@ const UsersFriendsLayout = (props) => (
             <div className="mr-2">
                 {props.friends.length > 0 ? (
                     props.friends.map((friend, i) => (
-                        <UserFriend key={i} i={i} friend={friend} route={props.route} />
+                        <UserFriend i={i} friend={friend} route={props.route} />
                     ))
                 ) : (
                     <h5>No Friends</h5>
@@ -276,7 +276,7 @@ const UsersFriendsLayout = (props) => (
 );
 
 const UserFriend = (props) => (
-    <div key={props.i} className="d-flex flex-row align-items-center justify-content-center border-bottom">
+    <div className="d-flex flex-row align-items-center justify-content-center border-bottom">
         <button className="btn" onClick={() => {
                                             props.route(`/reroute?path=users&id=${props.friend.id}`);
                                             }}>
