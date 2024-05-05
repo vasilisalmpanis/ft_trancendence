@@ -1,3 +1,4 @@
+from unittest import skip
 from django.http                        import JsonResponse
 from django.utils.decorators            import method_decorator
 from users.models                       import User, FriendRequest, user_model_to_dict
@@ -18,7 +19,9 @@ def get_incoming_friend_requests(request, user : User) -> JsonResponse:
     if request.method != "GET":
         return JsonResponse({"Error": "Wrong Request Method"}, status=400)
     try:
-        friend_requests = FriendRequestService.get_user_friend_requests(user, "incoming")
+        skip = int(request.GET.get("skip", 0))
+        limit = int(request.GET.get("limit", 10))
+        friend_requests = FriendRequestService.get_user_friend_requests(user, "incoming", skip=skip, limit=limit)
         return JsonResponse(friend_requests, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"status": f"{e}"}, status=400)
@@ -30,7 +33,9 @@ class FriendsView(View):
         Get all sent friend requests by currently logged in user
         """
         try:
-            friend_requests = FriendRequestService.get_user_friend_requests(user, "sent")
+            skip = int(request.GET.get("skip", 0))
+            limit = int(request.GET.get("limit", 10))
+            friend_requests = FriendRequestService.get_user_friend_requests(user, "sent", skip=skip, limit=limit)
             return JsonResponse(friend_requests, status=200, safe=False)
         except Exception as e:
             return JsonResponse({"status": f"{e}"}, status=400)

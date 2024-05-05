@@ -19,6 +19,9 @@ import User					from './pages/user';
 import UserFriendsLayout 	from './pages/user_friends';
 import ReRoutePage			from './pages/reroute';
 import LocalGame			from './pages/local_game';
+import Sent 				from './pages/sent';
+import Incoming 			from './pages/incoming';
+import Blocked 				from './pages/blocked';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -45,6 +48,9 @@ const App = (props) => {
 				<Route auth path="/2fa" element={<TFA/>}/>
 				<Route auth path="/local-game" element={<LocalGame/>}/>
 				<Route fallback auth path="/" element={<Main/>}/>
+				<Route fallback auth path="/friendrequests/sent" element={<Sent/>}/>
+				<Route fallback auth path="/friendrequests/incoming" element={<Incoming/>}/>
+				<Route fallback auth path="/blocked" element={<Blocked/>}/>
 			</Router>
 		</div>
 	);
