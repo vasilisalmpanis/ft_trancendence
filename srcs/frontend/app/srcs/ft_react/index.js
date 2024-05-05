@@ -384,6 +384,7 @@ class FTReact {
     const setState = action => {
       hook.queue.push(action);
       // console.log("setState", hook, oldHook);
+      node.parent.children[node.key] = node;
       node.states.forEach(hook => {
         hook.queue.forEach(action => {
           hook.state = typeof action === 'function' ? action(hook.state) : action;
