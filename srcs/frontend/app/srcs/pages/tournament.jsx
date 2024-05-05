@@ -48,34 +48,6 @@ let tws = null;
 let tchws = null;
 
 const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
-	// const [msgs, setMsgs] = ftReact.useState([]);
-	// const updateMsgs = (msg) => {
-	// 	setMsgs([...msgs, {content: msg, sender: 'me'}]);
-	// 	setTimeout(
-	// 		() => document.getElementById("msgs-end")?.scrollIntoView(),
-	// 		100
-	// 	);
-	// };
-	// ftReact.useEffect(()=>{
-	// 	if (!tchws) {
-	// 		tchws = new WebSocket(
-	// 			`ws://${window.location.hostname}:8000/ws/chat/tournament/${id}/`,
-	// 			["Authorization", localStorage.getItem("access_token")]
-	// 		);
-	// 	}
-	// 	if (tchws) {
-	// 		tchws.addEventListener('message', ev => {
-	// 			const data = JSON.parse(ev.data);
-	// 			if ("content" in data || 'status' in data) {
-	// 				setMsgs([...msgs, data]);
-	// 				setTimeout(
-	// 					() => document.getElementById("msgs-end")?.scrollIntoView(),
-	// 					100
-	// 				);
-	// 			};
-	// 		});
-	// 	}
-	// },[msgs])
 	return (
 		<div
 			className='border border-secondary-subtle border-opacity-25 rounded shadow'
