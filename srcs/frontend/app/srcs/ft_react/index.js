@@ -3,7 +3,8 @@
  */
 
 const requestIdleCallback =
-      window.requestIdleCallback ||
+      window.requestAnimationFrame ||
+      // window.requestIdleCallback ||
       function (cb) {
         var start = Date.now()
         return setTimeout(function () {
@@ -50,6 +51,7 @@ class FiberNode {
     return this.props.children && this.props.children[0] || null;
   }
   set child(val) {
+    val.parent = this;
     this.props.children[0] = val;
   }
   get children() {
@@ -58,6 +60,10 @@ class FiberNode {
   set children(val) {
     if (!this.props) this.props = {};
     this.props.children = val;
+    this.props.children.forEach((child, key) => {
+      child.parent = this;
+      child.key = key;
+    })
   }
   get sibling() {
     return this.parent && this.parent.children && this.parent.children[this.key + 1] || null;
@@ -66,7 +72,7 @@ class FiberNode {
     if (this.parent) {
       val.key = this.key + 1;
       val.parent = this.parent;
-      this.parent.children[val.key] = val;
+      this.parent.props.children[val.key] = val;
     }
   }
   get prevSibling() {
@@ -120,6 +126,7 @@ class FiberNode {
     };
     const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
+    // clonedNode.states = this.states ? structuredClone(this.states) : [];
     clonedNode.states = this.states ? [...this.states] : [];
     clonedNode.effects = this.effects ? [...this.effects] : [];
     clonedNode.key = this.key;
@@ -130,15 +137,15 @@ class FiberNode {
    * @param {FTReact} ftReact
    */
     reconcile(ftReact) {
-      //console.log("  VNode.reconcile RECONCILE: ", this, this.old);
-      //this.type instanceof Function && console.log("RECONCILE: ", this.type.name, this.old?.type.name, this);
-      this.parentsSiblings();
+      // this.parentsSiblings();
       let oldNode = this.old && this.old.child;
       let prevSibling = null;
       const children = this.children;
       let i = 0;
       while (i < children.length) {
         const el = children[i];
+        if (!el)
+          continue ;
         let newNode = null;
         let sameType = oldNode && el && oldNode.type == el.type || false;
         if (sameType) {
@@ -175,9 +182,10 @@ class FiberNode {
         ftReact._deletions.push(oldNode);
         oldNode = oldNode.sibling;
       }
-    }
+  }
   commit() {
-    // console.log("  VNode.commit ", this);
+    // if (this.type instanceof Function)
+    //   console.log("commit", this.type.name, this.effect, "|", ...this.states || [], "|", ...this.old?.states || []);
     let domParentNode = this.parent;
     while (!domParentNode.dom) {
       domParentNode = domParentNode.parent;
@@ -199,7 +207,6 @@ class FiberNode {
     this.old = this.clone();
   }
   delete(domParent) {
-    //console.log("  VNode.delete", this, domParent);
     if (this.effects) {
       this.effects.forEach(effect => {
           if (effect && effect.cleanup) {
@@ -210,22 +217,19 @@ class FiberNode {
     if (this.dom && domParent.contains(this.dom)) {
       domParent.removeChild(this.dom);
       this.dom = null;
-      //this.deleteFromFiber();
     } else {
       this.child && this.child.delete(domParent);
     }
     this.effect = null;
   }
   update(ftReact) {
-    //console.log("  VNode.update", this);
-    //this.type instanceof Function && console.log("UPDATE: ", this.type.name, this.old?.type.name, this);
-    if (this.type instanceof Function) this.resolveFunc(ftReact); else if (!this.dom) this.createDom();
-    //this.type instanceof Function && console.log(this.type.name, this.children.length);
+    if (this.type instanceof Function)
+      this.resolveFunc(ftReact);
+    else if (!this.dom)
+      this.createDom();
     this.reconcile(ftReact);
-    //this.type instanceof Function && console.log(this.children.length);
   }
   createDom() {
-    //console.log("  VNode.createDom", this);
     if (this.type == "TEXT_ELEMENT")
       this.dom = document.createTextNode("");
     else {
@@ -237,24 +241,15 @@ class FiberNode {
     this.updateDom();
   }
   updateDom = () => {
-    //console.log("  VNode.updateDom", this);
     const oldProps = this.old && this.old.props || {};
-    //Remove old or changed event listeners
     Object.keys(oldProps).filter(isEvent).filter(key => !(key in this.props) || isNew(oldProps, this.props)(key)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
-      //console.log("     removeEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.removeEventListener(eventType, oldProps[name]);
     });
-
-    // Remove old properties
     Object.keys(oldProps).filter(isProperty).filter(isGone(oldProps, this.props)).forEach(name => {
-      //console.log("     removeProperties", this.dom.tagName || this.type, name);
       this.dom[name] = "";
     });
-
-    // Set new or changed properties
     Object.keys(this.props).filter(isProperty).filter(isNew(oldProps, this.props)).forEach(name => {
-      //console.log("     setProperties", this.dom.tagName || this.type, name, this.props[name]);
       if (this.getNameSpace()) {
         this.dom.setAttribute(name, this.props[name])
       } else {
@@ -272,11 +267,8 @@ class FiberNode {
         }
       }
     });
-
-    // Add event listeners
     Object.keys(this.props).filter(isEvent).filter(isNew(oldProps, this.props)).forEach(name => {
       const eventType = name.toLowerCase().substring(2);
-      //console.log("     addEventListener", this.dom.tagName || this.type, name, eventType);
       this.dom.addEventListener(eventType, this.props[name]);
     });
   };
@@ -297,18 +289,17 @@ class FTReact {
     this._currentNode = null;
     /** @private */
     this._updateQueue = [];
+    /** @private */
+    this._nodeBuf = null;
   }
-
   /** @private */
   _scheduleUpdate(component) {
     if (!this._updateQueue.includes(component)) {
       this._updateQueue.push(component);
     }
   }
-
   /** @private */
   async _commit() {
-    //console.log("FTReact.commit");
     this._deletions.forEach(el => el.commit());
     this._deletions = [];
     this._root.child && this._root.child.commit();
@@ -316,43 +307,54 @@ class FTReact {
     this._newChanges = false;
   }
   /** @private */
-  _getNextNode(node) {
-    if (node.child)
-      return node.child;
-    while (node) {
-      if (node.sibling)
-        return node.sibling;
-      node = node.parent;
+  _getNextNode() {
+    if (!this._nextTask)
+      return ;
+    if (this._nextTask.child) {
+      this._nextTask = this._nextTask.child;
+      return ;
     }
-    return null;
+    while (this._nextTask) {
+      if (this._nextTask.sibling) {
+        this._nextTask = this._nextTask.sibling;
+        return ;
+      }
+      this._nextTask = this._nextTask.parent;
+    }
+    this._nextTask = null;
   }
   /** @private */
   _setNextTask() {
     if (this._nextTask) {
-      const nextNode = this._getNextNode(this._nextTask);
-      if (nextNode && this._updateQueue.includes(nextNode))
-          this._updateQueue = this._updateQueue.filter(it => it !== nextNode);
-      if (nextNode) {
-        this._nextTask = nextNode;
+      this._getNextNode();
+      if (this._nextTask)
+      {
+        if (this._updateQueue.includes(this._nextTask))
+          this._updateQueue = this._updateQueue.filter(it => it !== this._nextTask);
         return ;
       }
     }
     this._nextTask = this._updateQueue.shift() || null;
   }
   /** @private */
-  _printCommit() {
-    //for (let del of this._deletions)
-    //  console.log("DELETION", del.effect, del.type instanceof Function ? del.type.name : (del.dom ? del.dom : del));
-    let node = this._getNextNode(this._root);
-    while (node) {
-      //console.log(node.effect, node.type instanceof Function ? node.type.name : node.type, node);
-      node = this._getNextNode(node);
+  _printTree(node) {
+    if (!node)
+      node = this._root;
+    console.log(
+      "T", node.type instanceof Function ? node.type.name : node.type,
+      "|", ...node.states || [],
+      "|", ...node?.old?.states || []
+    );
+    if (node.children) {
+      for (let child of node.children) {
+        if (child)
+          this._printTree(child);
+      }
     }
   }
-
   /** @private */
-  async _renderLoop(deadline) {
-    const queue = [...this._updateQueue];
+  async _renderLoop() {
+  // async _renderLoop(deadline) {
     let shouldYield = false;
     if (!this._nextTask)
       this._setNextTask();
@@ -360,14 +362,19 @@ class FTReact {
       this._nextTask.update(this);
       this._newChanges = true;
       this._setNextTask();
-      shouldYield = deadline.timeRemaining() < 1;
+      // should Yield = deadline.timeRemaining() < 1;
     }
     if (!this._nextTask && this._newChanges) {
-      this._printCommit();
       await this._commit();
+      // this._root.parentsSiblings();
     }
     requestIdleCallback(this._renderLoop);
   }
+  /**
+   * 
+   * @param {*} initialValue 
+   * @returns {[*, Function]}
+   */
   useState(initialValue) {
     const node = this._currentNode;
     const oldHook = node.old && node.old.states[node.stId];
@@ -376,22 +383,23 @@ class FTReact {
       queue: []
     };
     const actions = oldHook ? oldHook.queue : [];
+    // if (node.states[node.stId]?.queue && node.states[node.stId]?.queue.length) {
+    //   actions = node.states[node.stId]?.queue;
+    // }
     actions.forEach(action => {
       hook.state = action instanceof Function ? action(hook.state) : action;
     });
-    // console.log("render", node.type instanceof Function ? node.type.name: node.type, hook);
-    // console.log("rndr", hook, oldHook);
     const setState = action => {
-      hook.queue.push(action);
-      // console.log("setState", hook, oldHook);
       node.parent.children[node.key] = node;
-      node.states.forEach(hook => {
-        hook.queue.forEach(action => {
-          hook.state = typeof action === 'function' ? action(hook.state) : action;
-        });
-        hook.queue = [];
-        this._scheduleUpdate(node);
-    });
+      hook.queue.push(action);
+      // node.states.forEach(hook => {
+      //   hook.queue.forEach(action => {
+      //     hook.state = typeof action === 'function' ? action(hook.state) : action;
+      //   });
+      //   hook.queue = [];
+      //   // this._scheduleUpdate(node);
+      // });
+      this._scheduleUpdate(node);
 
     };
     node.states[node.stId] = hook;
@@ -400,11 +408,12 @@ class FTReact {
   }
   /** @private */
   async _runEffects() {
-    let nextNode = this._root;
-    while (nextNode) {
-      if (nextNode.effects) {
-        for (let i = 0; i < nextNode.effects.length; i++) {
-          const effect = nextNode.effects[i];
+    this._nextTask = this._root;
+    this._getNextNode()
+    while (this._nextTask) {
+      if (this._nextTask.effects) {
+        for (let i = 0; i < this._nextTask.effects.length; i++) {
+          const effect = this._nextTask.effects[i];
           if (!effect)
             continue;
           if (effect.hasChangedDeps) {
@@ -414,20 +423,16 @@ class FTReact {
             effect.cleanup = await effect.callback() || null;
           }
         }
-        // nextNode.effects.forEach(async (effect) => {
-        //   if (effect.hasChangedDeps) {
-        //     if (effect.cleanup && effect.cleanup instanceof Function) {
-        //       effect.cleanup();
-        //     }
-        //     effect.callback instanceof Promise
-        //       ? effect.cleanup = await effect.callback() || null
-        //       : effect.cleanup = effect.callback() || null
-        //   }
-        // });
       }
-      nextNode = this._getNextNode(nextNode);
+      this._getNextNode();
     }
   }
+  /**
+   * 
+   * @param {Function} callback 
+   * @param {*[]} deps 
+   * @returns {undefined}
+   */
   useEffect(callback, deps) {
     const node = this._currentNode;
     const effectIdx = node.stId;
@@ -439,12 +444,10 @@ class FTReact {
       callback,
       hasChangedDeps
     };
-
     if (!hasChangedDeps && oldEffect && oldEffect.cleanup) {
       effect.cleanup = oldEffect.cleanup;
 
     }
-
     node.effects[effectIdx] = effect;
     node.stId++;
   }
@@ -478,12 +481,10 @@ class FTReact {
    * @param {HTMLElement} container 
    */
   render(element, container) {
-    //console.log("FTReact.render ", element);
     this._root.dom = container;
     this._root.children = [element];
     this._root.parentsSiblings();
     this._scheduleUpdate(this._root);
-    //this._nextTask = this._root;
     requestIdleCallback(this._renderLoop);
   }
 }

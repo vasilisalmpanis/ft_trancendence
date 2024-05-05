@@ -261,11 +261,13 @@ const FriendRequestLayout = (props) => {
 		}
 	};
 	return (
-		<li key={props.i} className="list-group-item d-flex justify-content-between align-items-center">
-				{/* <div className="d-flex flex-row my-2 my-lg-0 justify-content-between"> */}
-					<h6 className="">{props.request.sender.username}</h6>
+		<li className="list-group-item d-flex">
+				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
+					<h5>From:</h5>
+					<h5 className="">{props.request.sender.username}</h5>
 					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
 					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
+				</div>
 				{/* </div> */}
 		</li>
 	)
