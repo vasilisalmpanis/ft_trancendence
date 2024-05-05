@@ -34,6 +34,7 @@ const NavBar = (props) => {
 							<a
 								onClick={() => props.route("/leaderboard")}
 								className="nav-link"
+								style={{cursor: "pointer"}}
 							>
 								{window.location.pathname === "/leaderboard" ? 
 									<b className="border-bottom">Leaderboard</b>
@@ -44,6 +45,7 @@ const NavBar = (props) => {
 							<a
 								onClick={() => props.route("/games")}
 								className="nav-link"
+								style={{cursor: "pointer"}}
 							>
 								{window.location.pathname === "/games" ? 
 									<b className="border-bottom">Games</b>
@@ -54,6 +56,7 @@ const NavBar = (props) => {
 							<a
 								onClick={() => props.route("/tournaments")}
 								className="nav-link"
+								style={{cursor: "pointer"}}
 							>
 								{window.location.pathname === "/tournaments" ? 
 									<b className="border-bottom">Tournaments</b>
@@ -64,6 +67,7 @@ const NavBar = (props) => {
 							<a
 								onClick={() => props.route("/users")}
 								className="nav-link"
+								style={{cursor: "pointer"}}
 							>
 								{window.location.pathname === "/users" ? 
 									<b className="border-bottom">Users</b>
