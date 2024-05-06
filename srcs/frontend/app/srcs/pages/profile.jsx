@@ -11,6 +11,7 @@ import EditIcon									from "../components/edit_icon";
 import ClipboardIcon							from "../components/clipboard_icon";
 import StatsLayout								from "../components/statslayout";
 
+let reroute_number = -1;
 
 const BlockedUsers = (props) => {
 	const unblockUser = async (user_id) => {
@@ -25,14 +26,16 @@ const BlockedUsers = (props) => {
 			<div className="card" style="width: 20rem;">
 				<ul className="list-group list-group-flush">
 					<li className="list-group-item">
-						<button className="btn" onClick={() => props.route('/blocked')}>
+						{ (props.users && props.users.length > reroute_number)
+							?
+							<button className="btn" onClick={() => props.route('/blocked')}>
+								<h5 className="card-title">Blocked Users</h5>
+							</button>
+							:
 							<h5 className="card-title">Blocked Users</h5>
-						</button>
+						}
 					</li>
 					{
-						// error ?
-						// 	<span>{error}</span>
-						// :
 							(props.users && props.users.length)
 								?
 								props.users.map((user) => {
@@ -230,9 +233,14 @@ const IncomingRequests = (props) => {
 			<div className="card" style="width: 20rem;">
 				<ul className="list-group list-group-flush">
 					<li className="list-group-item">
-						<button className="btn" onClick={() => props.route('/friendrequests/incoming')}>
+						{ (props.requests && props.requests.length > reroute_number)
+							?
+							<button className="btn" onClick={() => props.route('/friendrequests/incoming')}>
+								<h5 className="card-title">Friend Requests</h5>
+							</button>
+							:
 							<h5 className="card-title">Friend Requests</h5>
-						</button>
+						}
 					</li>
 					{
 						props.requests && props.requests.length
@@ -281,7 +289,7 @@ const FriendRequestLayout = (props) => {
 				{props.sent
 				?
 				<div className=" w-100 d-flex flex-row justify-content-between">
-					<h5 className="">{props.request.sender.username}</h5>
+					<h5 className="">{props.request.receiver.username}</h5>
 					<button className="btn btn-danger" onClick={canceRequest}>Cancel</button>
 				</div>				
 				:
@@ -398,9 +406,14 @@ const OutgoingRequests = (props) => {
 			<div className="card" style="width: 20rem;">
 				<ul className="list-group list-group-flush">
 					<li className="list-group-item">
-						<button className="btn" onClick={() => props.route('/friendrequests/sent')}>
+						{ (props.requests && props.requests.length > reroute_number)
+							?
+							<button className="btn" onClick={() => props.route('/friendrequests/sent')}>
+								<h5 className="card-title">Sent Requests</h5>
+							</button>
+							:
 							<h5 className="card-title">Sent Requests</h5>
-						</button>
+						}
 					</li>
 					{
 						props.requests && props.requests.length
