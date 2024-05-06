@@ -177,8 +177,7 @@ const Pong = (props) => {
 			pl_dom = document.getElementById("pl-left");
 			pr_dom = document.getElementById("pl-right");
 			ball_dom = document.getElementById("ball");
-			
-            
+			score_board = document.getElementById("score-board");          
 		}
         if (left_score === maxScore || right_score === maxScore) {
             new bootstrap.Modal('#gameoverModal', {}).show();
