@@ -48,9 +48,7 @@ const NavBar = (props) => {
 					</button>
 				</div>
 				<div className="d-flex flex-row align-items-center mr-2">
-					<form class="form-inline ms-auto me-3">
-						<input class="form-control ms-auto" type="search" placeholder="Search" aria-label="Search"/>
-					</form>
+							<h6 className="mx-2 pt-2">{props.me.username}</h6>
 							{props.me && <button
 								onClick={() => props.route("/me")}
 								className="rounded-circle btn me-3 ms-auto"
@@ -62,9 +60,6 @@ const NavBar = (props) => {
 									width="30"
 								></img>
 							</button>}
-
-					{/* <Avatar img={props.me.avatar} size="50px"/> */}
-					{/* <h5 className="mx-auto">{props.me.username}</h5> */}
 				</div>
 			</div>
 		</nav>

@@ -10,51 +10,11 @@ import Avatar									from "../components/avatar";
 import EditIcon									from "../components/edit_icon";
 import ClipboardIcon							from "../components/clipboard_icon";
 import StatsLayout								from "../components/statslayout";
+import BlockedUsers								from "../components/blocked_users";
+import IncomingRequests							from "../components/incoming requests";
+import OutgoingRequests							from "../components/outgoing_requests";
 
 let reroute_number = -1;
-
-const BlockedUsers = (props) => {
-	const unblockUser = async (user_id) => {
-		const data = await apiClient.put(`/block`, {user_id: user_id});
-		if (data.error)
-			return ;
-		else
-			props.setter(null);
-	}
-	return (
-		<div className="d-flex flex-column align-self-stretch">
-			<div className="card" style="width: 20rem;">
-				<ul className="list-group list-group-flush">
-					<li className="list-group-item">
-						{ (props.users && props.users.length > reroute_number)
-							?
-							<button className="btn" onClick={() => props.route('/blocked')}>
-								<h5 className="card-title">Blocked Users</h5>
-							</button>
-							:
-							<h5 className="card-title">Blocked Users</h5>
-						}
-					</li>
-					{
-							(props.users && props.users.length)
-								?
-								props.users.map((user) => {
-									return (
-										<li className="list-group-item d-flex justify-content-between align-items-center">
-											<Avatar img={user.avatar} size="50px"/>
-											<span className="">{user.username}</span>
-											<button className="btn btn-primary" onClick={() => unblockUser(user.id)}>Unblock</button>
-										</li>
-								)}
-								)
-								:
-								<span>No blocked users</span>
-					}
-				</ul>
-			</div>
-		</div>
-	)
-}
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
@@ -227,82 +187,6 @@ const ProfileCard = (props) => {
 	);
 }
 
-const IncomingRequests = (props) => {
-	return (
-		<div className="d-flex flex-column align-self-stretch">
-			<div className="card" style="width: 20rem;">
-				<ul className="list-group list-group-flush">
-					<li className="list-group-item">
-						{ (props.requests && props.requests.length > reroute_number)
-							?
-							<button className="btn" onClick={() => props.route('/friendrequests/incoming')}>
-								<h5 className="card-title">Friend Requests</h5>
-							</button>
-							:
-							<h5 className="card-title">Friend Requests</h5>
-						}
-					</li>
-					{
-						props.requests && props.requests.length
-						?
-						props.requests.map((request, i) => {
-							return (
-								<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.requests} sent={props.sent}/>
-							);
-						})
-						: <span>You have no pending requests</span>
-					}
-				</ul>
-			</div>
-		</div>
-	);
-
-}
-
-const FriendRequestLayout = (props) => {
-	const acceptRequest = async () => {
-		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
-		if (data.error)
-			return ;
-		else {
-			props.setter(null);
-		}
-	};
-	const declineRequest = async () => {
-		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
-		if (data.error)
-			return ;
-		else {
-			props.setter(null);
-		}
-	};
-	const canceRequest = async () => {
-		const data = await apiClient.put(`/friendrequests`, {request_id: props.request.id});
-		if (data.error)
-			return ;
-		else {
-			props.setter(null);
-		}
-	};
-	return (
-		<li className="list-group-item d-flex">
-				{props.sent
-				?
-				<div className=" w-100 d-flex flex-row justify-content-between">
-					<h5 className="">{props.request.receiver.username}</h5>
-					<button className="btn btn-danger" onClick={canceRequest}>Cancel</button>
-				</div>				
-				:
-				<div className="d-flex w-100 flex-row align-items-center justify-content-between">
-					<span className="mr-5">{props.request.sender.username}</span>
-					<button className="btn" onClick={acceptRequest}>Accept</button>
-					<button className="btn" onClick={declineRequest}>Decline</button>
-				</div>
-			}
-		</li>
-	)	
-}
-
 const Profile = (props) => {
 	const me = JSON.parse(localStorage.getItem("me"));
 	const [blockedUsers, setBlockedUsers] = ftReact.useState(null);
@@ -323,7 +207,7 @@ const Profile = (props) => {
 	},[stats]);
 	ftReact.useEffect(async () => {
 		const getBlockedUsers = async () => {
-			let data = await apiClient.get(`/block`, {limit: 10, skip: 0});
+			let data = await apiClient.get(`/block`, {limit: 5, skip: 0});
 			if (data.error)
 				setError(data.error);
 			else if (data && data.length)
@@ -361,7 +245,7 @@ const Profile = (props) => {
 		<BarLayout route={props.route}>
 			{
 				me
-					? 	<div className="d-grid">
+					? 	<div className="d-grid w-75">
 							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>
@@ -379,14 +263,14 @@ const Profile = (props) => {
 									<button className="spinner-grow" role="status"></button>
 								:
 								<div className="row align-items-start">
-									<div className="col-lg-4 d-flex flex-column align-items-end mt-2">
+									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
 										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
 									</div>
-									<div className="col-lg-4 d-flex flex-column align-items-end mt-2">
+									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
 										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
 									</div>
 									{blockedUsers && 
-										<div className="col-lg-4 d-flex flex-column align-items-md-end mt-2">										
+										<div className="col-lg-4 d-flex flex-column align-items-md-center mt-2">										
 											<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
 										</div>
 									}
@@ -400,34 +284,4 @@ const Profile = (props) => {
 	);
 }
 
-const OutgoingRequests = (props) => {
-	return (
-		<div className="d-flex flex-column align-self-stretch">
-			<div className="card" style="width: 20rem;">
-				<ul className="list-group list-group-flush">
-					<li className="list-group-item">
-						{ (props.requests && props.requests.length > reroute_number)
-							?
-							<button className="btn" onClick={() => props.route('/friendrequests/sent')}>
-								<h5 className="card-title">Sent Requests</h5>
-							</button>
-							:
-							<h5 className="card-title">Sent Requests</h5>
-						}
-					</li>
-					{
-						props.requests && props.requests.length
-						?
-						props.requests.map((request, i) => {
-							return (
-								<FriendRequestLayout request={request} i={i} setter={props.setter} data={props.requests} sent={props.sent}/>
-							);
-						})
-						: <span>You sent no friend requests</span>
-					}
-				</ul>
-			</div>
-		</div>
-	);
-}
 export default Profile;
