@@ -32,7 +32,7 @@ const FriendRequestLayout = (props) => {
 		<li className="list-group-item">
 				{props.sent
 				?
-				<div className="w-100 d-flex flex-row justify-content-between">
+				<div className="w-100 d-flex flex-row justify-content-between gap-2">
 					<h5 className="">{props.request.receiver.username}</h5>
 					<button className="btn btn-danger" onClick={canceRequest}>Cancel</button>
 				</div>				

@@ -212,8 +212,6 @@ const Profile = (props) => {
 				setError(data.error);
 			else if (data && data.length)
 				setBlockedUsers([...data]);
-			else if (data.status === 'No blocked users')
-				setBlockedUsers([]);
 		}
 		if (!blockedUsers && !error)
 			await getBlockedUsers();
@@ -258,10 +256,6 @@ const Profile = (props) => {
 							? 
 							<Alert msg={error}/>
 							:
-								!incomingRequests && !outgoingRequests && !blockedUsers
-								?
-									<button className="spinner-grow" role="status"></button>
-								:
 								<div className="row align-items-start">
 									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
 										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
@@ -269,11 +263,9 @@ const Profile = (props) => {
 									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
 										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
 									</div>
-									{blockedUsers && 
-										<div className="col-lg-4 d-flex flex-column align-items-md-center mt-2">										
-											<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
-										</div>
-									}
+									<div className="col-lg-4 d-flex flex-column align-items-md-center mt-2">										
+										<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
+									</div>
 								</div>
 							}
 						</div>

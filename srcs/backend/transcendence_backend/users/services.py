@@ -45,7 +45,7 @@ class UserService:
         users_not_blocked_me = User.objects.exclude(blocked_me=user)
 
         # Intersection of users who haven't blocked me and users whom I haven't blocked
-        users = users_not_blocked_by_me.intersection(users_not_blocked_me)[skip:skip+limit]
+        users = users_not_blocked_by_me.intersection(users_not_blocked_me).order_by('username')[skip:skip+limit]
         data = [
             user_model_to_dict(user_element, me=user)
             for user_element in users
