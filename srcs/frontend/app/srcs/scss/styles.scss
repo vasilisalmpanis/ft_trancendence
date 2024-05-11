@@ -1,4 +1,8 @@
 // Import all of Bootstrap's CSS
 // $enable-grid-classes: false;
 // $enable-cssgrid: true;
+$pink: rgba(248, 2, 191, 0.5);
+$primary: $pink;
+$box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
+// $box-shadow-lg: 0 1rem 3rem rgba(248, 2, 191, 0.5);
 @import "bootstrap/scss/bootstrap";

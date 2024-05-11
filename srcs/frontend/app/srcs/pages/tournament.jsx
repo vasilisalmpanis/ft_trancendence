@@ -50,7 +50,7 @@ let tchws = null;
 const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 	return (
 		<div
-			className='border border-success-subtle border-opacity-25 rounded'
+			className='border border-secondary-subtle border-opacity-25 rounded shadow'
 			style={{maxWidth: "18rem"}}
 		>
 			<div
@@ -118,7 +118,31 @@ const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 			</form>
 		</div>
 	);
-}
+};
+
+const ModalWinner = ({winner}) => {
+	return (
+		<div
+			className="modal fade"
+			id="winnerModal"
+			tabindex="-1"
+			aria-labelledby="exampleModalLabel"
+			aria-hidden="true"
+		>
+			<div className="modal-dialog modal-dialog-centered">
+				<div className="modal-content">
+					<div className="modal-header">
+						<h1 className="modal-title fs-5" id="gameoverModalLabel">Tournament is finished</h1>
+						<button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					</div>
+					<div className="modal-body">
+						<h2>{winner ? <span>Winner: {winner.username}</span> : "No winner"}</h2>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+};
 
 const Tournament = (props) => {
 	const me =  JSON.parse(localStorage.getItem("me"));
@@ -216,51 +240,35 @@ const Tournament = (props) => {
 			await getTour();
 		}
 	},[tour]);
+	console.log(tour);
 	return (
 		<BarLayout route={props.route}>
 			{tour
 			? (tour.winner
 				? <FinishedTournament data={tour}/>
 				: <div>
-					<h3>It's a tournament {tour.name}</h3>
-					<div>
-						<h5 className="mt-3">Games:</h5>
-						{games && games.length
-							? games.map(game => <GameCard route={props.route} data={game} me={me}/>)
-							: <span>waiting games</span>
-						}
-					</div>
-					<div>
-						<h5 className="mt-3">Active users:</h5>
-						{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
-					</div>
-					<br/>
-					<LiveChat
-						msgs={msgs}
-						chat_id={id}
-						updateMsgs={updateMsgs}
-						route={props.route}
-						me={me}
-					/>
-					<div
-						className="modal fade"
-						id="winnerModal"
-						tabindex="-1"
-						aria-labelledby="exampleModalLabel"
-						aria-hidden="true"
-					>
-						<div className="modal-dialog modal-dialog-centered">
-							<div className="modal-content">
-								<div className="modal-header">
-			      					<h1 className="modal-title fs-5" id="gameoverModalLabel">Tournament is finished</h1>
-			      					<button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-			      				</div>
-								<div className="modal-body">
-			        				<h2>{winner ? <span>Winner: {winner.username}</span> : "No winner"}</h2>
-			    				</div>
-							</div>
+					<h3 className='text-primary'>Tournament {tour.name} for {tour.max_players} players</h3>
+					<div className='d-flex flex-wrap justify-content-center gap-4 mt-5'>
+						<div className='card p-3 shadow' style={{minWidth: '18rem'}}>
+							<h5 className="mt-3">Games:</h5>
+							{games && games.length
+								? games.map(game => <GameCard route={props.route} data={game} me={me}/>)
+								: <span>waiting games</span>
+							}
 						</div>
+						<div className='card p-3 shadow' style={{minWidth: '18rem'}}>
+							<h5 className="mt-3">Active users:</h5>
+							{users && users.length ? users.map(user => <UserCard data={user}/>) : <span>waiting users</span>}
+						</div>
+						<LiveChat
+							msgs={msgs}
+							chat_id={id}
+							updateMsgs={updateMsgs}
+							route={props.route}
+							me={me}
+						/>
 					</div>
+					<ModalWinner winner={winner}/>
 				</div>)
 			: (
 				<div className="spinner-grow" role="status">

@@ -17,7 +17,6 @@ const requestIdleCallback =
         }, 1)
   };
 
-
 const isEvent = key => key.startsWith("on");
 const isProperty = key => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => key => prev[key] !== next[key];
@@ -117,28 +116,41 @@ class FiberNode {
     const children = this.type(this.props);
     ftReact._currentNode = null;
     this.children = Array.isArray(children) ? children : [children];
-    this.parentsSiblings();
   }
   clone() {
-    const clonedProps = {
+    const clonedNode = new FiberNode(this.type, {});
+    clonedNode.parent = this.parent;
+    clonedNode.props = {
       ...this.props,
-      children: this.children.map(child => child instanceof FiberNode ? child.clone() : child)
+      children: this.children.map((child, idx) => {
+        if (child instanceof FiberNode) {
+          let ch = child.clone();
+          ch.parent = clonedNode;
+          ch.key = idx;
+          return ch;
+        }
+        child.parent = this;
+        child.key = idx;
+        return child;
+      })
     };
-    const clonedNode = new FiberNode(this.type, clonedProps);
     clonedNode.dom = this.dom;
-    // clonedNode.states = this.states ? structuredClone(this.states) : [];
     clonedNode.states = this.states ? [...this.states] : [];
     clonedNode.effects = this.effects ? [...this.effects] : [];
     clonedNode.key = this.key;
-    clonedNode.parent = this.parent;
     return clonedNode;
   }
     /**
    * @param {FTReact} ftReact
    */
     reconcile(ftReact) {
-      // this.parentsSiblings();
-      let oldNode = this.old && this.old.child;
+      ftReact._root.parentsSiblings();
+      this.parentsSiblings();
+      this.old?.parentsSiblings();
+
+      let oldChild = null;
+      if (this.old && this.old.child)
+        oldChild = this.old.child;
       let prevSibling = null;
       const children = this.children;
       let i = 0;
@@ -146,46 +158,46 @@ class FiberNode {
         const el = children[i];
         if (!el)
           continue ;
-        let newNode = null;
-        let sameType = oldNode && el && oldNode.type == el.type || false;
+        let newChild = null;
+        let sameType = oldChild && el && oldChild.type == el.type || false;
         if (sameType) {
-          newNode = new FiberNode(oldNode.type, el.props);
-          newNode.dom = oldNode.dom;
-          newNode.parent = this;
-          newNode.old = oldNode;
-          newNode.states = oldNode.states;
-          newNode.effect = "UPDATE";
+          newChild = new FiberNode(oldChild.type, el.props);
+          newChild.dom = oldChild.dom;
+          newChild.parent = this;
+          // newChild.key = oldChild.key;
+          newChild.old = oldChild;
+          newChild.states = oldChild.states;
+          newChild.effect = "UPDATE";
         }
         if (el && !sameType) {
-          newNode = new FiberNode(el.type, el.props);
-          newNode.parent = this;
-          newNode.states = el.states;
-          newNode.effect = "PLACEMENT";
+          newChild = new FiberNode(el.type, el.props);
+          newChild.parent = this;
+          // newChild.key = oldChild.key;
+          newChild.states = el.states;
+          newChild.effect = "PLACEMENT";
         }
-        if (oldNode && !sameType) {
-          oldNode.effect = "DELETION";
-          ftReact._deletions.push(oldNode);
+        if (oldChild && !sameType) {
+          oldChild.effect = "DELETION";
+          ftReact._deletions.push(oldChild);
         }
-        if (oldNode) {
-          oldNode = oldNode.sibling;
+        if (oldChild) {
+          oldChild = oldChild.sibling;
         }
         if (i === 0) {
-          this.child = newNode;
+          this.child = newChild;
         } else if (el && el.type) {
-          prevSibling.sibling = newNode;
+          prevSibling.sibling = newChild;
         }
-        prevSibling = newNode;
+        prevSibling = newChild;
         i++;
       }
-      while (oldNode) {
-        oldNode.effect = "DELETION";
-        ftReact._deletions.push(oldNode);
-        oldNode = oldNode.sibling;
+      while (oldChild) {
+        oldChild.effect = "DELETION";
+        ftReact._deletions.push(oldChild);
+        oldChild = oldChild.sibling;
       }
   }
   commit() {
-    // if (this.type instanceof Function)
-    //   console.log("commit", this.type.name, this.effect, "|", ...this.states || [], "|", ...this.old?.states || []);
     let domParentNode = this.parent;
     while (!domParentNode.dom) {
       domParentNode = domParentNode.parent;
@@ -204,6 +216,7 @@ class FiberNode {
     this.effect = null;
     this.child && this.child.commit();
     this.sibling && this.sibling.commit();
+    this.parentsSiblings();
     this.old = this.clone();
   }
   delete(domParent) {
@@ -392,15 +405,7 @@ class FTReact {
     const setState = action => {
       node.parent.children[node.key] = node;
       hook.queue.push(action);
-      // node.states.forEach(hook => {
-      //   hook.queue.forEach(action => {
-      //     hook.state = typeof action === 'function' ? action(hook.state) : action;
-      //   });
-      //   hook.queue = [];
-      //   // this._scheduleUpdate(node);
-      // });
       this._scheduleUpdate(node);
-
     };
     node.states[node.stId] = hook;
     node.stId++;
@@ -437,7 +442,9 @@ class FTReact {
     const node = this._currentNode;
     const effectIdx = node.stId;
     const oldEffect = node.old && node.old.effects[effectIdx];
-    const hasChangedDeps = oldEffect && oldEffect.deps ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i])) : true;
+    const hasChangedDeps = oldEffect && oldEffect.deps
+      ? !deps.every((dep, i) => Object.is(dep, oldEffect.deps[i]))
+      : true;
     const effect = {
       cleanup: null,
       deps,
@@ -486,6 +493,86 @@ class FTReact {
     this._root.parentsSiblings();
     this._scheduleUpdate(this._root);
     requestIdleCallback(this._renderLoop);
+  }
+  async _pause_treee() {
+    let paused = true;
+    const listener =  (ev) => {
+      if (ev.key === 'c')
+        paused = false;
+    };
+    window.addEventListener('keypress', listener);
+
+    this._draw_tree();
+    function timeout(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+  }  
+    while (paused) {
+      await timeout(10);
+    }
+    window.removeEventListener('keypress', listener);
+  }
+  _draw_tree(dom_node, tree_node, pos = -1, onclick, bg) {
+    if (!dom_node) {
+      dom_node = document.getElementById('debug');
+      for (let el of dom_node.childNodes)
+        dom_node.removeChild(el);
+    }
+    if (!tree_node)
+      tree_node = this._root;
+    const new_node = document.createElement('div');
+    new_node.style.textAlign = 'center';
+    new_node.style.border = '1px solid red';
+    new_node.style.width = '100%';
+    if (bg)
+      new_node.style.backgroundColor = bg;
+    else if (tree_node.old)
+      new_node.style.backgroundColor = '#101055';
+    else
+      new_node.style.backgroundColor = '#101010';
+    const text = document.createTextNode((
+      tree_node.type instanceof Function
+        ? tree_node.type.name
+        : (tree_node.type === 'TEXT_ELEMENT' ? 'T' : tree_node.type)
+    ));
+    const button = document.createElement('div');
+    button.appendChild(text);
+    const original = tree_node;
+    if (!onclick) {
+      onclick = (new_node) => {
+        return () => {
+          const position = Array.from(dom_node.childNodes).indexOf(new_node);
+          let bg = null;
+          dom_node.removeChild(new_node);
+          if (tree_node.old && original === tree_node) {
+            tree_node = tree_node.old;
+            bg = 'green';
+          }
+          else if (tree_node !== original)
+            {
+              tree_node = original;
+              bg = 'inherit';
+          }
+          this._draw_tree(dom_node, tree_node, position, onclick, bg);
+        }
+      };
+    }
+    button.addEventListener('click', onclick(new_node));
+    new_node.appendChild(button);
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.gap = '0.5rem';
+    container.style.width = '100%';
+    container.style.alignItems = 'start';
+    container.style.justifyContent = 'center';
+    new_node.appendChild(container);
+    if (pos < 0)
+      dom_node.appendChild(new_node);
+    else
+      dom_node.insertBefore(new_node, Array.from(dom_node.childNodes)[pos]);
+    if (tree_node.children) {
+    for (let child of tree_node.children)
+      this._draw_tree(container, child);
+  }
   }
 }
 const ftReact = new FTReact();
