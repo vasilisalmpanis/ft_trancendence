@@ -16,9 +16,9 @@ const NavBar = (props) => {
 				<button
 					className="navbar-toggler me-2"
 					type="button"
-					data-bs-toggle="collapse"
-					aria-expanded="false"
-					aria-label="Toggle navigation"
+					// data-bs-toggle="collapse"
+					// aria-expanded="false"
+					// aria-label="Toggle navigation"
 					onClick={(ev)=>{
 						ev.preventDefault();
 						setCollapse(!collapse)
@@ -101,9 +101,19 @@ const BarLayout = (props) => {
 	return (
 			<div className="h-100">
 				<NavBar route={props.route} me={me}/>
-				<Layout>
+				<div className="
+					container-md
+					text-center
+					d-flex
+					flex-column
+					mb-3
+					justify-content-center
+					align-items-center
+					p-1
+					h-100
+				">
 					{props.children}
-				</Layout>
+				</div>
 			</div>
 	);
 }
