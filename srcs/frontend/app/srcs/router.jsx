@@ -1,6 +1,8 @@
 import { apiClient }	from "./api/api_client";
 import ftReact			from "./ft_react";
 
+let prevEventListener = null;
+
 const useRouter = () => {
 	const [path, setPath] = ftReact.useState(location.pathname);
 	const route = (newPath, state) => {
@@ -12,12 +14,14 @@ const useRouter = () => {
 			setPath(newPath);
 		}
 	};
-	const onPopState = () => setPath(window.location.pathname);
-	const startListening =
-		() => window.addEventListener('popstate', onPopState);
-	const stopListening =
-		() => window.removeEventListener('popstate', onPopState);
-	return [route, path, startListening, stopListening];
+	const onPopState = (ev) => {
+        setPath(window.location.pathname)
+    };
+	window.addEventListener('popstate', onPopState);
+    if (prevEventListener)
+        window.removeEventListener('popstate', prevEventListener);
+    prevEventListener = onPopState;
+	return [route, path, setPath];
 }
 
 export const Route = (props) => {
@@ -47,10 +51,9 @@ const matchRoute = (route, path) => {
 }
 
 const RouterIn = (props) => {
-    const [route, path, startListening] = useRouter();
+    const [route, path, setPath] = useRouter();
     if (apiClient.route === null)
         apiClient.route = route;
-    startListening();
     let child = props.routes.find(
         route => {
             return route.props.path && matchRoute(route.props.path, path);
@@ -74,8 +77,10 @@ const RouterIn = (props) => {
             child = { ...fallback, key: path };
     }
     child.props.route = route;
-    if (child.props.path)
+    if (child.props.path) {
         window.history.replaceState(null, '', child.props.path);
+        setPath(child.props.path);
+    }
     return child;
 }
 
@@ -83,7 +88,7 @@ export const Router = (props) => {
 	const routes = props.children.filter(ch=>ch.props.path);
 	return (
 		<RouterIn routes={routes}>
-			{props.children}
+			{props.children[0].children}
 		</RouterIn>
 	);
 };
