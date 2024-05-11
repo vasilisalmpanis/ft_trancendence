@@ -58,7 +58,6 @@ const Pong = (props) => {
 	};
 	const keyRelease = (event) => {
 		if (ws && ws.readyState === WebSocket.OPEN) {
-			console.log(event.key)
 			if (event.key === 'ArrowUp' && platformDirection === 'up')
 			{
 
@@ -73,7 +72,6 @@ const Pong = (props) => {
 		}
 	};
 	const cleanup = () => {
-		console.log("cleanup");
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
 		document.removeEventListener("touchmove", touchMove);
@@ -144,10 +142,7 @@ const Pong = (props) => {
 						(new bootstrap.Modal('#gameoverModal', {})).show();
 					}
 					else if (data.start)
-					{
-						console.log(data.start);
 						return ;
-					}
 					else if (data.side === 'right')
 					{
 						me = 'right';

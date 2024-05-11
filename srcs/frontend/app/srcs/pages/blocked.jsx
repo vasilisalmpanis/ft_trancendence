@@ -44,7 +44,7 @@ const Blocked = (props) => {
                 :
                     (blockedUsers && blockedUsers.length > 0 )
                     ?
-                        <div className="d-flex flex-column gap-2 justify-content-center">
+                        <div className="border rounded p-2 d-flex flex-column gap-2 justify-content-center">
                             <BlockedUsers users={blockedUsers} setter={setBlockedUsers} route={props.route}/>
                             {blockedUsers.length % limit === 0 &&
                             <div>

@@ -18,7 +18,6 @@ const Incoming = (props) => {
                 setError(response.error);
                 return;
             }
-			console.log(response);
             setIncomingRequests(response);
             setSkip(skip + limit);
         }
@@ -44,7 +43,7 @@ const Incoming = (props) => {
                 :
                     (incomingRequests && incomingRequests.length > 0 )
                     ?
-                        <div className="d-flex flex-column gap-2 justify-content-center">
+                        <div className="d-flex p-2 border rounded flex-column gap-2 justify-content-center">
                             <IncomingRequests users={incomingRequests} setter={setIncomingRequests} route={props.route} sent={false}/>
                             {incomingRequests.length % limit === 0 &&
                             <div>

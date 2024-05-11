@@ -44,7 +44,6 @@ const Pong = (props) => {
             RightPlatformDirection = '';
 	};
 	const cleanup = () => {
-		console.log("cleanup");
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);

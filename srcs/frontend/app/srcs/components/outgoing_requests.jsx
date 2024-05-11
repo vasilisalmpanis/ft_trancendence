@@ -5,13 +5,13 @@ let reroute_number = -1;
 
 const OutgoingRequests = (props) => {
 	return (
-                <ul class="list-group">
+                <ul class="list-group list-group-flush">
 					<li className="list-group-item">
 						{ (props.requests && props.requests.length > reroute_number)
 							?
-							<button className="btn" onClick={() => props.route('/friendrequests/sent')}>
+							<a onClick={() => props.route('/friendrequests/sent')} style={{cursor: "pointer"}}>
 								<h5 className="card-title">Sent Requests</h5>
-							</button>
+							</a>
 							:
 							<h5 className="card-title">Sent Requests</h5>
 						}

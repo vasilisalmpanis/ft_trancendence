@@ -41,14 +41,13 @@ const LeaderboardCard = (props) => {
 const Leaderboard = (props) => {
     const [error, setError] = ftReact.useState(null);
     const [order, setOrder] = ftReact.useState("desc");
-    const [limit, setLimit] = ftReact.useState(2);
+    const [limit, setLimit] = ftReact.useState(10);
     const [lbItems, setLbItems] = ftReact.useState(null);
     const [skip, setSkip] = ftReact.useState(0);
     const [pageEnd, setPageEnd] = ftReact.useState(false);
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
-        console.log(data);
         if (data.error === 401)
             return ;
         else if (data.error === "no connection") {

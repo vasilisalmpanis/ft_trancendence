@@ -13,13 +13,13 @@ const BlockedUsers = (props) => {
 			props.setter(props.users.filter((user) => user.id !== user_id));
 	}
 	return (
-				<ul className="list-group">
+				<ul className="list-group list-group-flush" style={{wordWrap: "break-word", textWrap: "wrap"}}>
 					<li className="list-group-item">
 						{ (props.users && props.users.length > reroute_number)
 							?
-							<button className="btn" onClick={() => props.route('/blocked')}>
+							<a onClick={() => props.route('/blocked')} style={{cursor: "pointer"}}>
 								<h5 className="card-title">Blocked Users</h5>
-							</button>
+							</a>
 							:
 							<h5 className="card-title">Blocked Users</h5>
 						}
@@ -29,9 +29,9 @@ const BlockedUsers = (props) => {
 								?
 								props.users.map((user) => {
 									return (
-										<li className="list-group-item d-flex justify-content-between align-items-center gap-2">
+										<li className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
 											<Avatar img={user.avatar} size="50px"/>
-											<span className="">{user.username}</span>
+											<span style={{wordWrap: "break-word", maxWidth: "10ch"}}>{user.username}</span>
 											<button className="btn btn-primary" onClick={() => unblockUser(user.id)}>Unblock</button>
 										</li>
 								)}

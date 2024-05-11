@@ -3,7 +3,6 @@ import {apiClient}		from "../api/api_client";
 
 const Auth = (props) => {
 	let children = <span>You shall not pass!</span>;
-	console.log("auth:", apiClient.authorized());
 	if (apiClient.authorized())
 		children = props.children;
 	else

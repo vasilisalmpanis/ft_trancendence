@@ -86,7 +86,6 @@ const ProfileCard = (props) => {
 						<button type="submit" className="btn btn-outline-primary">Save</button>
 					</form>
 				</li>
-				{/* <li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li> */}
 				<li className="list-group-item">
 					{
 						tfaEnabled
@@ -157,11 +156,9 @@ const ProfileCard = (props) => {
 									ev.preventDefault();
 									const code = ev.target[0].value;
 									const res = await apiClient.post("/2fa/verify", {"2fa_code": code});
-									// console.log('RESPONSE AFTER EVDERYTHING:', res);
 									if (res.status === '2FA Verified')
 									{
 										apiClient.authorize(res, null, true);
-										// localStorage.setItem("2fa", true);
 										setTfaEnabled(true);
 									}
 									else if (res.error)
@@ -243,7 +240,7 @@ const Profile = (props) => {
 		<BarLayout route={props.route}>
 			{
 				me
-					? 	<div className="d-grid w-75">
+					? 	<div className="d-grid">
 							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>
@@ -256,14 +253,14 @@ const Profile = (props) => {
 							? 
 							<Alert msg={error}/>
 							:
-								<div className="d-flex flex-column flex-md-row align-items-center justify-content-evenly mt-2">
-									<div className="d-flex flex-column align-items-center mt-2">
+								<div className="d-flex flex-wrap justify-content-center mt-2 gap-3">
+									<div className='card flex-grow-1'>
 										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
 									</div>
-									<div className="d-flex flex-column align-items-center mt-2">
+									<div className='card flex-grow-1'>
 										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
 									</div>
-									<div className="d-flex flex-column align-items-center mt-2">										
+									<div className='card flex-grow-1' style={{overflowX: "auto"}}>
 										<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
 									</div>
 								</div>
