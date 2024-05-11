@@ -10,6 +10,11 @@ import Avatar									from "../components/avatar";
 import EditIcon									from "../components/edit_icon";
 import ClipboardIcon							from "../components/clipboard_icon";
 import StatsLayout								from "../components/statslayout";
+import BlockedUsers								from "../components/blocked_users";
+import IncomingRequests							from "../components/incoming requests";
+import OutgoingRequests							from "../components/outgoing_requests";
+
+let reroute_number = -1;
 
 const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
@@ -31,7 +36,7 @@ const ProfileCard = (props) => {
 		}
 	}
 	return (
-		<div className="card justify-content-center" style="width: 18rem;">
+		<div className="justify-content-center" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
@@ -81,7 +86,6 @@ const ProfileCard = (props) => {
 						<button type="submit" className="btn btn-outline-primary">Save</button>
 					</form>
 				</li>
-				<li className="list-group-item">{C_PROFILE_USERNAME}: {props.data.username}</li>
 				<li className="list-group-item">
 					{
 						tfaEnabled
@@ -152,11 +156,9 @@ const ProfileCard = (props) => {
 									ev.preventDefault();
 									const code = ev.target[0].value;
 									const res = await apiClient.post("/2fa/verify", {"2fa_code": code});
-									// console.log('RESPONSE AFTER EVDERYTHING:', res);
 									if (res.status === '2FA Verified')
 									{
-										apiClient.authorize(res);
-										localStorage.setItem("2fa", true);
+										apiClient.authorize(res, null, true);
 										setTfaEnabled(true);
 									}
 									else if (res.error)
@@ -182,90 +184,87 @@ const ProfileCard = (props) => {
 	);
 }
 
-const IncomingRequests = (props) => {
+const Profile = (props) => {
+	const me = JSON.parse(localStorage.getItem("me"));
+	const [blockedUsers, setBlockedUsers] = ftReact.useState(null);
 	const [incomingRequests, setIncomingRequests] = ftReact.useState(null);
+	const [outgoingRequests, setOutgoingRequests] = ftReact.useState(null);
+	const [stats, setStats] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
 	ftReact.useEffect(async () => {
+		const getMyStats = async () => {
+			const data = await apiClient.get(`/users/${me.id}/stats`);
+			if (data.error)
+				setError(data.error);
+			else if (data && !stats)
+				setStats(data);
+		}
+		if (!stats && !error)
+			await getMyStats();
+	},[stats]);
+	ftReact.useEffect(async () => {
+		const getBlockedUsers = async () => {
+			let data = await apiClient.get(`/block`, {limit: 5, skip: 0});
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setBlockedUsers([...data]);
+		}
+		if (!blockedUsers && !error)
+			await getBlockedUsers();
+	}
+	,[blockedUsers]);
+	ftReact.useEffect(async () => {
 		const getIncomingRequests = async () => {
-			const data = await apiClient.get(`/friendrequests/incoming`);
+			const data = await apiClient.get(`/friendrequests/incoming`, {limit: 10, skip: 0});
 			if (data.error)
 				setError(data.error);
 			else if (data && data.length)
 				setIncomingRequests([...data]);
 		}
 		if (!incomingRequests && !error)
-			getIncomingRequests();
+			await getIncomingRequests();
 	},[incomingRequests]);
-	return (
-		<div className="card" style="width: 20rem;">
-			<ul className="list-group list-group-flush">
-				<li className="list-group-item">
-					<h5 className="card-title">Friend Requests</h5>
-				</li>
-				{
-					incomingRequests && incomingRequests.length
-
-					? incomingRequests.map((request, i) => {
-						return (
-							<FriendRequestLayout request={request} i={i} setter={setIncomingRequests} data={incomingRequests}/>
-						);
-					})
-					: <span>Nobody wants to be a friend with you</span>
-				}
-			</ul>
-		</div>
-	);
-
-}
-
-const FriendRequestLayout = (props) => {
-	const acceptRequest = async () => {
-		const data = await apiClient.post(`/friendrequests/accept`, {request_id: props.request.id});
-		if (data.error)
-			return ;
-		else {
-			props.setter(null);
+	ftReact.useEffect(async () => {
+		const getOutgoingRequests = async () => {
+			const data = await apiClient.get(`/friendrequests`, {limit: 10, skip: 0});
+			if (data.error)
+				setError(data.error);
+			else if (data && data.length)
+				setOutgoingRequests([...data]);
 		}
-	};
-
-	const declineRequest = async () => {
-		const data = await apiClient.post(`/friendrequests/decline`, {request_id: props.request.id});
-		if (data.error)
-			return ;
-		else {
-			props.setter(props.data.filter((request) => request.id !== props.request.id));
-		}
-	};
-	return (
-		<li className="list-group-item d-flex">
-				<div className="d-flex flex-row gap-2 my-2 my-lg-0">
-					<h5>From:</h5>
-					<h5 className="">{props.request.sender.username}</h5>
-					<button className="btn btn-success mx-auto" onClick={acceptRequest}>Accept</button>
-					<button className="btn btn-danger mx-auto" onClick={declineRequest}>Decline</button>
-				</div>
-		</li>
-	)
-}
-
-const Profile = (props) => {
-	const me = JSON.parse(localStorage.getItem("me"));
+		if (!outgoingRequests && !error)
+			await getOutgoingRequests();
+	},[outgoingRequests]);
 	return (
 		<BarLayout route={props.route}>
 			{
 				me
-				? 	<div className="d-grid">
-							<div className="row justify-content-center text-center align-items-start g-3">
+					? 	<div className="d-grid">
+							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>
 								</div>
 								<div className="col d-flex justify-content-center">
-									<StatsLayout user_id={me.id}/>
-								</div>
-								<div className="col d-flex justify-content-center">
-									<IncomingRequests/>
+									{stats && <StatsLayout stats={stats}/>}
 								</div>
 							</div>
+							{error 
+							? 
+							<Alert msg={error}/>
+							:
+								<div className="d-flex flex-wrap justify-content-center mt-2 gap-3">
+									<div className='card flex-grow-1'>
+										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
+									</div>
+									<div className='card flex-grow-1'>
+										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
+									</div>
+									<div className='card flex-grow-1' style={{overflowX: "auto"}}>
+										<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
+									</div>
+								</div>
+							}
 						</div>
 					:
 						<button className="spinner-grow" role="status"></button>

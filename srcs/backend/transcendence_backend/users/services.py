@@ -45,7 +45,7 @@ class UserService:
         users_not_blocked_me = User.objects.exclude(blocked_me=user)
 
         # Intersection of users who haven't blocked me and users whom I haven't blocked
-        users = users_not_blocked_by_me.intersection(users_not_blocked_me)[skip:skip+limit]
+        users = users_not_blocked_by_me.intersection(users_not_blocked_me).order_by('username')[skip:skip+limit]
         data = [
             user_model_to_dict(user_element, me=user)
             for user_element in users
@@ -321,7 +321,7 @@ class SecondFactorService:
 
 class FriendRequestService:
     @staticmethod
-    def get_user_friend_requests(user : User, type : str) -> list[Dict[Any,Any]]:
+    def get_user_friend_requests(user : User, type : str, skip: int = 0, limit :int = 10) -> list[Dict[Any,Any]]:
         """
         Get friend requests for a user
         :param user: User instance
@@ -329,9 +329,9 @@ class FriendRequestService:
         :return: list[FriendRequest]
         """
         if type == "sent":
-            friend_requests = FriendRequest.objects.filter(sender=user, status="PENDING")
+            friend_requests = FriendRequest.objects.filter(sender=user, status="PENDING")[skip:skip+limit]
         else:
-            friend_requests = FriendRequest.objects.filter(receiver=user, status="PENDING")
+            friend_requests = FriendRequest.objects.filter(receiver=user, status="PENDING")[skip:skip+limit]
         return [
                     friend_request_model_to_dict(friend_request)
                     for friend_request in friend_requests
@@ -433,7 +433,7 @@ class FriendRequestService:
         :return: bool
         """
         try:
-            friend_request = FriendRequest.objects.filter(sender=user, receiver_id=request_id).firs
+            friend_request = FriendRequest.objects.filter(sender=user, id=request_id).first()
             if friend_request:
                 friend_request.delete()
                 return True

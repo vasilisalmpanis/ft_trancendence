@@ -1,4 +1,5 @@
 from email.mime import base
+from unittest import skip
 from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
@@ -151,7 +152,9 @@ class BlockedUsersView(View):
         if request.method != "GET":
             return JsonResponse({"Error": "Wrong Request Method"}, status=400)
         try:
-            blocked_users = UserService.get_blocked_users(user)
+            skip = int(request.GET.get("skip", 0))
+            limit = int(request.GET.get("limit", 10))
+            blocked_users = UserService.get_blocked_users(user, skip, limit)
             if not blocked_users:
                 return JsonResponse({"status": "No blocked users"}, status=200)
             return JsonResponse(blocked_users, status=200, safe=False)

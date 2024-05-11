@@ -51,7 +51,10 @@ const Signin = (props) => {
 			else if (resp["ok"] === "true")
 				props.route("/");
 			else if (resp["ok"] === "2fa")
+			{
 				props.route("/2fa");
+				// localStorage.setItem("2fa", true);
+			}
 		}
 	};
 	return (

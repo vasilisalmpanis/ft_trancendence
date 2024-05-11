@@ -106,7 +106,7 @@ class ApiClient {
     return await this.sendRequest(path, 'DELETE', body, query);
   }
 
-  async authorize (payload, query = null) {
+  async authorize (payload, query = null, tfa = false) {
     let response_body;
     if ("access_token" in payload)
       response_body = payload;
@@ -120,9 +120,9 @@ class ApiClient {
     this.headers['Authorization'] = `Bearer ${access_token}`;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
+    localStorage.setItem('2fa', tfa);
     if (!JSON.parse(atob(access_token.split(".")[1]))["is_authenticated"])
     {
-      localStorage.setItem('2fa', true);
       return {"ok": "2fa"}
     }
     const me = await this.get("/users/me");
@@ -168,16 +168,18 @@ class ApiClient {
 
   async second_factor (code) {
     const response = await this.sendRequest('auth/verify', 'POST', { "2fa_code" : code }, null);
-    const response_body = await response.json();
-    const access_token = response_body.access_token;
-    const refresh_token = response_body.refresh_token;
-    // dev only
-    if (typeof localStorage === 'undefined') {
-      this.headers['Authorization'] = `Bearer ${access_token}`;
+    if (response.error)
       return response;
-    }
+    const access_token = response.access_token;
+    const refresh_token = response.refresh_token;
     localStorage.setItem('access_token', access_token);
     localStorage.setItem('refresh_token', refresh_token);
+    this.headers['Authorization'] = `Bearer ${access_token}`;
+    localStorage.setItem('2fa', true);
+    const me = await this.get("/users/me");
+    if (me.error)
+      return me;
+    localStorage.setItem("me", JSON.stringify(me));
     return response;
   }
   authorized() {
