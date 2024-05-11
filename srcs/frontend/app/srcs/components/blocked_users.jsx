@@ -10,7 +10,7 @@ const BlockedUsers = (props) => {
 		if (data.error)
 			return ;
 		else
-			props.setter(null);
+			props.setter(props.users.filter((user) => user.id !== user_id));
 	}
 	return (
 				<ul className="list-group">

@@ -256,14 +256,14 @@ const Profile = (props) => {
 							? 
 							<Alert msg={error}/>
 							:
-								<div className="row align-items-start">
-									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
+								<div className="d-flex flex-column flex-md-row align-items-center justify-content-evenly mt-2">
+									<div className="d-flex flex-column align-items-center mt-2">
 										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
 									</div>
-									<div className="col-lg-4 d-flex flex-column align-items-center mt-2">
+									<div className="d-flex flex-column align-items-center mt-2">
 										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
 									</div>
-									<div className="col-lg-4 d-flex flex-column align-items-md-center mt-2">										
+									<div className="d-flex flex-column align-items-center mt-2">										
 										<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
 									</div>
 								</div>

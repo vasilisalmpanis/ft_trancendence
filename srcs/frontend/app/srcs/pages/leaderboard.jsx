@@ -44,6 +44,7 @@ const Leaderboard = (props) => {
     const [limit, setLimit] = ftReact.useState(2);
     const [lbItems, setLbItems] = ftReact.useState(null);
     const [skip, setSkip] = ftReact.useState(0);
+    const [pageEnd, setPageEnd] = ftReact.useState(false);
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
@@ -68,8 +69,10 @@ const Leaderboard = (props) => {
         if (data.error === 401)
             return ;
         let temp = [];
-        if (data.length === 0)
+        if (data.length === 0) {
+            setPageEnd(true);
             return ;
+        }
         for (let i = 0; i < data.length; i++)
         {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
@@ -102,7 +105,7 @@ const Leaderboard = (props) => {
                             {lbItems}
                         </tbody>
                     </table>
-                    {lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
+                    {!pageEnd && lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
                         updateLeaderBoard();
                     }}>Load more</button>}
                 </div>

@@ -9,7 +9,7 @@ const FriendRequestLayout = (props) => {
 		if (data.error)
 			return ;
 		else {
-			props.setter(null);
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
 		}
 	};
 	const declineRequest = async () => {
@@ -17,7 +17,7 @@ const FriendRequestLayout = (props) => {
 		if (data.error)
 			return ;
 		else {
-			props.setter(null);
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
 		}
 	};
 	const canceRequest = async () => {
@@ -25,7 +25,7 @@ const FriendRequestLayout = (props) => {
 		if (data.error)
 			return ;
 		else {
-			props.setter(null);
+			props.setter(props.data.filter((request) => request.id !== props.request.id));
 		}
 	};
 	return (
