@@ -38,7 +38,7 @@ const matchRoute = (route, path) => {
             if (!state)
                 state = {};
             state[propertyName] = propertyValue;
-            window.history.pushState(state, '');
+            window.history.replaceState(state, '');
             return true;
         } else {
             return false;

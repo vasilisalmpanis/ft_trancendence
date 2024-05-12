@@ -37,10 +37,10 @@ const FriendRequestLayout = (props) => {
 					<button className="btn btn-danger" onClick={canceRequest}>Cancel</button>
 				</div>				
 				:
-				<div className="d-flex w-100 flex-row align-items-center justify-content-center">
+				<div className="d-flex w-100 flex-row align-items-center justify-content-center gap-2">
 					<span className="mr-5" style={{wordWrap: "break-word", maxWidth: "15ch"}}>{props.request.sender.username}</span>
-					<button className="btn" onClick={acceptRequest}>Accept</button>
-					<button className="btn" onClick={declineRequest}>Decline</button>
+					<button className="btn btn-primary" onClick={acceptRequest}>Accept</button>
+					<button className="btn btn-danger" onClick={declineRequest}>Decline</button>
 				</div>
 			}
 		</li>

@@ -13,9 +13,9 @@
 			<div className="border rounded mb-2 d-flex" style={{border: "solid"}}>
 				<button className="btn" onClick={() => props.route(`/users/${props.data.id}`)}>
 					<ul className="list-group list-group-flush">
-						<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3 text-wrap">
-							<Avatar img={props.data.avatar} size={"10%"}/>
-							<span className="text-wrap">  {props.data.username}</span>
+						<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3" >
+							<Avatar img={props.data.avatar} size={"40rem"}/>
+							<span className="text-break">  {props.data.username}</span>
 						</li>
 					</ul>
 				</button>
@@ -57,7 +57,7 @@
 				{
 					users
 						? 
-							<div className="w-50">
+							<div>
 								{users.map(user => <UserCard data={user} route={props.route} user={user}/>)}
 								{!endOfUsers && users && users.length % limit === 0 && 
 									<button className="btn btn-primary" onClick={() => loadMore()}>Load more</button>

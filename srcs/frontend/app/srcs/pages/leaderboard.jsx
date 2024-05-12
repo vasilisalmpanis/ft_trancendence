@@ -10,7 +10,7 @@ const LeaderboardCard = (props) => {
     let user = props.users.filter(user => user["id"] === props.data.user_id)[0];
     return (
         <tr style={{ lineHeight: '1', borderBottom: '1px solid #ddd' }}>
-            <td scope="row" style={{ padding: '10px 5px', verticalAlign: 'middle' }}>
+            <td style={{  verticalAlign: 'middle' }}>
                 <div className="ml-auto" style="text-align: left;">
                     <button
                         className="btn"
@@ -18,20 +18,18 @@ const LeaderboardCard = (props) => {
                             props.route(`/users/${user.id}`);
                         }}
                     >
-                        <div className="d-flex align-items-center">
-                            <div style={{ marginRight: '10px' }}>
-                                <Avatar img={user.avatar} size="50px" />
-                            </div>
+                        <div className="d-flex gap-2 align-items-center text-break" style={{minWidth: "11ch"}}>
+                            <Avatar img={user.avatar} size="40rem" />
                             <span>{user.username}</span>
                         </div>
                     </button>
                 </div>
             </td>
-            <td style={{ padding: '10px 5px', verticalAlign: 'middle' }}>{`${props.data.games_won}`}</td>
-            <td style={{ padding: '10px 5px', verticalAlign: 'middle' }}>{`${props.data.games_lost}`}</td>
-            <td style={{ padding: '10px 5px', verticalAlign: 'middle' }}>{`${props.data.games_played}`}</td>
-            <td style={{ padding: '10px 5px', verticalAlign: 'middle' }}>{`${props.data.total_points}`}</td>
-            <td style={{ padding: '10px 5px', verticalAlign: 'middle' }}>{`${props.data.win_streaks}`}</td>
+            <td style={{  verticalAlign: 'middle' }}>{`${props.data.games_won}`}</td>
+            <td style={{  verticalAlign: 'middle' }}>{`${props.data.games_lost}`}</td>
+            <td style={{  verticalAlign: 'middle' }}>{`${props.data.games_played}`}</td>
+            <td style={{  verticalAlign: 'middle' }}>{`${props.data.total_points}`}</td>
+            <td style={{  verticalAlign: 'middle' }}>{`${props.data.win_streaks}`}</td>
         </tr>
     );
     
@@ -87,27 +85,29 @@ const Leaderboard = (props) => {
             {
                 lbItems 
                 ? 
-                <div className="pt-5">
+                <div>
                     <h1>Leaderboard</h1>
+                <div style={{overflowX: "auto", maxWidth: "100vw"}}>
                     <table className="table table-bordered rounded">
                     <thead>
                         <tr>
-                        <th scope="col">User</th>
-                        <th scope="col">Games Won</th>
-                        <th scope="col">Games Lost</th>
-                        <th scope="col">Games Played</th>
-                        <th scope="col">Total Points</th>
-                        <th scope="col">Winstreak</th>
+                        <th>User</th>
+                        <th>Games Won</th>
+                        <th>Games Lost</th>
+                        <th>Games Played</th>
+                        <th>Total Points</th>
+                        <th>Winstreak</th>
                         </tr>
                     </thead>
                         <tbody>
                             {lbItems}
                         </tbody>
                     </table>
+                </div>
                     {!pageEnd && lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
                         updateLeaderBoard();
                     }}>Load more</button>}
-                </div>
+                    </div>
                 : error
                 ?
                 <Alert msg={error}/>

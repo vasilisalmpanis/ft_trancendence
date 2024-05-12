@@ -4,8 +4,8 @@ import { apiClient }    from "../api/api_client.js";
 
 const StatsLayout = (props) => {
     return  (
-        <div className="d-flex text-center gap-5 ">
-                <div className="">
+        <div className="d-flex text-center gap-2">
+                <div>
                     <h5>Wins</h5>
                     <h6>{`${props.data.games_won}`}</h6>
                 </div>
@@ -33,6 +33,7 @@ const GameLayout = (props) => (
     <div className="d-flex flex-column align-items-start mt-5">
         <h3>Recent Games</h3>
         <div className="card align-self-stretch">
+            {props.games.length ?
             <table class="table mt-1">
                 <thead>
                     <tr>
@@ -52,6 +53,9 @@ const GameLayout = (props) => (
                     })}
                 </tbody>
             </table>
+            :
+            <h5>No games played yet</h5>
+            }
         </div>
     </div>
 )
@@ -214,26 +218,26 @@ const User = (props) => {
         <BarLayout route={props.route}>
             { user
             ?
-            <div className="d-flex flex-column">
+            <div className="d-flex flex-column justify-content-center p-2">
                 {}
-                <div className="d-flex gap-5">
-                    <div className="text-center card py-3 px-4">
-                        <div className="d-flex flex-row align-items-center justify-content-center">
+                <div className="d-flex flex-wrap gap-3">
+                    <div className="text-center card">
+                        <div className="d-flex flex-wrap align-items-center justify-content-center">
                             <div className="m-3">
                                 <Avatar img={user.avatar} size="100px" />
                                 <h5 className="pt-2">{user.username}</h5>
                             </div>
-                            <div className="m-5">
+                            <div className="m-3">
                                 <StatsLayout data={stats} />
                             </div>
+                            </div>
+                                <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend} block={block}/>
+                            </div>
+                            { friends && <UsersFriendsLayout friends={friends} route={props.route} user={user.id}/>}
                         </div>
-                        <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend} block={block}/>
+                    <div className="py-5 px-0 flex-row" style={{overflowX: "auto", maxWidth: "100vw"}}>
+                        { games && <GameLayout games={games} route={props.route} setter={setUser}/>}
                     </div>
-                { friends && <UsersFriendsLayout friends={friends} route={props.route} user={user.id}/>}
-                </div>
-                <div className="py-5 px-0 flex-row">
-                 { games && <GameLayout games={games} route={props.route} setter={setUser}/>}
-                </div>
             </div>
             : 'Loading' }
         </BarLayout>
@@ -241,7 +245,7 @@ const User = (props) => {
 }
 
 const UserActionsLayout = (props) => {
-    return (<div className="d-flex flex-row justify-content-evenly">
+    return (<div className="d-flex flex-wrap justify-content-evenly pb-2">
                 {props.user.id !== props.me.id && props.user.friend == "NOT_SENT" && <button className="btn btn-primary" onClick={() => props.add(props.user.id)}>Add Friend</button>}
                 {props.user.id !== props.me.id && props.user.friend == "PENDING" && <button className="btn disabled">Request Sent</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => {}}>Chat</button>}
@@ -284,7 +288,7 @@ const UserFriend = (props) => (
                 <div>
                     <Avatar img={props.friend.avatar} size="50px" />
                 </div>
-                <div className="p-3 card-body">
+                <div className="p-3 card-body text-break" style={{minWidth: "11ch"}}>
                     <h5>{props.friend.username}</h5>
                 </div>
             </div>
