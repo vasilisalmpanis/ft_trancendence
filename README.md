@@ -51,4 +51,4 @@ Follow these instructions to get your copy of the project up and running on your
     * http://localhost:8000/healthcheck - Backend
 
 6. CLI client:
-    We have also CLI client. Discovery yourself how to use it.
+    * We have also CLI client. Discovery yourself how to use it.
