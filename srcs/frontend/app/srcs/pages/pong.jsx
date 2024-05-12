@@ -119,7 +119,7 @@ const Pong = (props) => {
 			{
 				running = true;
 				ws = new WebSocket(
-					`ws://${window.location.hostname}:8000/ws`,
+					`wss://api.${window.location.hostname}/ws`,
 					["Authorization", localStorage.getItem("access_token")]
 				);
 				ws.addEventListener('open', (ev) => {

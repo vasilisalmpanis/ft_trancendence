@@ -171,7 +171,7 @@ const Tournament = (props) => {
 	ftReact.useEffect(()=>{
 		if (!tws) {
 			tws = new WebSocket(
-				`ws://${window.location.hostname}:8000/tournament`,
+				`wss://api.${window.location.hostname}/tournament`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		};
@@ -212,7 +212,7 @@ const Tournament = (props) => {
 		}
 		if (!tchws) {
 			tchws = new WebSocket(
-				`ws://${window.location.hostname}:8000/ws/chat/tournament/${id}/`,
+				`wss://api.${window.location.hostname}/ws/chat/tournament/${id}/`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		}
