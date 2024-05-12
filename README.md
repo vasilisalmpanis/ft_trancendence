@@ -45,9 +45,7 @@ Follow these instructions to get your copy of the project up and running on your
     docker-compose up
     ```
 5. Endpoints:
-    ```bash
-    http://localhost        # Frontend
-    http://localhost:5050   # PGAdmin. Username and password - from .env file
-    http://localhost:3000   # Grafana
-    http://localhost:8000   # Backend
-    ```
+    * http://localhost - Frontend
+    * http://localhost:5050 - PGAdmin. Username and password - from .env file
+    * http://localhost:3000 - Grafana
+    * http://localhost:8000/healthcheck - Backend
