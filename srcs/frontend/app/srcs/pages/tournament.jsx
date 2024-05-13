@@ -50,11 +50,11 @@ let tchws = null;
 const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 	return (
 		<div
-			className='border border-secondary-subtle border-opacity-25 rounded shadow'
+			className='border border-secondary-subtle border-opacity-25 rounded shadow d-flex flex-column justify-content-between'
 			style={{maxWidth: "18rem"}}
 		>
 			<div
-				className='d-flex flex-column align-items-start p-2 text-wrap text-start overflow-y-scroll'
+				className='d-flex flex-column align-items-start p-2 text-wrap text-start overflow-y-auto'
 				style={{maxHeight: "20rem", scrollbarWidth: "thin"}}
 			>
 				{msgs && 
@@ -69,7 +69,7 @@ const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 								Join game with {me.id === msg.game.player1.id ? msg.game.player2.username : msg.game.player1.username}
 							</a>
 						</div>
-						: <div className={msg.content ? '' : 'text-center w-100'}>
+						: <div className={msg.content ? '' : 'text-center w-100'} style={{maxWidth: "28ch", wordWrap: "break-word"}}>
 							<strong
 								className={
 									msg.content
@@ -101,7 +101,7 @@ const LiveChat = ({msgs, chat_id, updateMsgs, route, me}) => {
 					}
 				}}
 			>
-				<div className="input-group">
+				<div className="input-group mt-auto">
 					<input
 						required
 						type="text"
@@ -171,7 +171,7 @@ const Tournament = (props) => {
 	ftReact.useEffect(()=>{
 		if (!tws) {
 			tws = new WebSocket(
-				`ws://${window.location.hostname}:8000/tournament`,
+				`wss://api.${window.location.hostname}/tournament`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		};
@@ -212,7 +212,7 @@ const Tournament = (props) => {
 		}
 		if (!tchws) {
 			tchws = new WebSocket(
-				`ws://${window.location.hostname}:8000/ws/chat/tournament/${id}/`,
+				`wss://api.${window.location.hostname}/ws/chat/tournament/${id}/`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		}
