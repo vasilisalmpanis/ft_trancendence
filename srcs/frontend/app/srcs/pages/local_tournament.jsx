@@ -20,7 +20,7 @@ const MaxPlayersForm = (props) => (
             onClick={(event)=>{
                 event.preventDefault();
                 const count = event.target.previousSibling.value;
-                if (!count || count < 3)
+                if (!count || count < 3 || count > 10)
                 {
                     props.error("You cannot create tournament with less than 3 players!");
                     return ;
@@ -36,6 +36,7 @@ const MaxPlayersForm = (props) => (
                         }}
                     />
                 ));
+                props.error("");
             }}
         >
             Start new tournament
@@ -86,11 +87,12 @@ const NamesForm = (props) => (
 )
 
 const CurrentRound = (props) => (
-    <div className="d-flex flex-column gap-3">
+    <div className="d-flex flex-column gap-3 text-break" style={{maxWidth: "100ch"}}>
         {props.gameState.games.map((game, index) => (
             <div className="d-flex flex-column gap-3 card p-2">
                 <span>{`Game ${index + 1}`}</span>
                 <h5>{game.player1}</h5>
+                <h5>vs</h5>
                 <h5>{game.player2}</h5>
                 {game.winner && 
                     <div className="d-flex flex-column">
@@ -133,7 +135,7 @@ const CurrentRound = (props) => (
 const RestartTournament = (props) => (
     <div className="d-flex flex-column card p-5">
         <h2>Tournament Ended</h2>
-        <h3>Winner: {props.gameState.winner}</h3>
+        <h3>Winner: {props.data.winner}</h3>
         <button
             className="btn btn-primary"
             onClick={()=>{
@@ -218,7 +220,7 @@ const LocalTournament = (props) => {
             }
             {
                 gameState.winner &&
-                <RestartTournament gameState={setGameState}/> 
+                <RestartTournament gameState={setGameState} data={gameState}/> 
             }
             {error && <div className="alert alert-danger">{error}</div>}
         </BarLayout>
