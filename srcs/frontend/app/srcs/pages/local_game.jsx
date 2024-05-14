@@ -132,7 +132,6 @@ const Pong = (props) => {
         else
             angle = getRandomArbitrary(- Math.PI / 4,  Math.PI / 4);
     };
-    console.log(history.state.gameState)
     const checkCollisions = () => {
 		if (ballx <= 1){
 			if (pl - 1 < bally && bally < pl + 21) {

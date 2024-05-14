@@ -4,6 +4,17 @@ import BarLayout 		from "../components/barlayout";
 import Alert			from "../components/alert";
 import DeleteIcon from "../components/delete_icon";
 
+const CreateLocalTournament = (props) => {
+	return (
+		<button
+			className="btn btn-outline-primary mb-2"
+			onClick={()=>{props.route("/local-tournament");}}
+		>
+			Create local tournament
+		</button>
+	);
+}
+
 const CreateTournament = (props) => {
 	const [error, setError] = ftReact.useState("");
 	const createTournament = async (count, name) => {
@@ -106,6 +117,7 @@ const Tournaments = (props) => {
 		getTournaments();
 	return (
 		<BarLayout route={props.route}>
+			<CreateLocalTournament route={props.route}/>
 			<CreateTournament route={props.route} updateTournaments={getTournaments}/>
 			{
 				tournaments
