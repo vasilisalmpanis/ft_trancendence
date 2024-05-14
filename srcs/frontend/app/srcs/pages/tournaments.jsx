@@ -6,12 +6,15 @@ import DeleteIcon from "../components/delete_icon";
 
 const CreateLocalTournament = (props) => {
 	return (
-		<button
-			className="btn btn-outline-primary mb-2"
-			onClick={()=>{props.route("/local-tournament");}}
-		>
-			Create local tournament
-		</button>
+		<div className="d-flex flex-column gap-2 mb-3 p-2">
+			<h2>Local Tournament</h2>
+			<button
+				className="btn btn-outline-primary mb-2"
+				onClick={()=>{props.route("/local-tournament");}}
+			>
+				Create local tournament
+			</button>
+		</div>
 	);
 }
 
@@ -28,6 +31,8 @@ const CreateTournament = (props) => {
 		}
 	}
 	return (
+		<div className="d-flex flex-column gap-2 p-2">
+		<h2>Online Tournament</h2>
 		<form
 			className="d-flex flex-column gap-3"
 			onSubmit={(event)=>{
@@ -60,6 +65,7 @@ const CreateTournament = (props) => {
 			</button>
 			{error && <Alert msg={error}/>}
 		</form>
+		</div>
 	);
 }
 
@@ -117,6 +123,7 @@ const Tournaments = (props) => {
 		getTournaments();
 	return (
 		<BarLayout route={props.route}>
+
 			<CreateLocalTournament route={props.route}/>
 			<CreateTournament route={props.route} updateTournaments={getTournaments}/>
 			{
