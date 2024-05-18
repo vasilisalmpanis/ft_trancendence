@@ -1,10 +1,11 @@
----
-version: '3.8'
+# version: '3.8'
 
 services:
   db:
     image: postgres:16
     container_name: postgres
+    expose:
+      - "5432:5432"
     env_file:
       - .env
     environment:
@@ -16,32 +17,48 @@ services:
     networks:
       - backend
     restart: always
-#  backend:
-#    container_name: backend
-#    build:
-#      context: ./backend
-#      args:
-#        - DB_NAME=$DB_NAME
-#        - DB_USER=$DB_USER
-#        - DB_PASSWORD=$DB_PASSWORD
-#        - DB_HOST=$DB_HOST
-#        - DB_PORT=$DB_PORT
-#        - DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
-#    ports:
-#      - "8000:8000"
-#    networks:
-#    - backend
-#    env_file:
-#      - .env
-#    depends_on: 
-#    - db
-#    restart: always
 
-  backend_dev:
-    container_name: backend_dev
+  backend:
+    container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    networks:
+      - backend
+    env_file:
+      - .env
+    depends_on: 
+      - bg-tasks
+    restart: always
+
+  # backend_dev:
+  #   container_name: backend_dev
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.dev
+  #   expose:
+  #     - "8000:8000"
+  #   networks:
+  #     - backend
+  #   env_file:
+  #     - .env
+  #   depends_on: 
+  #     - db
+  #     - redis
+  #     - bg-tasks
+  #   restart: always
+  #   entrypoint:
+  #     - /data/backend/entrypoint.sh
+  #     - runserver
+  #     - 0.0.0.0:8000
+  #   volumes:
+  #     - pwd:/data
+
+  bg-tasks:
+    container_name: bg-tasks
+    build:
+      context: ./backend
     expose:
       - "8000:8000"
     networks:
@@ -52,8 +69,10 @@ services:
       - db
       - redis
     restart: always
-    volumes:
-      - pwd:/data
+    entrypoint:
+      - ./entry.sh
+      - -b
+      - "true"
 
   redis:
     container_name: redis
@@ -72,43 +91,43 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - backend_dev
+      - backend
     networks:
       - backend
     restart: always
   
-  pgAdmin:
-    container_name: pgAdmin
-    image: dpage/pgadmin4
-    environment:
-      PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
-      PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
-    ports:
-      - "5050:80"
-    networks:
-      - backend
-    restart: always
+  # pgAdmin:
+  #   container_name: pgAdmin
+  #   image: dpage/pgadmin4
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
+  #     PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
+  #   ports:
+  #     - "5050:80"
+  #   networks:
+  #     - backend
+  #   restart: always
 
-  grafana:
-    container_name: grafana
-    image: grafana/grafana-oss
-    ports:
-      - "3000:3000"
-    networks:
-      - backend
-    restart: always
-    volumes:
-      - grafana_data:/var/lib/grafana
-    user: "0:0"
-    env_file:
-      - .env
-    environment:
-      GF_DATABASE_TYPE: postgres
-      GF_DATABASE_HOST: $DB_HOST:$DB_PORT
-      GF_DATABASE_NAME: $DB_NAME
-      GF_DATABASE_USER: $DB_USER
-      GF_DATABASE_PASSWORD: $DB_PASSWORD
-      GF_DATABASE_SSL_MODE: disable
+  # grafana:
+  #   container_name: grafana
+  #   image: grafana/grafana-oss
+  #   ports:
+  #     - "3000:3000"
+  #   networks:
+  #     - backend
+  #   restart: always
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #   user: "0:0"
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     GF_DATABASE_TYPE: postgres
+  #     GF_DATABASE_HOST: $DB_HOST:$DB_PORT
+  #     GF_DATABASE_NAME: $DB_NAME
+  #     GF_DATABASE_USER: $DB_USER
+  #     GF_DATABASE_PASSWORD: $DB_PASSWORD
+  #     GF_DATABASE_SSL_MODE: disable
 
   # vault:
   #   container_name: vault
