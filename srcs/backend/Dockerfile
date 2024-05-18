@@ -1,5 +1,5 @@
 FROM --platform=linux/arm64 python:3.12-alpine as builder
-RUN apk add --no-cache postgresql-dev gcc python3-dev musl-dev
+RUN apk add --no-cache postgresql-dev gcc python3-dev musl-dev cffi-dev
 RUN pip install poetry==1.7.1
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR poetry install --no-root
 
 
 FROM --platform=linux/arm64 python:3.12-alpine as runtime
-RUN apk add --no-cache postgresql-dev gcc python3-dev musl-dev
+RUN apk add --no-cache postgresql-dev gcc python3-dev musl-dev cffi-dev
 ENV VIRTUAL_ENV=/data/.venv \
     PATH="/data/.venv/bin:$PATH"
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
