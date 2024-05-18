@@ -3,7 +3,7 @@
 
 This repository contains the source code for an online version of the classic Pong game. The game supports online players connecting over the web to compete in real-time.
 
-## Getting Started
+## Running  on localhost
 
 Follow these instructions to get your copy of the project up and running on your local machine for development and testing purposes.
 
@@ -52,3 +52,6 @@ Follow these instructions to get your copy of the project up and running on your
 
 6. CLI client:
     * We have also CLI client. Discovery yourself how to use it.
+
+## Deployment to kubernetes cluster
+1. Prerequisites:
