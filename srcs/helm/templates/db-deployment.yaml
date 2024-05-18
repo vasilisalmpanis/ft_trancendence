@@ -36,6 +36,11 @@ spec:
                 configMapKeyRef:
                   key: DB_USER
                   name: env
+            - name: PGDATA
+              valueFrom:
+                configMapKeyRef:
+                  key: PGDATA
+                  name: env
           image: postgres:16
           name: postgres
           ports:

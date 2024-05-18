@@ -5,6 +5,7 @@ data:
   DB_PORT: "5432"
   DB_USER: admin
   OAUTH_STATE: solid
+  PGDATA: /var/lib/postgresql/data/pgdata
 kind: ConfigMap
 metadata:
   creationTimestamp: null

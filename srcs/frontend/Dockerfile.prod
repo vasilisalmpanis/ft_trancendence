@@ -1,9 +1,9 @@
-FROM node:alpine AS build
+FROM --platform=linux/amd64 node:alpine AS build
 COPY ./app /app
 WORKDIR /app
 RUN npm install && npm run build
 
-FROM nginx:alpine AS prod
+FROM --platform=linux/amd64 nginx:alpine AS prod
 COPY nginx-prod.conf /etc/nginx/
 COPY  --from=build /app/dist /app
 CMD ["nginx", "-g", "daemon off;"]

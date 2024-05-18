@@ -86,6 +86,8 @@ spec:
                   key: user-default-pass
           image: {{ .Values.backend.image }}
           name: bg-tasks
+          ports:
+            - containerPort: 8000
           resources: {}
       restartPolicy: Always
 status: {}
