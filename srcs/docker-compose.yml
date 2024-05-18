@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   db:
@@ -58,7 +58,6 @@ services:
     container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile.dev
     expose:
       - "8000:8000"
     networks:
@@ -69,8 +68,10 @@ services:
       - db
       - redis
     restart: always
-    volumes:
-      - pwd:/data
+    entrypoint:
+      - ./entry.sh
+      - -b
+      - "true"
 
   redis:
     container_name: redis

@@ -54,6 +54,15 @@ base64_data = create_data_uri(default_avatar_image_data)
 DEFAULT_AVATAR = base64.b64decode(base64_data)
 
 
+# Read the default avatar image file
+with open(BASE_DIR/"default.jpeg", "rb") as image_file:
+    default_avatar_image_data = image_file.read()
+
+# Prepend the image data with the appropriate data URI scheme
+base64_data = create_data_uri(default_avatar_image_data)
+DEFAULT_AVATAR = base64.b64decode(base64_data)
+
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
