@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ft-transcendence-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: {{ .Values.cert_manager.cluster_issuer }}
+spec:
+  tls:
+  - hosts:
+    - {{ .Values.ingress.frontend_endpoint }}
+    - www.{{ .Values.ingress.frontend_endpoint }}
+    - {{ .Values.ingress.api_endpoint }}
+    - www.{{ .Values.ingress.api_endpoint }}
+    secretName: {{ .Values.ingress.tls_secret_name }}
+  rules:
+  - host: {{ .Values.ingress.frontend_endpoint }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-service
+            port:
+              number: 8000
+  - host: {{ .Values.ingress.api_endpoint }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: my-service
+            port:
+              number: 80

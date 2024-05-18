@@ -1,0 +1,18 @@
+backend:
+  oauth_uid: ""
+  oauth_secret: ""
+  jwt_secret: ""
+  fernet_secret: ""
+  django_secret_key: ""
+  user_default_pass: ""
+  image: "olisyma/42:backend"
+frontend:
+  image: "olisyma/42:frontend"
+db:
+  password: ""
+cert_manager:
+  cluster_issuer: letsencrypt-prod
+ingress:
+  tls_secret_name: transcendence-fun-tls
+  frontend_endpoint: transcendence.fun
+  api_endpoint: api.transcendence.fun

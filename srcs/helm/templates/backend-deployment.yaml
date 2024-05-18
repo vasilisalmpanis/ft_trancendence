@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: backend
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: backend
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.network/backend: "true"
+        io.kompose.service: backend
+    spec:
+      containers:
+        - env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: DB_HOST
+                  name: env
+            - name: DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  key: DB_NAME
+                  name: env
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: database-password
+            - name: DB_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: DB_PORT
+                  name: env
+            - name: DB_USER
+              valueFrom:
+                configMapKeyRef:
+                  key: DB_USER
+                  name: env
+            - name: DJANGO_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: django-secret-key
+            - name: FERNET_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: fernet-secret
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: jwt-secret
+            - name: OAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: oauth-app-secret
+            - name: OAUTH_STATE
+              valueFrom:
+                configMapKeyRef:
+                  key: OAUTH_STATE
+                  name: env
+            - name: OAUTH_UID
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: oauth-app-uid
+            - name: RANDOM_OAUTH_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: user-default-pass
+          image: {{ .Values.backend.image }}
+          name: backend
+          ports:
+            - containerPort: 8000
+          resources: {}
+      restartPolicy: Always
+status: {}

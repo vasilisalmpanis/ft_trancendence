@@ -16,7 +16,5 @@ ENV VIRTUAL_ENV=/data/.venv \
     PATH="/data/.venv/bin:$PATH"
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY transcendence_backend transcendence_backend
-COPY README.md .
-COPY entry.sh /transcendence_backend
 WORKDIR /transcendence_backend
 ENTRYPOINT [ "./entry.sh" ]

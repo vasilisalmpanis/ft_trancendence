@@ -1,0 +1,13 @@
+apiVersion: v1
+data:
+  DB_HOST: postgres
+  DB_NAME: transcendence
+  DB_PORT: "5432"
+  DB_USER: admin
+  OAUTH_STATE: solid
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: backend-env
+  name: env
