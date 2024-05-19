@@ -10,6 +10,4 @@ spec:
     kind: ClusterIssuer
   dnsNames:
     - {{ .Values.ingress.frontend_endpoint }}
-    - www.{{ .Values.ingress.frontend_endpoint }}
     - {{ .Values.ingress.api_endpoint }}
-    - www.{{ .Values.ingress.api_endpoint }}
