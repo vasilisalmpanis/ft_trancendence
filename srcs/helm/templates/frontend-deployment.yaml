@@ -24,7 +24,6 @@ spec:
           name: frontend
           ports:
             - containerPort: 80
-            - containerPort: 443
           resources: {}
       restartPolicy: Always
 status: {}
