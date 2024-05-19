@@ -58,6 +58,7 @@ services:
     container_name: backend
     build:
       context: ./backend
+      dockerfile: Dockerfile.prod
     expose:
       - "8000:8000"
     networks:
