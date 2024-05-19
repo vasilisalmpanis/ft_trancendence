@@ -6,8 +6,8 @@ data:
   DB_USER: {{ .Values.db.user | default (randAlpha 7) }}
   OAUTH_STATE: solid
   PGDATA: /var/lib/postgresql/data/pgdata
-  REDIS_HOST: {{ .Values.redis.hostname }}
-  REDIS_PORT: {{ .Values.redis.port }}
+  REDIS_HOST: {{ .Values.redis.hostname | default "redis" }}
+  REDIS_PORT: {{ .Values.redis.port | quote | default "6379" }}
 kind: ConfigMap
 metadata:
   creationTimestamp: null

@@ -6,9 +6,9 @@ backend:
   fernet_secret: ""
   django_secret_key: ""
   user_default_pass: ""
-  image: "olisyma/transcendence-backend:v0.0.1"
+  image: "olisyma/transcendence-backend:v0.0.2"
 frontend:
-  image: "olisyma/transcendence-frontend:v0.0.2"
+  image: "olisyma/transcendence-frontend:v0.0.3"
 db:
   user: ""
   password: ""
