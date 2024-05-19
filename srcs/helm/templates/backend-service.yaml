@@ -3,8 +3,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: backend
-  name: backend
+    io.kompose.service: {{ .Values.backend.hostname }}
+  name: {{ .Values.backend.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   ports:
@@ -12,5 +12,5 @@ spec:
       port: 8000
       targetPort: 8000
   selector:
-    io.kompose.service: backend
+    io.kompose.service: {{ .Values.backend.hostname }}
 status: {}

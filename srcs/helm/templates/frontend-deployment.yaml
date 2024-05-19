@@ -3,21 +3,21 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: frontend
-  name: frontend
+    io.kompose.service: {{ .Values.frontend.hostname }}
+  name: {{ .Values.frontend.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: frontend
+      io.kompose.service: {{ .Values.frontend.hostname }}
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
         io.kompose.network/backend: "true"
-        io.kompose.service: frontend
+        io.kompose.service: {{ .Values.frontend.hostname }}
     spec:
       containers:
         - image: {{ .Values.frontend.image }}

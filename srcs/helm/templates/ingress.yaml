@@ -22,9 +22,9 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: my-service
+            name: {{ .Values.frontend.hostname }}
             port:
-              number: 8000
+              number: 80
   - host: {{ .Values.ingress.api_endpoint }}
     http:
       paths:
@@ -32,6 +32,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: my-service
+            name: {{ .Values.backend.hostname }}
             port:
-              number: 80
+              number: 8000
