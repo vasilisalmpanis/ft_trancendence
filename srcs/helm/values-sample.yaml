@@ -7,8 +7,10 @@ backend:
   django_secret_key: ""
   user_default_pass: ""
   image: "olisyma/transcendence-backend:v0.0.2"
+  hostname: backend
 frontend:
   image: "olisyma/transcendence-frontend:v0.0.3"
+  hostname: frontend
 db:
   user: ""
   password: ""
