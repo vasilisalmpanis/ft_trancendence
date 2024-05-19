@@ -1,9 +1,9 @@
 apiVersion: v1
 data:
   DB_HOST: postgres
-  DB_NAME: transcendence
+  DB_NAME: {{ .Values.db.db_name | default "transcendence" }}
   DB_PORT: "5432"
-  DB_USER: admin
+  DB_USER: {{ .Values.db.user | default (randAlpha 7) }}
   OAUTH_STATE: solid
   PGDATA: /var/lib/postgresql/data/pgdata
 kind: ConfigMap
@@ -12,3 +12,4 @@ metadata:
   labels:
     io.kompose.service: backend-env
   name: env
+  namespace: {{ .Values.namespace }}

@@ -3,6 +3,7 @@ kind: NetworkPolicy
 metadata:
   creationTimestamp: null
   name: backend
+  namespace: {{ .Values.namespace }}
 spec:
   ingress:
     - from:

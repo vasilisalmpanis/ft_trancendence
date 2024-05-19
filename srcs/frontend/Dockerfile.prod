@@ -4,6 +4,6 @@ WORKDIR /app
 RUN npm install && npm run build
 
 FROM --platform=linux/arm64 arm64v8/nginx:alpine AS prod
-COPY nginx-prod.conf /etc/nginx/
+COPY nginx-prod.conf /etc/nginx/nginx.conf
 COPY  --from=build /app/dist /app
 CMD ["nginx", "-g", "daemon off;"]

@@ -1,3 +1,4 @@
+namespace: ft-transcendence
 backend:
   oauth_uid: ""
   oauth_secret: ""
@@ -9,7 +10,9 @@ backend:
 frontend:
   image: "olisyma/42:frontend"
 db:
+  user: ""
   password: ""
+  db_name: ""
 cert_manager:
   cluster_issuer: letsencrypt-prod
 ingress:

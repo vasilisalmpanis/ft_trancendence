@@ -2,6 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: ft-transcendence-ingress
+  namespace: {{ .Values.namespace }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/cluster-issuer: {{ .Values.cert_manager.cluster_issuer }}
