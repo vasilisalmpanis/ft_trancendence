@@ -3,14 +3,14 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: db
-  name: db
+    io.kompose.service: {{ .Values.db.hostname }}
+  name: {{ .Values.db.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: db
+      io.kompose.service: {{ .Values.db.hostname }}
   strategy:
     type: Recreate
   template:
@@ -18,7 +18,7 @@ spec:
       creationTimestamp: null
       labels:
         io.kompose.network/backend: "true"
-        io.kompose.service: db
+        io.kompose.service: {{ .Values.db.hostname }}
     spec:
       containers:
         - env:

@@ -3,8 +3,8 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: db
-  name: db
+    io.kompose.service: {{ .Values.db.hostname }}
+  name: {{ .Values.db.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   ports:
@@ -12,5 +12,5 @@ spec:
       port: 5432
       targetPort: 5432
   selector:
-    io.kompose.service: db
+    io.kompose.service: {{ .Values.db.hostname }}
 

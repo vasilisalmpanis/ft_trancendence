@@ -3,14 +3,14 @@ kind: Service
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: redis
-  name: redis
+    io.kompose.service: {{ .Values.redis.hostname }}
+  name: {{ .Values.redis.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   ports:
-    - name: "6379"
-      port: 6379
-      targetPort: 6379
+    - name: {{ .Values.redis.port | quote }}
+      port: {{ .Values.redis.port }}
+      targetPort: {{ .Values.redis.port }}
   selector:
-    io.kompose.service: redis
+    io.kompose.service: {{ .Values.redis.hostname }}
 

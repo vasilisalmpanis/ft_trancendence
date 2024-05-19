@@ -71,6 +71,16 @@ spec:
                 configMapKeyRef:
                   key: OAUTH_STATE
                   name: env
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_HOST
+                  name: env
+            - name: REDIS_PORT
+              valueFrom:
+                configMapKeyRef:
+                  key: REDIS_PORT
+                  name: env
             - name: OAUTH_UID
               valueFrom:
                 secretKeyRef:

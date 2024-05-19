@@ -8,14 +8,18 @@ backend:
   user_default_pass: ""
   image: "olisyma/transcendence-backend:v0.0.1"
 frontend:
-  image: "olisyma/transcendence-frontend:v0.0.1"
+  image: "olisyma/transcendence-frontend:v0.0.2"
 db:
   user: ""
   password: ""
   db_name: ""
+  hostname: db
 cert_manager:
   cluster_issuer: letsencrypt-prod
 ingress:
   tls_secret_name: transcendence-fun-tls
   frontend_endpoint: transcendence.fun
   api_endpoint: api.transcendence.fun
+redis:
+  hostname: redis
+  port: 6379

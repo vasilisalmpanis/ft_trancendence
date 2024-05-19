@@ -42,6 +42,8 @@ OAUTH_SECRET = env("OAUTH_SECRET")
 OAUTH_UID = env("OAUTH_UID")
 RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*20
+REDIS_HOST=env("REDIS_HOST")
+REDIS_PORT=env("REDIS_PORT")
 
 # Read the default avatar image file
 with open(BASE_DIR/"default.jpeg", "rb") as image_file:
@@ -178,7 +180,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     }
 }

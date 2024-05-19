@@ -3,21 +3,21 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: redis
-  name: redis
+    io.kompose.service: {{ .Values.redis.hostname }}
+  name: {{ .Values.redis.hostname }}
   namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: redis
+      io.kompose.service: {{ .Values.redis.hostname }}
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
         io.kompose.network/backend: "true"
-        io.kompose.service: redis
+        io.kompose.service: {{ .Values.redis.hostname }}
     spec:
       containers:
         - image: redis
