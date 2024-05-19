@@ -16,7 +16,7 @@ spec:
     - {{ .Values.ingress.api_endpoint }}
     secretName: {{ .Values.ingress.tls_secret_name }}
   rules:
-  - host: {{ .Values.ingress.frontend_endpoint }}
+  - host: www.{{ .Values.ingress.frontend_endpoint }}
     http:
       paths:
       - path: /
@@ -26,7 +26,7 @@ spec:
             name: {{ .Values.frontend.hostname }}
             port:
               number: 80
-  - host: {{ .Values.ingress.api_endpoint }}
+  - host: www.{{ .Values.ingress.api_endpoint }}
     http:
       paths:
       - path: /
