@@ -20,10 +20,6 @@ spec:
         io.kompose.service: bg-tasks
     spec:
       containers:
-        - command:
-            - ./entry.sh
-            - -b
-            - "true"
         - env:
             - name: DB_HOST
               valueFrom:
@@ -64,7 +60,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: backend-secrets
-                  key: jwt_secret
+                  key: jwt-secret
             - name: OAUTH_SECRET
               valueFrom:
                 secretKeyRef:
@@ -72,7 +68,7 @@ spec:
                   key: oauth-app-secret
             - name: OAUTH_STATE
               valueFrom:
-                secretKeyRef:
+                configMapKeyRef:
                   key: OAUTH_STATE
                   name: env
             - name: OAUTH_UID
@@ -86,7 +82,9 @@ spec:
                   name: backend-secrets
                   key: user-default-pass
           image: {{ .Values.backend.image }}
-          name: bg-tasks
+          name: backend
+          command: ["./entry.sh"]
+          args: ["-b", "true"]
           ports:
             - containerPort: 8000
           resources: {}
