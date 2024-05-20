@@ -58,7 +58,7 @@ services:
     container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.dev
     expose:
       - "8000:8000"
     networks:
@@ -69,10 +69,8 @@ services:
       - db
       - redis
     restart: always
-    entrypoint:
-      - ./entry.sh
-      - -b
-      - "true"
+    volumes:
+      - pwd:/data
 
   redis:
     container_name: redis
