@@ -178,7 +178,6 @@ const Tournament = (props) => {
 		if (tws) {
 			tws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
-				console.log("ws msg: ", data);
 				if ('users' in data) {
 					console.log("setting", ...data.users);
 					setUsers([...data.users]);
