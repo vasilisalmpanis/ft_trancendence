@@ -19,26 +19,26 @@ services:
       - backend
     restart: always
 
-  backend:
-    container_name: backend
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.prod
-    ports:
-      - "8000:8000"
-    networks:
-      - backend
-    env_file:
-      - .env
-    depends_on: 
-      - bg-tasks
-    restart: always
-
-  # backend_dev:
-  #   container_name: backend_dev
+  # backend:
+  #   container_name: backend
   #   build:
   #     context: ./backend
-  #     dockerfile: Dockerfile.dev
+  #     dockerfile: Dockerfile.prod
+  #   ports:
+  #     - "8000:8000"
+  #   networks:
+  #     - backend
+  #   env_file:
+  #     - .env
+  #   depends_on: 
+  #     - bg-tasks
+  #   restart: always
+
+  # bg-tasks:
+  #   container_name: bg-tasks
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile.prod
   #   expose:
   #     - "8000:8000"
   #   networks:
@@ -48,20 +48,17 @@ services:
   #   depends_on: 
   #     - db
   #     - redis
-  #     - bg-tasks
   #   restart: always
   #   entrypoint:
-  #     - /data/backend/entrypoint.sh
-  #     - runserver
-  #     - 0.0.0.0:8000
-  #   volumes:
-  #     - pwd:/data
+  #     - ./entry.sh
+  #     - -b
+  #     - "true"
 
-  bg-tasks:
-    container_name: bg-tasks
+  backend:
+    container_name: backend
     build:
       context: ./backend
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile.dev
     expose:
       - "8000:8000"
     networks:
@@ -72,10 +69,8 @@ services:
       - db
       - redis
     restart: always
-    entrypoint:
-      - ./entry.sh
-      - -b
-      - "true"
+    volumes:
+      - pwd:/data
 
   redis:
     container_name: redis

@@ -4,5 +4,16 @@
 $pink: rgba(248, 2, 191, 0.5);
 $primary: $pink;
 $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
+.btn {
+    &:hover {
+        box-shadow: 0 0 2rem rgba($primary, 0.3);
+    }
+}
+.nav-link {
+    &:hover {
+        text-shadow: $primary 0 0 0.5em;//, 0 0 0.2em $primary;\
+        font-weight: bold;
+    }
+}
 // $box-shadow-lg: 0 1rem 3rem rgba(248, 2, 191, 0.5);
 @import "bootstrap/scss/bootstrap";

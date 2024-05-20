@@ -178,9 +178,11 @@ const Tournament = (props) => {
 		if (tws) {
 			tws.addEventListener('message', ev => {
 				const data = JSON.parse(ev.data);
-				//console.log("ws msg: ", data);
-				if ('users' in data)
-					setUsers([...data.users])
+				console.log("ws msg: ", data);
+				if ('users' in data) {
+					console.log("setting", ...data.users);
+					setUsers([...data.users]);
+				}
 				if ('message' in data && 'games' in data['message'])
 				{
 					data.message.games.forEach(game=>{
@@ -229,7 +231,7 @@ const Tournament = (props) => {
 			});
 		}
 		return cleanup_ws;
-	},[users, games, winner, msgs]);
+	},[users, games, winner, msgs, setUsers, setGames, setWinner, setMsgs]);
 	ftReact.useEffect(async () => {
 
 		const getTour = async () => {
@@ -239,8 +241,7 @@ const Tournament = (props) => {
 		if (!tour) {
 			await getTour();
 		}
-	},[tour]);
-	console.log(tour);
+	},[tour, setTour]);
 	return (
 		<BarLayout route={props.route}>
 			{tour
