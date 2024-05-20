@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ft-transcendence
+  namespace: {{ .Values.namespace }}
+spec:
+  secretName: {{ .Values.ingress.tls_secret_name }}
+  issuerRef:
+    name: {{ .Values.cert_manager.cluster_issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ .Values.ingress.frontend_endpoint }}
+    - {{ .Values.ingress.api_endpoint }}

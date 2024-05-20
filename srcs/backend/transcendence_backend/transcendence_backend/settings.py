@@ -27,14 +27,6 @@ def create_data_uri(image_data, mediatype='image/jpeg'):
     data_uri = f'data:{mediatype};base64,{base64_encoded_data}'
     return data_uri
 
-# Read the default avatar image file
-with open("/data/backend/default.jpeg", "rb") as image_file:
-    default_avatar_image_data = image_file.read()
-
-# Prepend the image data with the appropriate data URI scheme
-base64_data = create_data_uri(default_avatar_image_data)
-DEFAULT_AVATAR = base64.b64decode(base64_data)
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -50,6 +42,17 @@ OAUTH_SECRET = env("OAUTH_SECRET")
 OAUTH_UID = env("OAUTH_UID")
 RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*20
+REDIS_HOST=env("REDIS_HOST")
+REDIS_PORT=env("REDIS_PORT")
+
+# Read the default avatar image file
+with open(BASE_DIR/"default.jpeg", "rb") as image_file:
+    default_avatar_image_data = image_file.read()
+
+# Prepend the image data with the appropriate data URI scheme
+base64_data = create_data_uri(default_avatar_image_data)
+DEFAULT_AVATAR = base64.b64decode(base64_data)
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -177,7 +180,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
         },
     }
 }

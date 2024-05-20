@@ -1,0 +1,27 @@
+namespace: ft-transcendence
+backend:
+  oauth_uid: ""
+  oauth_secret: ""
+  jwt_secret: ""
+  fernet_secret: ""
+  django_secret_key: ""
+  user_default_pass: ""
+  image: "olisyma/transcendence-backend:v0.0.3"
+  hostname: backend
+frontend:
+  image: "olisyma/transcendence-frontend:v0.0.4"
+  hostname: frontend
+db:
+  user: ""
+  password: ""
+  db_name: ""
+  hostname: db
+cert_manager:
+  cluster_issuer: letsencrypt-prod
+ingress:
+  tls_secret_name: transcendence-fun-tls
+  frontend_endpoint: transcendence.fun
+  api_endpoint: api.transcendence.fun
+redis:
+  hostname: redis
+  port: 6379

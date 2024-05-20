@@ -57,34 +57,48 @@ const TournamentCard = (props) => {
 	return (
 		<div className="card mb-2" style="width: 18rem;">
 			<ul className="list-group list-group-flush">
-				<li className="list-group-item d-inline-flex align-items-baseline" onClick={()=> {props.route(`/tournaments/${props.data.id}`);}}>
-					{props.data.name}
-					{props.data.player_ids.includes(me.id) && props.data.status !== 'closed' &&
-						<button
-							className="btn d-inline p-0 ms-auto"
-							onClick={async ()=>{
-								await apiClient.delete("/tournaments", {tournament_id: props.data.id});
-								await props.updateTournaments();
-							}}
-						>
-							<DeleteIcon/>
-						</button>
-					}
-					{props.data.status !== 'closed' &&
-						<button
-							className="btn d-inline p-0 ms-auto"
-							onClick={async ()=>{
-								if (!props.data.player_ids.includes(me.id)) {
-									const resp = await apiClient.put("/tournaments", {tournament_id: props.data.id});
-									if (resp.error) {
-										return ;
-									}
+				<li className="list-group-item d-inline-flex align-items-baseline justify-content-between">
+					<span
+						className={props.data.status !== 'closed' ? "text-success font-weight-bold" : "text-secondary"}
+					>
+						{props.data.name}
+					</span>
+					{props.data.status !== 'closed'
+						?	<div>
+								<button
+									className="btn d-inline p-0"
+									onClick={async ()=>{
+										if (!props.data.player_ids.includes(me.id)) {
+											const resp = await apiClient.put("/tournaments", {tournament_id: props.data.id});
+											if (resp.error) {
+												return ;
+											}
+										}
+										props.route(`/tournaments/${props.data.id}`);
+									}}
+								>
+									{props.data.player_ids.includes(me.id) ? "ENTER" : "JOIN"}
+								</button>
+								{props.data.player_ids.includes(me.id) &&
+									<button
+										className="btn d-inline p-0 ms-1"
+										onClick={async ()=>{
+											await apiClient.delete("/tournaments", {tournament_id: props.data.id});
+											await props.updateTournaments();
+										}}
+									>
+										<DeleteIcon/>
+									</button>
 								}
-								// props.route(`/tournaments/${props.data.id}`);
-							}}
-						>
-							JOIN
-						</button>
+							</div>
+						:	<button
+								className="btn d-inline p-0 ms-auto"
+								onClick={async ()=>{
+									props.route(`/tournaments/${props.data.id}`);
+								}}
+							>
+								SHOW
+							</button>
 					}
 				</li>
 			</ul>

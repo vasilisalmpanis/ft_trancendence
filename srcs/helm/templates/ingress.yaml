@@ -1,0 +1,38 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ft-transcendence-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: {{ .Values.cert_manager.cluster_issuer }}
+    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - {{ .Values.ingress.frontend_endpoint }}
+    - {{ .Values.ingress.api_endpoint }}
+    secretName: {{ .Values.ingress.tls_secret_name }}
+  rules:
+  - host: {{ .Values.ingress.frontend_endpoint }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.frontend.hostname }}
+            port:
+              number: 80
+  - host: {{ .Values.ingress.api_endpoint }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.backend.hostname }}
+            port:
+              number: 8000

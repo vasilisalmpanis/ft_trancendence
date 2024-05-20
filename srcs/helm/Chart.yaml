@@ -1,0 +1,6 @@
+name: ft-transcendence
+description: 42 School common core final project - online pong game
+version: 0.0.1
+apiVersion: v1
+keywords:
+  - ft-transcendence

@@ -1,3 +1,4 @@
+import { apiClient } from "../api/api_client";
 import ftReact	from "../ft_react";
 import Layout 	from "./layout";
 
@@ -76,17 +77,27 @@ const NavBar = (props) => {
 						</li>
 					</ul>
 					{props.me && 
-						<button
-							onClick={() => props.route("/me")}
-							className="rounded-circle btn me-3 ms-auto"
-						>
-							<img
-								src={props.me.avatar.replace("data", "data:").replace("base64", ";base64,")}
-								style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
-								alt="profile"
-								width="30"
-							></img>
-						</button>
+						<div className="d-flex align-items-center">
+							<a
+								onClick={() => {
+									apiClient.logout();
+									props.route("/signin");
+								}}
+								className="nav-link"
+								style={{cursor: "pointer"}}
+							>Sign Out</a>
+							<button
+								onClick={() => props.route("/me")}
+								className="rounded-circle btn me-3 ms-auto"
+							>
+								<img
+									src={props.me.avatar.replace("data", "data:").replace("base64", ";base64,")}
+									style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
+									alt="profile"
+									width="30"
+								></img>
+							</button>
+						</div>
 					}
 				</div>
 			</div>

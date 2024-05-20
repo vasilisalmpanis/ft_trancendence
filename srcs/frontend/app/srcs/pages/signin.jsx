@@ -70,6 +70,7 @@ const Signin = (props) => {
 							placeholder={C_SIGNIN_USERNAME}
 							className="form-control"
 							required
+							autoFocus
 						/>
 					</div>
 					<div className="mb-3">

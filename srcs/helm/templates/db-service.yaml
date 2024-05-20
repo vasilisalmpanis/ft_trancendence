@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    io.kompose.service: {{ .Values.db.hostname }}
+  name: {{ .Values.db.hostname }}
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    io.kompose.service: {{ .Values.db.hostname }}
+
