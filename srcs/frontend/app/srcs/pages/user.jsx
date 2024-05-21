@@ -4,7 +4,7 @@ import { apiClient }    from "../api/api_client.js";
 
 const StatsLayout = (props) => {
     return  (
-        <div className="d-flex text-center gap-2">
+        <div className="d-flex flex-wrap text-center gap-2">
                 <div>
                     <h5>Wins</h5>
                     <h6>{`${props.data.games_won}`}</h6>
@@ -189,8 +189,10 @@ const User = (props) => {
         if (!user) {
             temp_user = await apiClient.get(`/users/${id}`);
             if (temp_user.error) {
-                if (temp_user.error === 404)
+                if (temp_user.error === "User Doesn't Exist")
+                {
                     props.route("/users");
+                }
                 return;
             }
         }
@@ -202,6 +204,7 @@ const User = (props) => {
             temp_friends = await apiClient.get(`users/${temp_user.id}/friends`, {limit: 3});
         if (temp_user.error || temp_stats.error || temp_games.error || temp_friends.error) {
             setError(temp_user.error || temp_stats.error || temp_games.error);
+            return ;
         }
         if (temp_user && !temp_user.error)
             setUser(temp_user);
@@ -216,7 +219,10 @@ const User = (props) => {
         getData();
     return (
         <BarLayout route={props.route}>
-            { user
+            { error ?
+            <div className="alert alert-danger">{error}</div> 
+            : 
+            user
             ?
             <div className="d-flex flex-column justify-content-center p-2">
                 {}
@@ -257,7 +263,7 @@ const UserActionsLayout = (props) => {
 
 const UsersFriendsLayout = (props) => (
     <div className="d-flex flex-column align-items-start">
-        <div className="d-flex justify-content-between gap-5">
+        <div className="d-flex flex-grow justify-content-between gap-5">
             <h5>Friends</h5>
             {props.friends.length > 0 &&
                 <button className="btn" onClick={() => props.route(`/user-friends/${props.user}`)}>
@@ -266,7 +272,7 @@ const UsersFriendsLayout = (props) => (
             }
         </div>
         <div className="card align-self-start flex-shrink p-3">
-            <div className="mr-2">
+            <div className="mr-2 text-break" style={{maxWidth: "20ch"}}>
                 {props.friends.length > 0 ? (
                     props.friends.map((friend, i) => (
                         <UserFriend i={i} friend={friend} route={props.route} />

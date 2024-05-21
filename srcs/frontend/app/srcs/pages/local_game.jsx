@@ -10,7 +10,7 @@ let gameRunning;
 
 const Pong = (props) => {
     const [wins, setWins] = ftReact.useState("");
-    const maxScore = 1;
+    const maxScore = 10;
     let maxAngle = 4 * Math.PI / 12;
 	let pl = 40;
 	let pr = 40;
@@ -122,6 +122,15 @@ const Pong = (props) => {
     const getRandomArbitrary = (min, max) => {
         return Math.random() * (max - min) + min;
       }
+
+    const setHistory = () => {
+        let tournamentState = history.state.gameState;
+        if (tournamentState) {
+            tournamentState.games.find(game => game.winner === null).score1 = left_score;
+            tournamentState.games.find(game => game.winner === null).score2 = right_score;
+            history.replaceState({gameState: tournamentState}, "");
+        }
+    };
     const restartBall = () => {
         speed = 1;
         ballx = 50;
@@ -146,8 +155,10 @@ const Pong = (props) => {
             {
 				ballx = 97;
 				right_score += 1;
-                if (game)
+                if (game) {
                     game.score2 += 1;
+                    setHistory();
+                }
                 restartBall();
             }
         }
@@ -163,8 +174,10 @@ const Pong = (props) => {
             }
 			else {
 				ballx = 3;
-                if (game)
+                if (game) {
                     game.score1 += 1;
+                    setHistory();
+                }
                 left_score += 1;
                 restartBall();
             }

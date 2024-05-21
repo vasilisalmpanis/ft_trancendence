@@ -37,7 +37,7 @@ const BlockedUsers = (props) => {
 								)}
 								)
 								:
-								<li className="list-group-item">No blocked users</li>
+								<li className="list-group-item">You have no blocked users</li>
 					}
 				</ul>
 	)

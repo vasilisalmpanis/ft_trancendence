@@ -84,10 +84,12 @@ class StatService:
         if order == "asc":
             leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).\
                                                         order_by("stats__total_points", 'id').\
+                                                        exclude(stats__games_played=0).\
                                                         values_list('stats__user', flat=True)[skip:skip+limit]
         else:
             leaderboard_users = users_not_blocked_by_me.filter(stats__isnull=False).\
                                                         order_by("-stats__total_points", 'id').\
+                                                        exclude(stats__games_played=0).\
                                                         values_list('stats__user', flat=True)[skip:skip+limit]
         data = [
             stats_model_to_dict(User.objects.get(id=user_id))

@@ -86,6 +86,7 @@ class ApiClient {
       }
       return await this.proceedResponse(response);
     } catch (error) {
+      this.route('/signin');
       return {error: "no connection"};
     }
   }

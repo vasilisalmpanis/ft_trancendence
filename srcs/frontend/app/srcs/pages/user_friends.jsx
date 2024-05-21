@@ -64,21 +64,26 @@ const UserFriendsLayout = (props) => {
                     ?
                     <div className="card justify-content-center p-4">
                         {friends.map(friend => (
-                            <div className="d-flex gap-5 mt-0 border-bottom flex-row">
-                                <div className="d-flex align-items-baseline">
-                                    <div className="py-2">
-                                        <Avatar img={friend.avatar} size="50px"/>
+                            <button
+                                className="btn"
+                                onClick={() => props.route(`/users/${friend.id}`)}
+                            >
+                                <div className="d-flex gap-5 mt-0 border-bottom flex-row">
+                                    <div className="d-flex align-items-baseline">
+                                        <div className="py-2">
+                                            <Avatar img={friend.avatar} size="50px"/>
+                                        </div>
+                                    <div className="px-5">
+                                            <span>{friend.username}</span>
                                     </div>
-                                <div className="px-5">
-                                        <span>{friend.username}</span>
-                                </div>
-                                    <div>
-                                        {me.id != friend.id && friend.friend == "NOT_SENT" && <button className="btn btn-primary" onClick={() => addFriend(friend.id)}>Add Friend</button>}
-                                        {me.id != friend.id && friend.friend == "PENDING" && <button className="btn disabled">Request Pending</button>}
-                                        {me.id != friend.id && friend.friend == true && <button className="btn btn-primary">Chat</button>}
+                                        <div>
+                                            {me.id != friend.id && friend.friend == "NOT_SENT" && <button className="btn btn-primary" onClick={() => addFriend(friend.id)}>Add Friend</button>}
+                                            {me.id != friend.id && friend.friend == "PENDING" && <button className="btn disabled">Request Pending</button>}
+                                            {me.id != friend.id && friend.friend == true && <button className="btn btn-primary">Chat</button>}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </button>
                         ))}
                         </div>
                     :
