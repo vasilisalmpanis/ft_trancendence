@@ -183,7 +183,14 @@ class ApiClient {
     return response;
   }
   authorized() {
-    return localStorage.getItem('access_token') ? true : false;
+    return (
+      (
+        localStorage.getItem('access_token')
+        || localStorage.getItem('refresh_token')
+      ) && localStorage.getItem('me')
+      ? true
+      : false
+    );
   }
 };
 

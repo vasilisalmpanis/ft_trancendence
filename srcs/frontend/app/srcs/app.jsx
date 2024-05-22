@@ -47,7 +47,7 @@ const App = (props) => {
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
 				<Route auth path="/2fa" element={<TFA/>}/>
 				<Route auth path="/local-game" element={<LocalGame/>}/>
-				<Route fallback auth path="/" element={<Main/>}/>
+				<Route fallback path="/" element={<Main/>}/>
 				<Route fallback auth path="/friendrequests/sent" element={<Sent/>}/>
 				<Route fallback auth path="/friendrequests/incoming" element={<Incoming/>}/>
 				<Route fallback auth path="/blocked" element={<Blocked/>}/>
