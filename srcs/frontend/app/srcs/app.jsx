@@ -22,6 +22,7 @@ import LocalGame			from './pages/local_game';
 import Sent 				from './pages/sent';
 import Incoming 			from './pages/incoming';
 import Blocked 				from './pages/blocked';
+import LocalTournament		from './pages/local_tournament';
 
 const App = (props) => {
 	const [theme, setTheme] = useTheme();
@@ -50,6 +51,7 @@ const App = (props) => {
 				<Route fallback auth path="/" element={<Main/>}/>
 				<Route fallback auth path="/friendrequests/sent" element={<Sent/>}/>
 				<Route fallback auth path="/friendrequests/incoming" element={<Incoming/>}/>
+				<Route fallback auth path="/local-tournament" element={<LocalTournament/>}/>
 				<Route fallback auth path="/blocked" element={<Blocked/>}/>
 			</Router>
 		</div>

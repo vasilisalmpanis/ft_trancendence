@@ -138,7 +138,7 @@ const ProfileCard = (props) => {
   					<div className="modal-content">
   						<div className="modal-body">
   							<h3
-								className="modal-title fs-5"
+								className="modal-title fs-5 text-break"
 								id="exampleModalLabel"
 							>
 									Add this secret to your authenticator app:
@@ -148,7 +148,7 @@ const ProfileCard = (props) => {
 								className="f-inline-flex align-items-center btn btn-link text-decoration-none"
 								onClick={()=>{navigator.clipboard.writeText(tfa)}}
 							>
-								<span className="me-1 mb-1">{tfa}</span>
+								<span className="me-1 mb-1 text-break">{tfa}</span>
 								<ClipboardIcon/>
 							</button>
 							<form

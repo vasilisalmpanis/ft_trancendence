@@ -17,6 +17,19 @@ const Pong = (props) => {
 	let leftPlatformDirection = '';
     let RightPlatformDirection = '';
 	let prevYCoordinate = null;
+	let pl_dom = null;
+	let pr_dom = null;
+	let ball_dom = null;
+	let score_board = null;
+    let left_score = 0;
+    let right_score = 0;
+    let ballx = 50;
+    let bally = 50;
+    let angle = 45;
+    let speed = 1;
+    let speedIncrease = 0.05;
+    let game = history.state.gameState?.games.find(game => game.winner === null) || null;
+
 	const keyPress = (ev) => {
         switch (ev.key) {
             case 'ArrowUp':
@@ -52,6 +65,9 @@ const Pong = (props) => {
     const hideModal = () => {
         props.route("/games");
     };
+    const hideTournamentModal = () => {
+        props.route("/local-tournament", {gameState: history.state.gameState});
+    };
 	// const touchMove = (ev) => {
 	// 	const currentYCoordinate = ev.touches[0].clientY;
 	// 	if (currentYCoordinate > prevYCoordinate && platformDirection !== 'down')
@@ -78,22 +94,18 @@ const Pong = (props) => {
         // document.addEventListener("touchend", touchEnd);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
         document.getElementById("gameoverModal")?.addEventListener('hide.bs.modal', hideModal);
+        document.getElementById("tournamentGameoverModal")?.removeEventListener('hide.bs.modal', hideTournamentModal);
+        document.getElementById("tournamentGameoverModal")?.addEventListener('hide.bs.modal', hideTournamentModal);
+        if (game)
+        {
+            left_score = game.score1;
+            right_score = game.score2;
+        }
         gameRunning = true;
         if (wins === "")
             requestAnimationFrame(gameLoop);
         return cleanup;
 	},[wins])
-	let pl_dom = null;
-	let pr_dom = null;
-	let ball_dom = null;
-	let score_board = null;
-    let left_score = 0;
-    let right_score = 0;
-    let ballx = 50;
-    let bally = 50;
-    let angle = 45;
-    let speed = 1;
-    let speedIncrease = 0.05;
     const move = () => {
         ballx = Math.cos(angle) * speed + ballx;
         bally = -Math.sin(angle) * speed + bally;
@@ -110,6 +122,15 @@ const Pong = (props) => {
     const getRandomArbitrary = (min, max) => {
         return Math.random() * (max - min) + min;
       }
+
+    const setHistory = () => {
+        let tournamentState = history.state.gameState;
+        if (tournamentState) {
+            tournamentState.games.find(game => game.winner === null).score1 = left_score;
+            tournamentState.games.find(game => game.winner === null).score2 = right_score;
+            history.replaceState({gameState: tournamentState}, "");
+        }
+    };
     const restartBall = () => {
         speed = 1;
         ballx = 50;
@@ -120,7 +141,6 @@ const Pong = (props) => {
         else
             angle = getRandomArbitrary(- Math.PI / 4,  Math.PI / 4);
     };
-
     const checkCollisions = () => {
 		if (ballx <= 1){
 			if (pl - 1 < bally && bally < pl + 21) {
@@ -135,6 +155,10 @@ const Pong = (props) => {
             {
 				ballx = 97;
 				right_score += 1;
+                if (game) {
+                    game.score2 += 1;
+                    setHistory();
+                }
                 restartBall();
             }
         }
@@ -150,7 +174,11 @@ const Pong = (props) => {
             }
 			else {
 				ballx = 3;
-				left_score += 1;
+                if (game) {
+                    game.score1 += 1;
+                    setHistory();
+                }
+                left_score += 1;
                 restartBall();
             }
         }
@@ -179,7 +207,16 @@ const Pong = (props) => {
 			score_board = document.getElementById("score-board");          
 		}
         if (left_score === maxScore || right_score === maxScore) {
-            new bootstrap.Modal('#gameoverModal', {}).show();
+            let tournamentState = history.state.gameState;
+            if (tournamentState) {
+                let running_game = tournamentState.games.find(game => game.winner === null);
+                running_game.winner = left_score > right_score ? running_game.player1 : running_game.player2;
+                new bootstrap.Modal('#tournamentGameoverModal', {}).show();
+            }
+            else
+            {
+                new bootstrap.Modal('#gameoverModal', {}).show();
+            }
             if (right_score > left_score)
                 setWins("Right player wins!");
             else
@@ -226,6 +263,22 @@ const Pong = (props) => {
                     </div>
                     <div class="modal-footer justify-content-center" >
                         <button className="btn btn-primary" data-bs-dismiss="modal">Go Back to Main Menu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="tournamentGameoverModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" >
+                    <div class="modal-content" >
+                    <div class="modal-header" >
+                        <h5 class="modal-title" id="exampleModalLabel">Game over</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" >
+                        <h3>{wins}</h3>
+                    </div>
+                    <div class="modal-footer justify-content-center" >
+                        <button className="btn btn-primary" data-bs-dismiss="modal">Go Back to Tournament</button>
                         </div>
                     </div>
                 </div>

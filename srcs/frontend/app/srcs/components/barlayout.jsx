@@ -112,7 +112,9 @@ const BarLayout = (props) => {
 	return (
 			<div className="h-100">
 				<NavBar route={props.route} me={me}/>
-				<div className="
+				<div
+					style={{maxWidth: "100vw"}}
+					className="
 					container-md
 					text-center
 					d-flex
@@ -120,7 +122,7 @@ const BarLayout = (props) => {
 					mb-3
 					justify-content-center
 					align-items-center
-					p-1
+					p-3
 					h-100
 				">
 					{props.children}
