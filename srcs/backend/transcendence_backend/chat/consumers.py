@@ -8,7 +8,9 @@ from users.models                   import User
 from tournament.models              import Tournament
 from .services                      import MessageService
 import json
+import logging 
 
+logger = logging.getLogger(__name__)
 T = TypeVar('T')
 class SingletonMeta(type):
 	_instances: Dict[type[T], T] = {}
@@ -73,7 +75,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         if chat_id == 0:
             self.rooms[chat_id]['name'] = 'global'
         else:
-            self.rooms[chat_id]['name'] = chat.name;
+            self.rooms[chat_id]['name'] = chat.name
 
     def add_participant_to_room(self, chat_id: str, user_id: str, channel_name: str):
         """
@@ -133,7 +135,11 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     _chats = DirectMessageChatroomManager()
 
     async def connect(self):
-        await self.accept()
+        logger.warn("Connecting to chat")
+        if self.scope.get('auth_protocol', False):
+            await self.accept("Authorization")
+        else:
+            await self.accept()
         try:
             self.chat_ids = await database_sync_to_async(self._chats.get_chat_ids)(self.scope['user'].id)
             await database_sync_to_async(self._chats.add_user)(self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
@@ -155,6 +161,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'chat_ids': self.chat_ids,
                     }))
         except Exception as e:
+            print(e, flush=True)
             await self.send(text_data=json.dumps({
                 'status': 'error', 'message': f'Could not connect: {str(e)}'}))
             await self.close()
@@ -197,7 +204,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                                     int(text_data_json['chat_id']),
                                     text_data_json['content']
                                     )
-                await self.channel_layer.group_send(text_data_json['chat_id'],
+                await self.channel_layer.group_send(str(text_data_json['chat_id']),
                     {
                         'type': 'plain.message',
                         'chat_id': message.chat.id,
@@ -251,8 +258,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def plain_message(self, event):
-        if self.scope['user'].id == event['sender_id']:
-            return
+        # if self.scope['user'].id == event['sender_id']:
+        #     return
         await self.send(text_data=json.dumps({
             'type': 'plain.message',
             'chat_id': event['chat_id'],

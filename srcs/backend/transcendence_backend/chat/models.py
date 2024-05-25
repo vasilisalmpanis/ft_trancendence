@@ -33,7 +33,7 @@ def chat_model_to_dict(chat, user) -> Dict[Any,Any]:
         "id": chat.id,
         "name": chat.name,
         "unread_messages": unread_messages_num,
-        "participants": { participant.username: participant.id for participant in participants },
+        "participants": [participant.id for participant in participants],
     }
 
 
@@ -59,6 +59,7 @@ def message_model_to_dict(message) -> dict:
         "chat_id": message.chat.id,
         "timestamp": message.timestamp,
         "sender": message.sender.username,
+        "sender_name": message.sender.username,
         "read": message.read,
         "content": message.content,
     }
