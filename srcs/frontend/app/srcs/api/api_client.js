@@ -1,3 +1,5 @@
+import WebsocketClient from "./websocket_client.js";
+
 /**
  * Represents an API client for making HTTP requests
  * to the backend server pong.
@@ -130,6 +132,7 @@ class ApiClient {
     if (me.error)
       return me;
     localStorage.setItem("me", JSON.stringify(me));
+    new WebsocketClient("wss://api.localhost/ws/chat/dm/", access_token);
     return {"ok": "true"};
   }
 
