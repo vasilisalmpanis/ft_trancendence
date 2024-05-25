@@ -17,3 +17,11 @@ $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
 }
 // $box-shadow-lg: 0 1rem 3rem rgba(248, 2, 191, 0.5);
 @import "bootstrap/scss/bootstrap";
+@each $breakpoint in map-keys($grid-breakpoints) {
+    $sizes: ( 25: 25%, 50: 50%, 75: 75%, 100: 100%, );
+    @each $size, $length in $sizes {
+      @include media-breakpoint-up($breakpoint) {
+        .w-#{$breakpoint}-#{$size} {width: $length !important;}
+      }
+    }
+  }

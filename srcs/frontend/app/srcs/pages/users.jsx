@@ -29,15 +29,19 @@
 		const [skip, setSkip] = ftReact.useState(0);
 		const [limit, setLimit] = ftReact.useState(10);
 		const [endOfUsers, setEndOfUsers] = ftReact.useState(false);
-		const getUsers = async () => {
-			const data = await apiClient.get("/users", {skip: skip, limit: limit});
-			if (data.error)
-				setError(data.error);
-			else if (data && !users) {
-				setUsers(data);
-				setSkip(skip + limit);
+		ftReact.useEffect(async() => {
+			const getUsers = async () => {
+				const data = await apiClient.get("/users", {skip: skip, limit: limit});
+				if (data.error)
+					setError(data.error);
+				else if (data && !users) {
+					setUsers(data);
+					setSkip(skip + limit);
+				}
 			}
-		};
+			if (!users)
+				await getUsers();
+		}, [users, setUsers]);
 		const loadMore = async () => {
 			const data = await apiClient.get("/users", {skip: skip, limit: limit});
 			if (data.error)
@@ -50,8 +54,6 @@
 				setSkip(skip + limit);
 			}
 		};
-		if (!users && !error)
-			getUsers();
 		return (
 			<BarLayout route={props.route}>
 				{

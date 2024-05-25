@@ -1,10 +1,29 @@
-import { apiClient } from "../api/api_client";
-import ftReact	from "../ft_react";
-import Layout 	from "./layout";
+import { apiClient }	from "../api/api_client";
+import ftReact			from "../ft_react";
+import WebsocketClient	from "../api/websocket_client";
 
 
 const NavBar = (props) => {
 	const [collapse, setCollapse] = ftReact.useState(true);
+	const [wsClient, setWsClient] = ftReact.useState(
+		new WebsocketClient(
+			"wss://api.localhost/ws/chat/dm/",
+			localStorage.getItem("access_token")
+		)
+	);
+    ftReact.useEffect(() => {
+        wsClient && wsClient.getWs().addEventListener('message', ev => {
+            const data = JSON.parse(ev.data);
+            if ("content" in data || 'status' in data) {
+				console.log(data);
+            };
+        });
+		return () => {
+			console.log("closing ws");
+			wsClient && wsClient.close();
+			setWsClient(null);
+		}
+    }, [wsClient, setWsClient]);
 	return (
 		<nav className="navbar navbar-expand-md bg-body-tertiary">
 			<div className="container-fluid">
@@ -73,6 +92,23 @@ const NavBar = (props) => {
 								{window.location.pathname === "/users" ? 
 									<b className="border-bottom">Users</b>
 									: "Users"}
+							</a>
+						</li>
+						<li className="nav-item">
+							<a
+								onClick={() => props.route("/chats")}
+								className="nav-link"
+								style={{cursor: "pointer"}}
+							>
+								{window.location.pathname === "/chats" ? 
+									<b className="border-bottom">Chats</b>
+									: "Chats"}
+								<sup class="badge rounded-pill bg-success align-top">
+									<small>
+										235
+										<span class="visually-hidden">unread messages</span>
+									</small>
+								</sup>
 							</a>
 						</li>
 					</ul>
