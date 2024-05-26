@@ -139,15 +139,6 @@ const GameCard = (props) => {
     );
 }
 
-// const Avatar = (props) => (
-//     <img
-//         src={props.img.replace("data", "data:").replace("base64", ";base64,")}
-//         style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
-//         alt="profile"
-//         width={props.size || "90%"}
-//     ></img>
-// )
-
 const User = (props) => {
     const [stats, setStats] = ftReact.useState(null);
     const [games, setGames] = ftReact.useState(null);

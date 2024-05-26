@@ -17,7 +17,7 @@ const Avatar = (props) => {
 			if (props.img.startsWith("data"))
 				await fetchBlob(props.img);
 			else if (props.img.startsWith("/"))
-				setBlob(`https://api.localhost${props.img}`)
+				setBlob(`https://api.${window.location.hostname}${props.img}`)
 		}
 		else if (props.img && props.img instanceof Blob && (blob !== props.img))
 			setBlob(props.img);
