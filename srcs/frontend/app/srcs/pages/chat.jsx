@@ -4,25 +4,31 @@ import BarLayout        from '../components/barlayout';
 import WebsocketClient  from '../api/websocket_client';
 import Avatar           from '../components/avatar';
 
+const units = {
+    year  : 24 * 60 * 60 * 1000 * 365,
+    month : 24 * 60 * 60 * 1000 * 365/12,
+    day   : 24 * 60 * 60 * 1000,
+    hour  : 60 * 60 * 1000,
+    minute: 60 * 1000,
+    second: 1000
+  }
+  
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+  
+  const getRelativeTime = (d1, d2 = new Date()) => {
+    const elapsed = d1 - d2
+  
+    // "Math.abs" accounts for both "past" & "future" scenarios
+    for (let u in units) 
+      if (Math.abs(elapsed) > units[u] || u == 'second') 
+        return rtf.format(Math.round(elapsed/units[u]), u)
+  }
+
 const SelectedChat = (props) => {
-    const [user, setUser] = ftReact.useState(null);
     const [trigger, setTrigger] = ftReact.useState(false);
     const me = JSON.parse(localStorage.getItem('me'));
+    const user = props.chat.participants;
     const limit = 10;
-    ftReact.useEffect(async () => {
-        const getUser = async () => {
-            if (props.chat) {
-                let user_id = props.chat.participants.find(participant => participant !== me.id);
-                console.log('get user', props.chat);
-                const data = await apiClient.get(`/users/${user_id}`);
-                if (data.error) {
-                    return;
-                }
-                setUser(data);
-            }
-        };
-        await getUser();
-    }, [props.chat]);
     const getOldMsgs = async (chat_id) => {
         if (props.paginator[chat_id] === -1)
             return;
@@ -76,7 +82,15 @@ const SelectedChat = (props) => {
     return (
             <div className='col-8 px-0 border rounded-end d-flex flex-column justify-content-between'>
                 <div className='w-100 border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "4rem"}}>
-                        {user && <Avatar img={user.avatar} size={50}/>}
+                        {user && 
+                            <img
+                                loading="lazy"
+                                width={50}
+                                style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
+                                src={`https://api.${window.location.hostname}${user.avatar}`}
+                                className="img-thumbnail"
+                            />
+                        }
                         <h3 className='align-middle'>
                             <a onClick={
                                 (ev) => {
@@ -95,23 +109,38 @@ const SelectedChat = (props) => {
                         style={{maxHeight: "70vh", scrollbarWidth: "thin"}}
                     >
                         <div id="sentinel"></div>
+                        {console.log(props.msgs)}
                         {   props.chatSelected &&
                             props.msgs &&
                             props.msgs
                                 .filter(msg => msg.chat_id === props.chatSelected)
+                                .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
                                 .map(msg =>
-                                    <div className={msg.content ? '' : 'text-center w-100'} style={{maxWidth: "28ch", wordWrap: "break-word"}}>
-                                        <strong
-                                            className={
-                                                msg.content
-                                                    ? msg.sender_id === 'me' ? 'text-info' :'text-success'
-                                                    : 'text-secondary'
-                                            }
-                                        >
-                                            {msg.sender_name}:
-                                        </strong> <span className="text-secondary">
-                                            {msg.content ? msg.content : msg.status}
-                                        </span>
+                                    <div
+                                        className={
+                                            msg.content
+                                                ? (
+                                                    msg.sender?.id === me.id
+                                                        ? ' align-self-end \
+                                                            text-end \
+                                                            bg-gray \
+                                                            border rounded-4 \
+                                                            py-1 px-2 my-1 \
+                                                            '
+                                                        : ' bg-gray border rounded-4 py-1 px-2 my-1'
+                                                )
+                                                : 'text-center w-100'
+                                        }
+                                        style={{wordWrap: "break-word", maxWidth: "75%", overflowWrap: "break-word"}}
+                                    >
+                                        <div className='d-flex flex-column gap-0'>
+                                            <span className='text-break'>
+                                                {msg.content ? msg.content : msg.status}
+                                            </span>
+                                            <span className="align-self-end text-secondary" style={{fontSize: '0.7rem'}}>
+                                            {getRelativeTime(new Date(msg.timestamp))}
+                                            </span>
+                                        </div>
                                     </div>
                                 )
                         }
@@ -127,7 +156,7 @@ const SelectedChat = (props) => {
                                     type: "plain.message",
                                     content: msg
                                 }));
-                                props.updateMsgs({content: msg, sender_name: "me"});
+                                // props.updateMsgs({content: msg, sender_name: "me"});
                                 ev.target[0].value = "";
                             }
                         }}
@@ -160,11 +189,13 @@ const Chats = (props) => {
     const [chatSelected, setChatSelected] = ftReact.useState(null);
     const [msgs, setMsgs] = ftReact.useState([]);
     const [paginator, setPaginator] = ftReact.useState({});
+    const [activeFriends, setActiveFriends] = ftReact.useState([]);
     const limit = 10;
-    const ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
+    let ws = null;
+    // console.log(activeFriends);
     ftReact.useEffect(async () => {
         const getChats = async () => {
-                const data = await apiClient.get('/chats');
+            const data = await apiClient.get('/chats');
             if (data.error) {
                 setError(data.error);
                 return;
@@ -179,14 +210,28 @@ const Chats = (props) => {
             await getChats();
         }
     }, [chats, setChats, error, setError]);
+    const updateActiveUsers = (data) => {
+        if (data.type === 'client.update')
+            setActiveFriends(data['active_friends_ids']);
+        else if (data.type === 'status.update') {
+            if (data.status === 'connected')
+                setActiveFriends([...activeFriends, data.sender_id]);
+            else if (data.status === 'disconnected')
+                setActiveFriends(activeFriends.filter(id => id !== data.sender_id))
+        }
+    };
     ftReact.useEffect(() => {
+        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
         ws.addEventListener('message', ev => {
             const data = JSON.parse(ev.data);
-            if ("content" in data || 'status' in data) {
-                updateMsgs(data);
+            if ("type" in data && data.type === 'plain.message') {
+                updateMsgs(data.message);
             };
+            if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
+                updateActiveUsers(data);
+            }
         });
-    }, [msgs, setMsgs, updateMsgs, ws]);
+    }, [msgs, setMsgs, updateMsgs]);
     const updateMsgs = (msg, to_end = true) => {
         const msgsContainer = document.getElementById("msgs-container");
         const sentinel = document.getElementById('sentinel');
@@ -231,23 +276,34 @@ const Chats = (props) => {
                                     }
                                     }
                                 >
-                                    {chat.name}
+                                    <div className='d-flex flex-row justify-content-start align-items-center gap-2 p-2'>
+                                        <Avatar img={chat.participants.avatar} size={'40rem'}/>
+                                        {chat.participants.username}
+                                        {console.log('participant', chat.participants.id, activeFriends)}
+                                        {activeFriends && activeFriends.includes(chat.participants.id) &&
+                                            <span class="p-2 bg-success border border-light rounded-circle">
+                                                <span class="visually-hidden">Active User</span>
+                                                
+                                            </span>
+                                        }
+                                    </div>   
                                 </div>
                             );
                         })}
                     </div>
-                    {chatSelected &&
-                    <SelectedChat
-                        chatSelected={chatSelected}
-                        chat={chats.find(chat => chat.id === chatSelected)}
-                        msgs={msgs}
-                        ws={ws}
-                        updateMsgs={updateMsgs}
-                        paginator={paginator}
-                        setPaginator={setPaginator}
-                        route={props.route}
-                    />
-                }
+                    {   chatSelected && 
+                        chats &&
+                        <SelectedChat
+                            chatSelected={chatSelected}
+                            chat={chats.find(chat => chat.id === chatSelected)}
+                            msgs={msgs}
+                            ws={ws}
+                            updateMsgs={updateMsgs}
+                            paginator={paginator}
+                            setPaginator={setPaginator}
+                            route={props.route}
+                        />
+                    }
                 </div>
             </div>
         </BarLayout>

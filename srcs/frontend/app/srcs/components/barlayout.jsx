@@ -20,11 +20,6 @@ const NavBar = (props) => {
 				console.log(data);
             };
         });
-		return () => {
-			console.log("closing ws");
-			wsClient && wsClient.close();
-			setWsClient(null);
-		}
     }, [wsClient, setWsClient]);
 	return (
 		<nav className="navbar navbar-expand-md bg-body-tertiary">
