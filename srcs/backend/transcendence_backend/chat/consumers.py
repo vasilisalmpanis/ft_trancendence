@@ -204,15 +204,13 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                                     int(text_data_json['chat_id']),
                                     text_data_json['content']
                                     )
+                # logger.warn(f"Message created: {message}")
+                # message['type'] = 'plain.message'
                 await self.channel_layer.group_send(str(text_data_json['chat_id']),
                     {
                         'type': 'plain.message',
-                        'chat_id': message.chat.id,
-                        'sender_id': message.sender.id,
-                        'sender_name': message.sender.username,
-                        'content': message.content,
-                        'message_id': message.id,
-                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        'message' : message
+                        # 'timestamp': message['timestamp']
                     })
             except Exception as e:
                 await self.send(text_data=json.dumps({
@@ -262,13 +260,9 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         #     return
         await self.send(text_data=json.dumps({
             'type': 'plain.message',
-            'chat_id': event['chat_id'],
-            'sender_id': event['sender_id'],
-            'sender_name': event['sender_name'],
-            'content': event['content'],
-            'timestamp': event['timestamp']
+            'message': event['message']
         }))
-        await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
+        await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message']['id'])
 
     async def game_invite(self, event):
         if self.scope['user'].id == event['sender_id']:

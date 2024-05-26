@@ -99,7 +99,7 @@ class MessageService:
                 sender=user,
                 content=content
             )
-            return message
+            return message_model_to_dict(message)
         return None
 
     @staticmethod
