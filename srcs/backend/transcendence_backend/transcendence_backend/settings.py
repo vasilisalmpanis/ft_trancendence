@@ -41,17 +41,15 @@ OAUTH_STATE = env("OAUTH_STATE")
 OAUTH_SECRET = env("OAUTH_SECRET")
 OAUTH_UID = env("OAUTH_UID")
 RANDOM_OAUTH_USER_PASSWORD = env("RANDOM_OAUTH_USER_PASSWORD")
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*20
+AVATAR_UPLOAD_MAX_MEMORY_SIZE = 1024*1024*10
 REDIS_HOST=env("REDIS_HOST")
 REDIS_PORT=env("REDIS_PORT")
 
-# Read the default avatar image file
-with open(BASE_DIR/"default.jpeg", "rb") as image_file:
-    default_avatar_image_data = image_file.read()
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Prepend the image data with the appropriate data URI scheme
-base64_data = create_data_uri(default_avatar_image_data)
-DEFAULT_AVATAR = base64.b64decode(base64_data)
+# Read the default avatar image file
+DEFAULT_AVATAR = 'default.jpeg'
 
 
 # SECURITY WARNING: don't run with debug turned on in production!

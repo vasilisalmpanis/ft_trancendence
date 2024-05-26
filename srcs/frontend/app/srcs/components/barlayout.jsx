@@ -1,6 +1,8 @@
 import { apiClient }	from "../api/api_client";
 import ftReact			from "../ft_react";
 import WebsocketClient	from "../api/websocket_client";
+import Avatar from "./avatar";
+import Layout 	from "./layout";
 
 
 const NavBar = (props) => {
@@ -128,12 +130,7 @@ const NavBar = (props) => {
 									onClick={() => props.route("/me")}
 									className="rounded-circle btn me-3 ms-auto"
 								>
-									<img
-										src={props.me.avatar.replace("data", "data:").replace("base64", ";base64,")}
-										style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
-										alt="profile"
-										width="30"
-									></img>
+									<Avatar img={props.me.avatar} size={'45rem'}/>
 								</button>
 							</div>
 					</div>

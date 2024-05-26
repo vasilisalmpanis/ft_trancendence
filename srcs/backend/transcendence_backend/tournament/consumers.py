@@ -79,7 +79,7 @@ class TournamentGroupManager(metaclass=SingletonMeta):
         instance = self._groups[group]
         return {
             'group': group,
-            'users': [user_model_to_dict(user, avatar=False) for user in instance['users']]
+            'users': [user_model_to_dict(user) for user in instance['users']]
         }
     
     def is_empty(self, group: str):
@@ -154,7 +154,7 @@ class TournamentRunner(AsyncConsumer):
                     {
                         'type': 'send.message',
                         'status' : 'tournament_ends',
-                        'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner, avatar=False)}
+                        'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner)}
                     }
                 )
                 self._tournaments.pop(group)
@@ -173,7 +173,7 @@ class TournamentRunner(AsyncConsumer):
                         'type': 'send.message',
                         'status' : 'next_round',
                         'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[group]['games']]},
-                        'stragler' : user_model_to_dict(self._tournaments[group]['stragler'], avatar=False) if 'stragler' in self._tournaments[group] else None,
+                        'stragler' : user_model_to_dict(self._tournaments[group]['stragler']) if 'stragler' in self._tournaments[group] else None,
                     }
                 )
 
@@ -217,7 +217,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             return
         
         # send a message to the group that a user has joined
-        user_dict = user_model_to_dict(user, avatar=False)
+        user_dict = user_model_to_dict(user)
         await self.channel_layer.group_send(
             't_' + group_name,
             {
@@ -265,7 +265,7 @@ class TournamentConsumer(AsyncWebsocketConsumer):
         tournament = self.scope['tournament']
         group_name = str(tournament.id)
         # self._groups.remove(group_name, user)
-        user_dict = await database_sync_to_async(user_model_to_dict)(user, avatar=False)
+        user_dict = await database_sync_to_async(user_model_to_dict)(user)
         self._groups.remove(group_name, user)
         await self.channel_layer.group_discard('t_' + group_name, self.channel_name)
         await self.channel_layer.group_send(

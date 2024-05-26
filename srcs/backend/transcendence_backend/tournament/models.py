@@ -1,6 +1,5 @@
-from email.policy import default
 from django.db      import models
-from users.models   import User, user_model_to_dict
+from users.models   import User
 from typing         import Dict, Any
 # Create your models here.
 
