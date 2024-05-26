@@ -12,6 +12,9 @@ package-lock.json
 *.so
 .eslintrc.json
 test*
+*.img
+*.png
+!default.jpeg
 
 package-lock.json
 node_modules
