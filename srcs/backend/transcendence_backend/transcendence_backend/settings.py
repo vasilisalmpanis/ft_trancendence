@@ -49,7 +49,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Read the default avatar image file
-DEFAULT_AVATAR = 'avatars/default.jpeg'
+DEFAULT_AVATAR = 'default.jpeg'
 
 
 # SECURITY WARNING: don't run with debug turned on in production!

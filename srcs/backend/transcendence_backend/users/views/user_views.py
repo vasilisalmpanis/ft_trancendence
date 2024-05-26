@@ -15,6 +15,7 @@ from stats.models                       import Stats
 from django.conf                        import settings
 from datetime                           import datetime, timedelta
 from django                             import forms
+from pathlib                            import Path
 import authorize.views
 import json
 import logging
@@ -128,11 +129,19 @@ class CurrentUserView(View):
         Updates user username, password, email, and avatar
         """
         if request.content_type == 'multipart/form-data':
+            old_avatar = (
+                Path(user.avatar.path)
+                if user.avatar.path and not user.avatar.path.endswith(settings.DEFAULT_AVATAR)
+                else None
+            )
             form = AvatarForm(request.POST, request.FILES, instance=user)
             if form.is_valid():
                 try:
                     form.clean_image()
                     form.save()
+                    # logger.warn('OLD', old_avatar)
+                    if old_avatar:
+                        old_avatar.unlink(missing_ok=True)
                 except Exception as e:
                     logger.error(e)
                     return JsonResponse({'status': e.args[0] if len(e.args) else 'error'}, status=400, safe=False)

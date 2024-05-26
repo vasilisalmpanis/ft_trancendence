@@ -45,7 +45,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(max_length=255, unique=True, blank=True)
     password = models.CharField(max_length=255, blank=False)
     # avatar = models.BinaryField(editable=True, max_length=1024*1024*20, unique=False, blank=True, null=True)
-    avatar = models.ImageField(upload_to='avatars/')
+    avatar = models.ImageField()
     token = models.CharField(max_length=255, null=True, blank=True)
     stats = models.ForeignKey('stats.Stats', on_delete=models.CASCADE, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)
