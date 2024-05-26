@@ -51,7 +51,7 @@ const matchRoute = (route, path) => {
 }
 
 const RouterIn = (props) => {
-    const [route, path, setPath] = useRouter();
+    const [route, path] = useRouter();
     if (apiClient.route === null)
         apiClient.route = route;
     let child = props.routes.find(
@@ -79,7 +79,8 @@ const RouterIn = (props) => {
     child.props.route = route;
     if (child.props.path) {
         window.history.replaceState(null, '', child.props.path);
-        setPath(child.props.path);
+        if (child === login && !apiClient.authorized())
+            localStorage.removeItem("me");
     }
     return child;
 }
