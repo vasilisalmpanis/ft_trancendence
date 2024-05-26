@@ -1,6 +1,7 @@
 import ftReact      from "../ft_react";
 import BarLayout    from "../components/barlayout.jsx";
 import { apiClient }    from "../api/api_client.js";
+import Avatar from "../components/avatar.jsx";
 
 const StatsLayout = (props) => {
     return  (
@@ -138,14 +139,14 @@ const GameCard = (props) => {
     );
 }
 
-const Avatar = (props) => (
-    <img
-        src={props.img.replace("data", "data:").replace("base64", ";base64,")}
-        style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
-        alt="profile"
-        width={props.size || "90%"}
-    ></img>
-)
+// const Avatar = (props) => (
+//     <img
+//         src={props.img.replace("data", "data:").replace("base64", ";base64,")}
+//         style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}					
+//         alt="profile"
+//         width={props.size || "90%"}
+//     ></img>
+// )
 
 const User = (props) => {
     const [stats, setStats] = ftReact.useState(null);

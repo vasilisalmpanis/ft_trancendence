@@ -16,8 +16,8 @@ const Avatar = (props) => {
 		{
 			if (props.img.startsWith("data"))
 				await fetchBlob(props.img);
-			//else if (props.img.startsWith("http"))
-			//	setBlob(props.img)
+			else if (props.img.startsWith("/"))
+				setBlob(`https://api.localhost${props.img}`)
 		}
 		else if (props.img && props.img instanceof Blob && (blob !== props.img))
 			setBlob(props.img);
@@ -27,7 +27,7 @@ const Avatar = (props) => {
 			loading="lazy"
 			width={props.size || "90%"}
 			style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
-			src={blob && URL.createObjectURL(blob)}
+			src={blob && (blob instanceof Blob ? URL.createObjectURL(blob) : blob)}
 			className="img-thumbnail"
 		/>
 	)

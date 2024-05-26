@@ -7,15 +7,7 @@ class ApiClient {
   constructor (baseUrl) {
     this.baseUrl = new URL(baseUrl);
     this.route = null;
-    if (typeof localStorage === 'undefined') {
-      this.headers = {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      };
-      return ;
-    }
     this.headers = {
-      'Content-Type': 'application/json',
       Accept: 'application/json',
     };
     if (localStorage.getItem('access_token')) {
@@ -57,16 +49,23 @@ class ApiClient {
     }
   }
 
-  async sendRequest (path, method, body, query) {
+  async sendRequest (path, method, body, query, headers = {}) {
     /* Makes request and returns reponse object with all its fields */
     const url = new URL(path, this.baseUrl);
     const params = {
       method,
-      headers: this.headers,
+      headers: {...this.headers, ...headers},
     };
     if (body) {
-      params.body = JSON.stringify(body);
+      if (body instanceof FormData)
+        params.body = body;
+      else {
+        params.body = JSON.stringify(body);
+        params.headers['Content-Type'] = 'application/json';
+      }
     }
+    else
+      params.headers['Content-Type'] = 'application/json';
     if (query) {
       Object.entries(query).forEach(([key, value]) => {
         url.searchParams.append(key, value);
@@ -95,8 +94,8 @@ class ApiClient {
     return await this.sendRequest(path, 'GET', null, query);
   }
 
-  async post (path, body, query) {
-    return await this.sendRequest(path, 'POST', body, query);
+  async post (path, body, query, headers) {
+    return await this.sendRequest(path, 'POST', body, query, headers);
   }
 
   async put (path, body, query) {

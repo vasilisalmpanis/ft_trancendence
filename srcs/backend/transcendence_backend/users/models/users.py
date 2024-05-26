@@ -44,7 +44,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=255, unique=True, blank=False)
     email = models.EmailField(max_length=255, unique=True, blank=True)
     password = models.CharField(max_length=255, blank=False)
-    avatar = models.BinaryField(editable=True, max_length=1024*1024*20, unique=False, blank=True, null=True)
+    # avatar = models.BinaryField(editable=True, max_length=1024*1024*20, unique=False, blank=True, null=True)
+    avatar = models.ImageField(upload_to='avatars/')
     token = models.CharField(max_length=255, null=True, blank=True)
     stats = models.ForeignKey('stats.Stats', on_delete=models.CASCADE, null=True, blank=True)
     otp_secret = models.CharField(max_length=255, null=True, blank=True)
@@ -77,7 +78,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'User'
         verbose_name_plural = 'Users'
 
-def user_model_to_dict(user : "User", avatar=True, me: User | None = None) -> dict[str, Any]:
+def user_model_to_dict(user : "User", me: User | None = None) -> dict[str, Any]:
     if not user:
         return {}
     friend = False
@@ -90,6 +91,6 @@ def user_model_to_dict(user : "User", avatar=True, me: User | None = None) -> di
     return {
         "id": user.id,
         "username": user.username,
-        "avatar": base64.b64encode(user.avatar).decode('utf-8') if avatar else None,
+        "avatar": user.avatar.url if user.avatar else "",
         "friend": friend,
     }

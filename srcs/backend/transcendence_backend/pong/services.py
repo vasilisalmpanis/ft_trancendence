@@ -180,9 +180,9 @@ class PongService:
         game.status = 'finished'
         game.save()
         if score1 > score2:
-            return user_model_to_dict(game.player1, avatar=False)
+            return user_model_to_dict(game.player1)
         elif score1 < score2:
-            return user_model_to_dict(game.player2, avatar=False)
+            return user_model_to_dict(game.player2)
         return pong_model_to_dict(game)
     
     @staticmethod

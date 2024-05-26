@@ -21,8 +21,8 @@ const GameCard = (props) => {
 	
 const UserCard = (props) => {
 	return (
-		<div>
-			{/* <Avatar size={"46rem"} img={props.data.avatar}/> */}
+		<div className='d-flex flex-row gap-2 align-items-center'>
+			<Avatar size={"40rem"} img={props.data.avatar}/>
 			<span className="ms-1">{props.data.username}</span>
 		</div>
 	)
