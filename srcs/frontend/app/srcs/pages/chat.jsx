@@ -150,8 +150,8 @@ const SelectedChat = (props) => {
                         onSubmit={(ev)=>{
                             ev.preventDefault();
                             const msg = ev.target[0].value;
-                            if (props.ws) {
-                                props.ws.send(JSON.stringify({
+                            if (ws) {
+                                ws.send(JSON.stringify({
                                     chat_id: props.chatSelected,
                                     type: "plain.message",
                                     content: msg
@@ -183,6 +183,7 @@ const SelectedChat = (props) => {
 
 let observer = null;
 
+let ws = null;
 const Chats = (props) => {
     const [chats, setChats] = ftReact.useState([]);
     const [error, setError] = ftReact.useState(null);
@@ -191,7 +192,6 @@ const Chats = (props) => {
     const [paginator, setPaginator] = ftReact.useState({});
     const [activeFriends, setActiveFriends] = ftReact.useState([]);
     const limit = 10;
-    let ws = null;
     // console.log(activeFriends);
     ftReact.useEffect(async () => {
         const getChats = async () => {
@@ -256,7 +256,7 @@ const Chats = (props) => {
     };
     return (
         <BarLayout route={props.route}>
-            <div className='d-grid w-100 w-md-75 w-xxl-50' style={{minHeight: "75%"}}>
+            <div className='d-grid w-100 w-md-75 w-xxl-50' style={{minHeight: "95%"}}>
                 <div className='row'>
                     <div className={chatSelected ? 'col-4 px-0 border rounded-start' : 'col border rounded px-0'}>
                         <div className='w-100 border-bottom py-3' style={{height: "4rem"}}>
