@@ -28,8 +28,8 @@ def friend_request_model_to_dict(friend_request : FriendRequest) -> dict[Any, An
     """
     return {
         "id": friend_request.id,
-        "sender": user_model_to_dict(friend_request.sender, avatar=False),
-        "receiver": user_model_to_dict(friend_request.receiver, avatar=False),
+        "sender": user_model_to_dict(friend_request.sender),
+        "receiver": user_model_to_dict(friend_request.receiver),
         "message": friend_request.message,
         "status": friend_request.status
     }

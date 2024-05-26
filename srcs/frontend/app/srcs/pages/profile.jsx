@@ -40,11 +40,21 @@ const ProfileCard = (props) => {
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item">
 					<form
-						onSubmit={(event)=>{
+						onSubmit={async (event)=>{
 							event.preventDefault();
-							updateMe();
+  							const formData = new FormData(event.target);
+							const resp = await apiClient.post(
+								'/users/me',
+								formData,
+							)
+							if (resp.error)
+								setError(resp.error)
+							else
+								localStorage.setItem("me", JSON.stringify(resp))
 						}}
 						className="d-flex flex-column gap-3"
+						enctype="multipart/form-data"
+						method="post"
 					>
 						<div>
 						<Avatar img={img}/>
@@ -73,6 +83,7 @@ const ProfileCard = (props) => {
 								}}
 								className="input-control"
 								type="file"
+								name='avatar'
 								id="imageInput"
 								accept="image/*"
 								onChange={(event)=>{

@@ -1,7 +1,7 @@
 import ftReact          from "../ft_react";
 import BarLayout        from "../components/barlayout";
 import { apiClient }    from "../api/api_client.js";
-import Avatar           from "../components/avatar2.jsx";
+import Avatar           from "../components/avatar.jsx";
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'bootstrap/dist/js/bootstrap.bundle.js';
 

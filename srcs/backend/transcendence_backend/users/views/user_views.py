@@ -4,8 +4,9 @@ from django.http                        import JsonResponse
 from django.views                       import View
 from django.views.decorators.http       import require_http_methods
 from django.utils.decorators            import method_decorator
+from django.core.exceptions             import ValidationError
 from transcendence_backend.decorators   import jwt_auth_required
-from ..models                           import User, FriendRequest, user_model_to_dict
+from ..models                           import User, user_model_to_dict
 from ..services                         import UserService, SecondFactorService
 from transcendence_backend.decorators   import jwt_auth_required
 from jwt                                import JWT
@@ -13,9 +14,10 @@ from chat.models                        import Chat
 from stats.models                       import Stats
 from django.conf                        import settings
 from datetime                           import datetime, timedelta
+from django                             import forms
+from pathlib                            import Path
 import authorize.views
 import json
-import base64
 import logging
 
 logger = logging.getLogger(__name__)
@@ -89,6 +91,20 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
     except Exception as e:
         return JsonResponse({"error" : "User Doesn't Exist"}, status=404)
 
+class AvatarForm(forms.ModelForm):
+    def clean_image(self):
+        image = self.cleaned_data.get('avatar', False)
+        if image:
+            if image.size > settings.AVATAR_UPLOAD_MAX_MEMORY_SIZE:
+                raise ValidationError("Image file too large")
+            return image
+        else:
+            raise ValidationError("Couldn't read uploaded image")
+
+    class Meta:
+        model = User
+        fields = ['avatar']
+
 @method_decorator(jwt_auth_required(), name="dispatch")
 class CurrentUserView(View):
             
@@ -96,12 +112,7 @@ class CurrentUserView(View):
         """
         Returns currently logged in user data
         """
-        data = {
-            "username": user.username,
-            "id": user.id,
-            "avatar": base64.b64encode(user.avatar).decode('utf-8') if user.avatar else None,
-        }
-        return JsonResponse(data, status=200)
+        return JsonResponse(user_model_to_dict(user), status=200)
     
     def delete(self, request, user: User) -> JsonResponse:
         """
@@ -117,12 +128,30 @@ class CurrentUserView(View):
         """
         Updates user username, password, email, and avatar
         """
+        if request.content_type == 'multipart/form-data':
+            old_avatar = (
+                Path(user.avatar.path)
+                if user.avatar.path and not user.avatar.path.endswith(settings.DEFAULT_AVATAR)
+                else None
+            )
+            form = AvatarForm(request.POST, request.FILES, instance=user)
+            if form.is_valid():
+                try:
+                    form.clean_image()
+                    form.save()
+                    # logger.warn('OLD', old_avatar)
+                    if old_avatar:
+                        old_avatar.unlink(missing_ok=True)
+                except Exception as e:
+                    logger.error(e)
+                    return JsonResponse({'status': e.args[0] if len(e.args) else 'error'}, status=400, safe=False)
+                return JsonResponse(user_model_to_dict(user), status=201, safe=False)
+            return JsonResponse({'status': 'invalid request'}, status=400, safe=False)
         data = json.loads(request.body)
         username = data.get("username", None)
         password = data.get("password", None)
         email = data.get("email", None)
-        avatar = data.get("avatar", None)
-        updated_user = UserService.update_user(user, username, password, email, base64.b64decode(avatar))
+        updated_user = UserService.update_user(user, username, password, email)
         return JsonResponse(updated_user, status=200, safe=False)
 
 @jwt_auth_required()

@@ -97,5 +97,5 @@ class TournamentService:
         'status': tournament.status,
         'winner': tournament.winner.id if tournament.winner else None,
         'created_at': tournament.created_at,
-        'player_ids': [user_model_to_dict(player, avatar=False) for player in tournament.players.all()]
+        'player_ids': [user_model_to_dict(player) for player in tournament.players.all()]
     }

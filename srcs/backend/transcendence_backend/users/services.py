@@ -54,7 +54,7 @@ class UserService:
 
 
     @staticmethod
-    def update_user(user : User, username = None, password = None, email = None, avatar = None) -> Dict[str,Any]:
+    def update_user(user : User, username = None, password = None, email = None) -> Dict[str,Any]:
         """
         Update user details
         :param user: User instance
@@ -74,8 +74,6 @@ class UserService:
             if User.objects.filter(email=email).exclude(id=user.id).exists():
                 raise Exception("Email already exists")
             user.email = email
-        if avatar:
-            user.avatar = avatar
         user.save()
         return user_model_to_dict(user)
 
