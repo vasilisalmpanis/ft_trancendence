@@ -12,7 +12,8 @@ package-lock.json
 *.so
 .eslintrc.json
 test*
-*.img
+*.jpeg
+*.jpg
 *.png
 !default.jpeg
 
