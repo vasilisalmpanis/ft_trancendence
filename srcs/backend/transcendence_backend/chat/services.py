@@ -103,21 +103,20 @@ class MessageService:
         return None
 
     @staticmethod
-    def read_message(user : User, message_id : int) -> bool:
+    def read_messages(user : User, message_ids : List[int], chat_id: int) -> int:
         """
         Mark message as read
         :param user: User instance
         :param message_id: int
-        :return: bool
+        :return: Number of unread messages for this user
         """
-        message = Message.objects.filter(id=message_id, chat__participants__id=user.id).first()
-        if not message:
-            return False
-        if user.username == message.sender.username:
-            return False
-        message.read = True
-        message.save()
-        return True
+        messages = Message.objects.filter(id__in=message_ids, chat__id=chat_id, chat__participants__id=user.id)
+        for message in messages:
+            if message.sender != user:
+                message.read = True
+                message.save()
+        unread_chat_messages = Message.objects.filter(chat__id=chat_id, read=False, chat__participants__id=user.id).exclude(sender=user.id).count()
+        return unread_chat_messages
 
     @staticmethod
     def get_messages(chat_id : int, skip=0, limit=10) -> list:

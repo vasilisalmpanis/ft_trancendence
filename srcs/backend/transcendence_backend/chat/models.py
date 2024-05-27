@@ -35,7 +35,7 @@ def chat_model_to_dict(chat, user) -> Dict[Any,Any]:
         "id": chat.id,
         "name": chat.name,
         "unread_messages": unread_messages_num,
-        "participants": user_model_to_dict(participants.exclude(id=user.id).first()),
+        "participants": user_model_to_dict(participants.exclude(id=user.id).first())
     }
 
 
