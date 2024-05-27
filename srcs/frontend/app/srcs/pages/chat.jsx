@@ -13,16 +13,15 @@ const units = {
     second: 1000
   }
   
-  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
-  
-  const getRelativeTime = (d1, d2 = new Date()) => {
-    const elapsed = d1 - d2
-  
-    // "Math.abs" accounts for both "past" & "future" scenarios
-    for (let u in units) 
-      if (Math.abs(elapsed) > units[u] || u == 'second') 
-        return rtf.format(Math.round(elapsed/units[u]), u)
-  }
+const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+
+const getRelativeTime = (d1, d2 = new Date()) => {
+const elapsed = d1 - d2
+
+for (let u in units) 
+    if (Math.abs(elapsed) > units[u] || u == 'second') 
+    return rtf.format(Math.round(elapsed/units[u]), u)
+}
 
 const SelectedChat = (props) => {
     const [trigger, setTrigger] = ftReact.useState(false);
@@ -34,7 +33,6 @@ const SelectedChat = (props) => {
             return;
         const resp = await apiClient.get(`/chats/${chat_id}/messages`, {limit: limit, skip: props.paginator[chat_id] || 0});
         if (resp.error) {
-            // setError(resp.error);
             return;
         }
         if (resp.length < limit) {
@@ -109,7 +107,6 @@ const SelectedChat = (props) => {
                         style={{maxHeight: "70vh", scrollbarWidth: "thin"}}
                     >
                         <div id="sentinel"></div>
-                        {console.log(props.msgs)}
                         {   props.chatSelected &&
                             props.msgs &&
                             props.msgs
@@ -182,8 +179,9 @@ const SelectedChat = (props) => {
 };
 
 let observer = null;
-
 let ws = null;
+let prevListener = null;
+
 const Chats = (props) => {
     const [chats, setChats] = ftReact.useState([]);
     const [error, setError] = ftReact.useState(null);
@@ -191,8 +189,8 @@ const Chats = (props) => {
     const [msgs, setMsgs] = ftReact.useState([]);
     const [paginator, setPaginator] = ftReact.useState({});
     const [activeFriends, setActiveFriends] = ftReact.useState([]);
+    const me = JSON.parse(localStorage.getItem('me'));
     const limit = 10;
-    // console.log(activeFriends);
     ftReact.useEffect(async () => {
         const getChats = async () => {
             const data = await apiClient.get('/chats');
@@ -203,13 +201,24 @@ const Chats = (props) => {
             if (data.status === "No chats found") {
                 return;
             }
-            console.log(data);
             setChats(data);
         };
         if (!chats.length && !error) {
             await getChats();
         }
     }, [chats, setChats, error, setError]);
+    ftReact.useEffect(() => {
+        if (chats &&  msgs && chatSelected && ws) {
+            const unread_ids = msgs.filter(msg => msg.chat_id === chatSelected && msg.sender.id !== me.id && !msg.read).map(msg => msg.id);
+            if (unread_ids.length > 0) {
+                ws.send(JSON.stringify({
+                    type: "message.management",
+                    ids: unread_ids,
+                    chat_id: chatSelected
+                }));
+            }
+        }
+    }, [chatSelected]);
     const updateActiveUsers = (data) => {
         if (data.type === 'client.update')
             setActiveFriends(data['active_friends_ids']);
@@ -220,9 +229,20 @@ const Chats = (props) => {
                 setActiveFriends(activeFriends.filter(id => id !== data.sender_id))
         }
     };
+    const updateUnreadMessages = (data) => {
+        const chat_id = data.chat_id;
+        const unread_messages = data.unread_messages;
+        const new_chats = chats.map(chat => {
+            if (chat.id === chat_id) {
+                return {...chat, unread_messages: unread_messages};
+            }
+            return chat;
+        });
+        setChats(new_chats);
+    };
     ftReact.useEffect(() => {
-        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
-        ws.addEventListener('message', ev => {
+        // console.log('connecting to ws');
+        const handleMessage = (ev) => {
             const data = JSON.parse(ev.data);
             if ("type" in data && data.type === 'plain.message') {
                 updateMsgs(data.message);
@@ -230,7 +250,15 @@ const Chats = (props) => {
             if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
                 updateActiveUsers(data);
             }
-        });
+            if ("status" in data && data.status === 'message.management') {
+                updateUnreadMessages(data);
+            }
+        }
+        if (prevListener)
+            ws.removeEventListener('message', prevListener);
+        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
+        ws.addEventListener('message', handleMessage);
+        prevListener = handleMessage;
     }, [msgs, setMsgs, updateMsgs]);
     const updateMsgs = (msg, to_end = true) => {
         const msgsContainer = document.getElementById("msgs-container");
@@ -253,6 +281,36 @@ const Chats = (props) => {
                     observer.observe(sentinel);
                 }
             }, 100);
+        const chat_id = Array.isArray(msg) ? msg[0].chat_id : msg.chat_id;
+        const ids = Array.isArray(msg)
+                        ? msg.map(msg => {
+                                if (msg.chat_id === chat_id && msg.sender.id !== me.id && !msg.read)
+                                    return msg.id;
+                            }).filter(id => id)
+                        : ( msg.chat_id === chat_id &&
+                            msg.sender.id !== me.id &&
+                            !msg.read)
+                            ? [msg.id] 
+                            : [];
+        console.log('message', chatSelected, chat_id, ids)
+        if (chatSelected === chat_id && ids.length > 0) {
+            ws.send(JSON.stringify({
+                type: "message.management",
+                ids: ids,
+                chat_id : chat_id
+            }));
+        }
+        else if (ids.length > 0)
+        {
+            console.log('updating unread messages', chat_id, ids.length)
+            const new_chats = chats.map(chat => {
+                if (chat.id === chat_id) {
+                    return {...chat, unread_messages: chat.unread_messages + ids.length};
+                }
+                return chat;
+            });
+            setChats(new_chats);
+        }
     };
     return (
         <BarLayout route={props.route}>
@@ -279,11 +337,16 @@ const Chats = (props) => {
                                     <div className='d-flex flex-row justify-content-start align-items-center gap-2 p-2'>
                                         <Avatar img={chat.participants.avatar} size={'40rem'}/>
                                         {chat.participants.username}
-                                        {console.log('participant', chat.participants.id, activeFriends)}
                                         {activeFriends && activeFriends.includes(chat.participants.id) &&
                                             <span class="p-2 bg-success border border-light rounded-circle">
                                                 <span class="visually-hidden">Active User</span>
                                                 
+                                            </span>
+                                        }
+                                        {chat["unread_messages"] > 0 && 
+                                            <span class="badge rounded-pill bg-danger">
+                                                {chat["unread_messages"]}
+                                                <span class="visually-hidden">unread messages</span>
                                             </span>
                                         }
                                     </div>   
