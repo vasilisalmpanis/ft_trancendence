@@ -271,6 +271,20 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'status': 'error',
                     'message': f'{str(e)}'
                     }))
+        # Active Friends
+        elif text_data_json['type'] == 'active.friends':
+            try:
+                active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
+                await self.send(text_data=json.dumps({
+                    'status': 'active.friends',
+                    'active_friends_ids': active_friends
+                }))
+            except Exception as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': f'Could not get active friends: {str(e)}'
+                }))
+                
             
 
     async def status_update(self, event):
