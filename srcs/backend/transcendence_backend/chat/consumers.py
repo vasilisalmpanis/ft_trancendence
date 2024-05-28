@@ -5,6 +5,7 @@ from threading                      import Lock
 from typing                         import Dict, TypeVar, List
 from .models                        import Chat
 from users.models                   import User
+from users.services                 import UserService
 from tournament.models              import Tournament
 from .services                      import MessageService
 import json
@@ -275,7 +276,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     async def status_update(self, event):
         if self.scope['user'].id == event['sender_id']:
             return
-        if not self.scope['user'].friends.filter(id=event['sender_id']).exists():
+        if not database_sync_to_async(UserService.are_users_friends)(self.scope['user'], event['sender_id']):
             return
         await self.send(text_data=json.dumps({
                     'type': 'status.update',

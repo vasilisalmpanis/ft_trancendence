@@ -242,6 +242,19 @@ class UserService:
         user.save()
         return user
     
+    @staticmethod
+    def are_users_friends(user: User, friend_id: int) -> bool:
+        """
+        Check if two users are friends
+        :param user: User instance
+        :param friend_id: int
+        :return: bool
+        """
+        if user.friends.filter(id=friend_id).exists():
+            return True
+        return False
+
+    
 
 
 class SecondFactorService:
