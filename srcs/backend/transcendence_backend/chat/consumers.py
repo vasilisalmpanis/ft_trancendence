@@ -129,7 +129,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         return self.users
     def get_rooms_dict(self):
         return self.rooms
-
+import asyncio
 class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     _chats = DirectMessageChatroomManager()
@@ -145,7 +145,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             await database_sync_to_async(self._chats.add_user)(self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
             for chat_id in self.chat_ids:
                 await self.channel_layer.group_add(str(chat_id), self.channel_name)
-            await self.channel_layer.group_send('0', 
+            await self.channel_layer.group_send('0',
                 {
                     'type': 'status.update',
                     'status': 'connected',
@@ -154,14 +154,18 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
             active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
+            total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
             await self.send(text_data=json.dumps({
                     'type': 'client.update',
                     'status': 'client connected',
                     'active_friends_ids': active_friends,
                     'chat_ids': self.chat_ids,
+                    'total_unread_messages': total_unread_messages
                     }))
+    
         except Exception as e:
-            print(e, flush=True)
+            logger.warn("error connecting")
+            asyncio.sleep(2)
             await self.send(text_data=json.dumps({
                 'status': 'error', 'message': f'Could not connect: {str(e)}'}))
             await self.close()
@@ -213,17 +217,20 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             except Exception as e:
                 await self.send(text_data=json.dumps({
                         'status': 'error', 'message': f'Could not send message: {str(e)}'}))
-        # Status Updates
-        # elif text_data_json['type'] == 'status_update':
-        #     await self.channel_layer.group_send('0',
-        #             {
-        #                 'type': 'status.update',
-        #                 'status': text_data_json['status'],
-        #                 'timestamp': text_data_json['timestamp'],
-        #                 'sender_id': text_data_json['sender_id'],
-        #                 'sender_name': text_data_json['sender_name'],
-        #                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        #             })
+                
+        # Unread messages
+        elif text_data_json['type'] == 'unread.messages':
+            try:
+                total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
+                await self.send(text_data=json.dumps({
+                    'type': 'unread.messages',
+                    'total_unread_messages': total_unread_messages
+                }))
+            except Exception as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error', 'message': f'Could not get unread messages: {str(e)}'
+                }))
+
         # Game Invites
         elif text_data_json['type'] == 'game.invite':
             await self.channel_layer.group_send(text_data_json['chat_id'],
@@ -252,7 +259,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 unread_messages = await database_sync_to_async(MessageService.read_messages)(self.scope['user'], ids, chat_id)
                 await self.send(text_data=json.dumps({
                     'status': 'message.management',
-                    'unread_messages': unread_messages,
+                    'unread_messages': unread_messages[0],
+                    'total_unread_messages': unread_messages[1],
                     'chat_id': chat_id,
                     'processed_ids': ids
                     }))
@@ -266,6 +274,8 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     async def status_update(self, event):
         if self.scope['user'].id == event['sender_id']:
+            return
+        if not self.scope['user'].friends.filter(id=event['sender_id']).exists():
             return
         await self.send(text_data=json.dumps({
                     'type': 'status.update',

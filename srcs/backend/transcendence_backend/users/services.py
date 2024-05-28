@@ -10,6 +10,7 @@ from typing                     import Any, Dict, List
 from channels.layers            import get_channel_layer
 from asgiref.sync               import async_to_sync
 from stats.services             import StatService
+from chat.services              import ChatService
 import os
 import base64
 import logging
@@ -153,6 +154,7 @@ class UserService:
                                      receiver_id=user.id).delete()
         FriendRequest.objects.filter(sender_id=user.id,
                                         receiver_id=user_to_block.id).delete()
+        ChatService.delete_chat_between_users(user, user_to_block)
         return user_model_to_dict(user_to_block, me=user)
     
     @staticmethod
