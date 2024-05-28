@@ -253,15 +253,21 @@ const Chats = (props) => {
             if ("status" in data && data.status === 'message.management') {
                 updateUnreadMessages(data);
             }
+            if ("status" in data && data.status === 'active.friends') {
+                setActiveFriends(data.active_friends_ids);
+            }
         }
         if (prevListener)
             ws.removeEventListener('message', prevListener);
         ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
         ws.addEventListener('message', handleMessage);
+        if (activeFriends.length === 0)
+            ws.send(JSON.stringify({type: "active.friends"}));
         prevListener = handleMessage;
         return () => {
             ws && ws.removeEventListener('message', prevListener);
         };
+
     }, [msgs, setMsgs, updateMsgs]);
     const updateMsgs = (msg, to_end = true) => {
         if (Array.isArray(msg) && msg.length === 0)
