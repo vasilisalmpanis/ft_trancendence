@@ -175,8 +175,8 @@ const User = (props) => {
     }
     const chat = async (user_id) => {
         const res = await apiClient.post(`/chats`, {receiver_id: user_id});
-        if (res.error) {
-            console.log(res.error);
+        if (res.error && res.error !== "Chat already exists") {
+            setError(res.error);
             return;
         }
         props.route('/chats');

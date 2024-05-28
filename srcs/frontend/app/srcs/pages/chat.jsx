@@ -259,11 +259,16 @@ const Chats = (props) => {
         ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
         ws.addEventListener('message', handleMessage);
         prevListener = handleMessage;
+        return () => {
+            ws && ws.removeEventListener('message', prevListener);
+        };
     }, [msgs, setMsgs, updateMsgs]);
     const updateMsgs = (msg, to_end = true) => {
+        if (Array.isArray(msg) && msg.length === 0)
+            return;
         const msgsContainer = document.getElementById("msgs-container");
         const sentinel = document.getElementById('sentinel');
-        observer?.unobserve(sentinel);
+        sentinel && observer?.unobserve(sentinel);
         const currentScrollHeight = msgsContainer?.scrollHeight;
         const currentScrollTop = msgsContainer?.scrollTop;
         to_end
@@ -278,7 +283,7 @@ const Chats = (props) => {
                 const newScrollHeight = msgsContainer.scrollHeight;
                 msgsContainer.scrollTop = newScrollHeight - currentScrollHeight + currentScrollTop;
                 if (observer && sentinel && chatSelected && paginator[chatSelected] !== -1) {
-                    observer.observe(sentinel);
+                    sentinel && observer?.observe(sentinel);
                 }
             }, 100);
         const chat_id = Array.isArray(msg) ? msg[0].chat_id : msg.chat_id;
