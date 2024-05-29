@@ -181,6 +181,7 @@ const SelectedChat = (props) => {
 let observer = null;
 let ws = null;
 let prevListener = null;
+let prevOpenListener = null;
 
 const Chats = (props) => {
     const [chats, setChats] = ftReact.useState([]);
@@ -188,7 +189,7 @@ const Chats = (props) => {
     const [chatSelected, setChatSelected] = ftReact.useState(null);
     const [msgs, setMsgs] = ftReact.useState([]);
     const [paginator, setPaginator] = ftReact.useState({});
-    const [activeFriends, setActiveFriends] = ftReact.useState([]);
+    const [activeFriends, setActiveFriends] = ftReact.useState(null);
     const me = JSON.parse(localStorage.getItem('me'));
     const limit = 10;
     ftReact.useEffect(async () => {
@@ -257,15 +258,25 @@ const Chats = (props) => {
                 setActiveFriends(data.active_friends_ids);
             }
         }
+        const handleOpen = (ev) => {
+            !activeFriends && ws.send(JSON.stringify({type: "active.friends"}));
+        }
+        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
+        if (ws.readyState === WebSocket.OPEN)
+           handleOpen();
+        else {
+            if (handleOpen)
+                ws.removeEventListener('open', handleOpen);
+            ws.addEventListener('open', handleOpen);
+            prevOpenListener = handleOpen;
+        }
         if (prevListener)
             ws.removeEventListener('message', prevListener);
-        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
         ws.addEventListener('message', handleMessage);
-        if (activeFriends.length === 0)
-            ws.send(JSON.stringify({type: "active.friends"}));
         prevListener = handleMessage;
         return () => {
-            ws && ws.removeEventListener('message', prevListener);
+            ws && prevListener && ws.removeEventListener('message', prevListener);
+            ws && prevOpenListener && ws.removeEventListener('open', prevOpenListener);
         };
 
     }, [msgs, setMsgs, updateMsgs]);

@@ -22,7 +22,14 @@ const GameCard = (props) => {
 const UserCard = (props) => {
 	return (
 		<div className='d-flex flex-row gap-2 align-items-center'>
-			<Avatar size={"40rem"} img={props.data.avatar}/>
+			{/* <Avatar size={"40rem"} img={props.data.avatar}/> */}
+			<img
+				loading="lazy"
+				width={"40rem"}
+				style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
+				src={`https://api.${window.location.hostname}${props.data.avatar}`}
+				className="img-thumbnail"
+			/>
 			<span className="ms-1">{props.data.username}</span>
 		</div>
 	)
@@ -155,7 +162,8 @@ const Tournament = (props) => {
 		props.route("/tournaments");
 	const id = history.state.id;
 	const cleanup_ws = () => {
-		console.log("cleanup_ws");
+		if (window.history.state && window.history.state.id === id)
+			return ;
 		tws && tws.close();
 		tws = null;
 		tchws && tchws.close();

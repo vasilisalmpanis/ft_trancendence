@@ -56,10 +56,14 @@ const Users = (props) => {
 		if (prevOpenListener)
 			ws.removeEventListener('open', prevOpenListener);
 		ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
-		ws.addEventListener('open', handleOpen);
-		prevOpenListener = handleOpen;
+		if (ws && ws.readyState === WebSocket.OPEN)
+			handleOpen();
+		else {
+			ws.addEventListener('open', handleOpen);
+			prevOpenListener = handleOpen;
+		}
 		return () => {
-			ws && ws.removeEventListener('open', prevOpenListener);
+			ws && prevOpenListener && ws.removeEventListener('open', prevOpenListener);
 		};
 	}, []);
 	ftReact.useEffect(() => {

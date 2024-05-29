@@ -20,7 +20,9 @@ class WebsocketClient {
         this.ws.close();
     }
   }
-
+  static has(endpoint) {
+    return instances.has(endpoint);
+  }
 }
 
 export default WebsocketClient;

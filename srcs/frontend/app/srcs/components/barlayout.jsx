@@ -25,8 +25,7 @@ const NavBar = (props) => {
 				setUnread(data.total_unread_messages);
 			if ('type' in data ) 
 			{
-				if (data.type === "plain.message" && data.message.sender !== me.id) {
-				// console.log("unread", unread)
+				if (data.type === "plain.message" && data.message.sender.id !== me.id) {
 					if (unread)
 						setUnread(unread + 1);
 					else
