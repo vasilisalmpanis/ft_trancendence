@@ -19,6 +19,8 @@ def getStatistics(request, user : User, id : int) -> JsonResponse:
     """
     if request.method == "GET":
         try:
+            if id < 0:
+                return JsonResponse({"error": "Invalid id"}, status=400)
             new_user = User.objects.get(id=id)
             stats = StatService.get_stats(user, new_user)
             return JsonResponse(stats, status=200, safe=False)
@@ -37,6 +39,8 @@ def leaderBoard(request, user : User) -> JsonResponse:
         try:        
             skip = int(request.GET.get("skip", 0))
             limit = int(request.GET.get("limit", 10))
+            if skip < 0 or limit < 0:
+                return JsonResponse({"error": "Invalid skip or limit"}, status=400)
             order = request.GET.get("order", "desc")
             stats = StatService.leaderboard(user, skip, limit, order)
             return JsonResponse(stats, status=200, safe=False)

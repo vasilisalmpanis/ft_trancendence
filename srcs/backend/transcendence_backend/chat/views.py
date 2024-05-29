@@ -22,8 +22,8 @@ def get_messages_from_chat(request, user : User, id : int) -> JsonResponse:
     skip = int(request.GET.get("skip", 0))
     limit = int(request.GET.get("limit", 10))
     data = MessageService.get_messages(id, skip, limit)
-    if len(data) == 0:
-        return JsonResponse({"status": "no messages found"}, status=404)
+    # if len(data) == 0:
+    #     return JsonResponse({"status": "no messages found"}, status=404)
     return JsonResponse(data, status=200, safe=False)
 
 @method_decorator(jwt_auth_required(), name="dispatch")

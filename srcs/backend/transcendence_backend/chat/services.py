@@ -68,6 +68,26 @@ class ChatService:
             })
             return response
         return {}
+    
+    @staticmethod
+    def delete_chat_between_users(user1: User, user2: User) -> bool:
+        """
+        Delete chat between two users
+        :param user1: User instance
+        :param user2: User instance
+        :return: bool
+        """
+        chat = Chat.objects.filter(participants__id=user1.id).filter(participants__id=user2.id).first()
+        if chat:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)('0', {
+                'type': 'manager.update',
+                'status': 'chat.deleted',
+                'chat_id': chat.id,
+            })
+            chat.delete()
+            return True
+        return False
 
     @staticmethod
     def get_chats(user : User, skip : int = 0, limit : int = 10) -> List[Dict[str, str]]:
@@ -99,25 +119,25 @@ class MessageService:
                 sender=user,
                 content=content
             )
-            return message
+            return message_model_to_dict(message)
         return None
 
     @staticmethod
-    def read_message(user : User, message_id : int) -> bool:
+    def read_messages(user : User, message_ids : List[int], chat_id: int) -> int:
         """
         Mark message as read
         :param user: User instance
         :param message_id: int
-        :return: bool
+        :return: Number of unread messages for this user
         """
-        message = Message.objects.filter(id=message_id, chat__participants__id=user.id).first()
-        if not message:
-            return False
-        if user.username == message.sender.username:
-            return False
-        message.read = True
-        message.save()
-        return True
+        messages = Message.objects.filter(id__in=message_ids, chat__id=chat_id, chat__participants__id=user.id)
+        for message in messages:
+            if message.sender != user:
+                message.read = True
+                message.save()
+        unread_chat_messages = Message.objects.filter(chat__id=chat_id, read=False, chat__participants__id=user.id).exclude(sender=user.id).count()
+        total_unread_messages = Message.objects.filter(chat__participants__id=user.id, read=False).exclude(sender=user.id).count()
+        return [unread_chat_messages, total_unread_messages]
 
     @staticmethod
     def get_messages(chat_id : int, skip=0, limit=10) -> list:
@@ -140,3 +160,13 @@ class MessageService:
         return [
             message_model_to_dict(message) 
             for message in messages]
+
+    @staticmethod
+    def get_unread_messages_count(user : User) -> int:
+        """
+        Get all unread messages for user
+        :param user: User instance
+        :return: list
+        """
+        unread_messages_count = Message.objects.filter(chat__participants__id=user.id, read=False).exclude(sender=user.id).count()
+        return unread_messages_count

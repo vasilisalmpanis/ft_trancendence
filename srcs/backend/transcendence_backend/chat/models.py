@@ -2,9 +2,11 @@ from ast                        import mod
 from email.policy               import default
 from http                       import server
 from django.db                  import models
+from users.models               import User, user_model_to_dict
 from users.models.users         import User
 from django.utils               import timezone
 from typing                     import Any, Dict
+import datetime
 
 # Create your models here.
 
@@ -33,7 +35,7 @@ def chat_model_to_dict(chat, user) -> Dict[Any,Any]:
         "id": chat.id,
         "name": chat.name,
         "unread_messages": unread_messages_num,
-        "participants": { participant.username: participant.id for participant in participants },
+        "participants": user_model_to_dict(participants.exclude(id=user.id).first())
     }
 
 
@@ -57,8 +59,9 @@ def message_model_to_dict(message) -> dict:
     return {
         "id": message.id,
         "chat_id": message.chat.id,
-        "timestamp": message.timestamp,
-        "sender": message.sender.username,
+        "timestamp": message.timestamp.isoformat(),
+        "sender": user_model_to_dict(message.sender),
+        "sender_name": message.sender.username,
         "read": message.read,
         "content": message.content,
     }

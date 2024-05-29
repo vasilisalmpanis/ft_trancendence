@@ -60,6 +60,7 @@ const Pong = (props) => {
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
+        document.getElementById("tournamentGameoverModal")?.removeEventListener('hide.bs.modal', hideTournamentModal);  
         gameRunning = false;
 	}
     const hideModal = () => {
@@ -154,11 +155,11 @@ const Pong = (props) => {
 			else
             {
 				ballx = 97;
-				right_score += 1;
                 if (game) {
                     game.score2 += 1;
                     setHistory();
                 }
+                right_score += 1;
                 restartBall();
             }
         }
@@ -206,26 +207,28 @@ const Pong = (props) => {
 			ball_dom = document.getElementById("ball");
 			score_board = document.getElementById("score-board");          
 		}
-        if (left_score === maxScore || right_score === maxScore) {
+        if (gameRunning && (left_score === maxScore || right_score === maxScore)) {
             let tournamentState = history.state.gameState;
             if (tournamentState) {
                 let running_game = tournamentState.games.find(game => game.winner === null);
+                if (!running_game)
+                    return ;
                 running_game.winner = left_score > right_score ? running_game.player1 : running_game.player2;
                 new bootstrap.Modal('#tournamentGameoverModal', {}).show();
             }
             else
-            {
                 new bootstrap.Modal('#gameoverModal', {}).show();
-            }
+            gameRunning = false;
             if (right_score > left_score)
                 setWins("Right player wins!");
             else
                 setWins("Left player wins!");
             return ;
         }
-        if (gameRunning)
+        if (gameRunning) {
     		requestAnimationFrame(gameLoop);
-	}
+       }
+    };
 	return (
 		<BarLayout route={props.route}>
             <div style={{
@@ -250,7 +253,7 @@ const Pong = (props) => {
                 }}/>
                 <Platform y={pl}/>
                 <Platform right y={pr}/>
-            </div>
+            </div> 
             <div class="modal fade" id="gameoverModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" >
                     <div class="modal-content" >
