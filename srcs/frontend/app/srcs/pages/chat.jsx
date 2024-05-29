@@ -242,7 +242,6 @@ const Chats = (props) => {
         setChats(new_chats);
     };
     ftReact.useEffect(() => {
-        // console.log('connecting to ws');
         const handleMessage = (ev) => {
             const data = JSON.parse(ev.data);
             if ("type" in data && data.type === 'plain.message') {
@@ -314,7 +313,6 @@ const Chats = (props) => {
                             !msg.read)
                             ? [msg.id] 
                             : [];
-        console.log('message', chatSelected, chat_id, ids)
         if (chatSelected === chat_id && ids.length > 0) {
             ws.send(JSON.stringify({
                 type: "message.management",
@@ -324,7 +322,6 @@ const Chats = (props) => {
         }
         else if (ids.length > 0)
         {
-            console.log('updating unread messages', chat_id, ids.length)
             const new_chats = chats.map(chat => {
                 if (chat.id === chat_id) {
                     return {...chat, unread_messages: chat.unread_messages + ids.length};

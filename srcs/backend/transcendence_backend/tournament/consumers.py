@@ -254,7 +254,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
     async def send_message(self, event):
         await self.send(json.dumps(event))
         if ('status' in event and event['status'] == 'tournament_ends'):
-            logger.warn(f"\n\n\nTOURNAMENT ENDS DISCONNECTING {event}\n\n\n")
             await self.channel_layer.group_discard(event['room'], self.channel_name)
             await self.close()
 
@@ -266,7 +265,6 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             await self.send(text_data)
         elif 'status' in data and data['status'] == 'status.update':
             group_id = str(self.scope['tournament'].id)
-            logger.warn(f"\n\n\nSTATUS UPDATE {group_id}\n\n\n")
             await self.channel_layer.send(
                 'tournament_runner',
                 {

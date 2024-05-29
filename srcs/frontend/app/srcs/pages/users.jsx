@@ -73,7 +73,6 @@ const Users = (props) => {
                 setActiveFriends(data.active_friends_ids);
             }
             if ("type" in data && data.type === 'client.update') {
-				console.log('data', data);
                 setActiveFriends(data.active_friends_ids);
             }
 			if ("type" in data && data.type === 'status.update') {
@@ -88,7 +87,6 @@ const Users = (props) => {
 				ws.removeEventListener('message', prevEventListener);
 			ws.addEventListener('message', handleMessage);
 			prevEventListener = handleMessage;
-			console.log("active friends", activeFriends);
 		}
 		return () => {
 			ws && ws.removeEventListener('message', prevEventListener);

@@ -130,7 +130,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         return self.users
     def get_rooms_dict(self):
         return self.rooms
-import asyncio
+
 class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     _chats = DirectMessageChatroomManager()
@@ -166,7 +166,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     
         except Exception as e:
             logger.warn("error connecting")
-            asyncio.sleep(2)
             await self.send(text_data=json.dumps({
                 'status': 'error', 'message': f'Could not connect: {str(e)}'}))
             await self.close()
@@ -523,14 +522,4 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
                 'content': event['content'],
             }))
         
-    # async def alert(self, event):
-    #     if self.scope['user'].username == event['player1'] or self.scope['user'].username == event['player2']:
-    #         await self.send(text_data=json.dumps({
-    #             'type': 'alert',
-    #             'status': event['status'],
-    #             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    #             'tournament_id': event['tournament_id'],
-    #             'player1': event['player1'],
-    #             'player2': event['player2'],
-    #         }))
 

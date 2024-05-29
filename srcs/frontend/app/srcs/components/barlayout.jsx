@@ -32,7 +32,6 @@ const NavBar = (props) => {
 						setUnread(1);
 				}
 				else if (data.type === "unread.messages") {
-					console.log("unread", data.total_unread_messages)
 					setUnread(data.total_unread_messages);
 				}
 			}
@@ -56,7 +55,6 @@ const NavBar = (props) => {
 				});
 			}
 			// ws.addEventListener('close', (ev) => {
-			// 	console.log("closing ws", ev);
 			// 	wsClient.close();
 			// });
 		}
