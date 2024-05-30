@@ -52,7 +52,7 @@ class ApiClient {
   async sendRequest (path, method, body, query, headers = {}) {
     /* Makes request and returns reponse object with all its fields */
     const url = new URL(path, this.baseUrl);
-    const params = {
+    let params = {
       method,
       headers: {...this.headers, ...headers},
     };
@@ -81,7 +81,12 @@ class ApiClient {
           this.route('/signin');
           return {error: 401};
         }
+        params = {
+          method,
+          headers: {...this.headers, ...headers},
+        };
         response = await fetch(url, params);
+        break ; // dont know if really needed but certainly while loop is not the best solution
       }
       return await this.proceedResponse(response);
     } catch (error) {

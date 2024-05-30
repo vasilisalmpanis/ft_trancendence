@@ -202,8 +202,14 @@ const Profile = (props) => {
 	const [outgoingRequests, setOutgoingRequests] = ftReact.useState(null);
 	const [stats, setStats] = ftReact.useState(null);
 	const [error, setError] = ftReact.useState("");
+	if (!me)
+		props.route("/signin", {from: {path: "/profile"}});
 	ftReact.useEffect(async () => {
 		const getMyStats = async () => {
+			if (!me) {
+				props.route("/signin", {from: {path: "/profile"}});
+				return ;
+			}
 			const data = await apiClient.get(`/users/${me.id}/stats`);
 			if (data.error)
 				setError(data.error);
@@ -260,6 +266,7 @@ const Profile = (props) => {
 									{stats && <StatsLayout stats={stats}/>}
 								</div>
 							</div>
+							{error}
 							{error 
 							? 
 							<Alert msg={error}/>
