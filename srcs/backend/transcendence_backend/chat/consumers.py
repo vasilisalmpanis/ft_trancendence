@@ -115,6 +115,16 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
             for participant in chat.participants.all():
                 if participant.id in self.users:
                     self.add_participant_to_room(chat_id, participant.id, self.users[participant.id]['channel_name'])
+    
+    def is_in_room(self, chat_id: str, user_id: int) -> bool:
+        """
+        Checks if user is in room
+        """
+        if chat_id in self.rooms:
+            for participant in self.rooms[chat_id]['participants']:
+                if participant.get('user_id') == user_id:
+                    return True
+        return False
 
     async def update_manager_dicts(self):
         """
@@ -247,7 +257,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             try:
                 ids = text_data_json.get('ids', [])
                 chat_id = text_data_json.get('chat_id')
-                logger.warn(f"Received message management request with ids: {ids}")
                 if not chat_id or not ids or not isinstance(ids, list):
                     await self.send(text_data=json.dumps({
                         'status': 'error',
@@ -265,7 +274,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'processed_ids': ids
                     }))
             except Exception as e:
-                logger.warn(f"Error processing message management request: {str(e)}")
                 await self.send(text_data=json.dumps({
                     'status': 'error',
                     'message': f'{str(e)}'
@@ -288,7 +296,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
     async def status_update(self, event):
         if event.get('sender_id') is None:
-            logger.warn(f"Sending status update to {event}")
             await self.send(text_data=json.dumps({
                 'type': 'status.update',
                 'status': 'connected',
@@ -298,7 +305,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'participants': [event['participants'] if 'participants' in event else None]
             }))
             return
-        logger.warn(f"Sending status update to {event}")
         if self.scope['user'].id == event['sender_id']:
             return
         if not database_sync_to_async(UserService.are_users_friends)(self.scope['user'], event['sender_id']):
@@ -312,12 +318,32 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     }))
 
     async def manager_update(self, event):
-        await self._chats.update_manager_dicts()
-        await self.send(text_data=json.dumps({
-            'type': 'manager.update',
-            'users': self._chats.get_users_dict(),
-            'rooms': self._chats.get_rooms_dict()
-        }))
+        # Deletion of chat
+        if 'status' in event and event['status'] == 'chat.deleted':
+            logger.warn(f"\n\n\n\nDEBUG {event}\n\n\n\n")
+            await self.send(text_data=json.dumps({
+                'type': 'manager.update',
+                'status': event['status'],
+                'chat_id': event['chat_id'],
+            }))
+            await self.channel_layer.group_discard(str(event['chat_id']), self.channel_name)
+            self._chats.remove_user([event['chat_id']], self.scope['user'].id)
+            self.chat_ids.remove(event['chat_id'])
+
+        # Creation of chat
+        if 'status' in event and event['status'] == 'chat.created':
+            user_id = self.scope['user'].id
+            username = self.scope['user'].username
+            chat_id = event['1']['id']
+            self.chat_ids.append(chat_id)
+            await self.channel_layer.group_add(str(chat_id), self.channel_name)
+            await database_sync_to_async(self._chats.add_user)(user_id, username, self.channel_name, [chat_id])
+            await self.send(text_data=json.dumps({
+                'type': 'manager.update',
+                'status': event['status'],
+                'chat': event['1'] if user_id == event['2']['participants']['id'] else event['2'],
+            }))
+
 
     async def plain_message(self, event):
         await self.send(text_data=json.dumps({
