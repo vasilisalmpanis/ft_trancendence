@@ -58,14 +58,14 @@ def jwt_auth_required(second_factor : bool = False, days: int = 1):
                 request = args[0]
             token = request.headers.get('Authorization')
             if token is None:
-                return JsonResponse({'Error': 'Authorization header required'}, status=401)
+                return JsonResponse({'status': 'Authorization header required'}, status=401)
             try:
                 tokens = token.split(' ')
                 for t in tokens[1:]:
                     if t != "":
                         token = t
             except IndexError:
-                return JsonResponse({'Error': 'Access Token Required'}, status=401)
+                return JsonResponse({'status': 'Access Token Required'}, status=401)
             jwt = JWT(settings.JWT_SECRET)
             try:
                 payload = jwt.decrypt_jwt(token)
@@ -73,7 +73,7 @@ def jwt_auth_required(second_factor : bool = False, days: int = 1):
                 kwargs['user'] = user
                 return view_func(*args, **kwargs)
             except Exception as e:
-                return JsonResponse({'Error': f"{str(e)}"}, status=401)
+                return JsonResponse({'status': f"{str(e)}"}, status=401)
         return _wrapped_view
     return decorator
 

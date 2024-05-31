@@ -54,14 +54,14 @@ class AuthMiddleware:
                     if tournament:
                         scope["tournament"] = tournament
                     else:
-                        return JsonResponse({'error': 'User not in a tournament'}, status=400)
+                        return JsonResponse({'status': 'User not in a tournament'}, status=400)
                     
 
             except Exception as e:
                 scope["user"] = None
-                return JsonResponse({'error': 'Authorization header required'}, status=401)
+                return JsonResponse({'status': 'Authorization header required'}, status=401)
         else:
-            return JsonResponse({'error': 'Authorization header required'}, status=401)
+            return JsonResponse({'status': 'Authorization header required'}, status=401)
 
 
         return await self.app(scope, receive, send)

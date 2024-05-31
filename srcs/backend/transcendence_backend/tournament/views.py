@@ -22,12 +22,12 @@ class TournamentView(View):
             skip = int(request.GET.get('skip', 0))
             limit = int(request.GET.get('limit', 10))
             if skip < 0 or limit < 0:
-                return JsonResponse({'error': 'Invalid skip or limit'}, status=400)
+                return JsonResponse({'status': 'Invalid skip or limit'}, status=400)
             type = request.GET.get('type', 'all')
             tournaments = TournamentService.get_tournaments(type, skip, limit)
             return JsonResponse(tournaments, safe=False)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'status': str(e)}, status=400)
 
     def post(self, request, user : User):
         """
@@ -42,11 +42,11 @@ class TournamentView(View):
             max_players = int(data.get('max_players', 20))
             max_points = int(data.get('max_points', 10))
             if max_points < 1 or max_players < 1 or max_players > 20:
-                return JsonResponse({'error': 'Invalid max_points or max_players'}, status=400)
+                return JsonResponse({'status': 'Invalid max_points or max_players'}, status=400)
             tournament = TournamentService.create_tournament(name, user, description=description, max_points=max_points, max_players=max_players)
             return JsonResponse(tournament, safe=False)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'status': str(e)}, status=400)
         
 
     def put(self, request, user : User):
@@ -59,11 +59,11 @@ class TournamentView(View):
             data = json.loads(request.body)
             tournament_id = int(data.get('tournament_id', 0))
             if tournament_id < 1:
-                return JsonResponse({'error': 'Invalid tournament_id'}, status=400)
+                return JsonResponse({'status': 'Invalid tournament_id'}, status=400)
             tournament = TournamentService.update_tournament(tournament_id, user)
             return JsonResponse(tournament, safe=False)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'status': str(e)}, status=400)
         
     def delete(self, request , user : User):
         """
@@ -75,20 +75,20 @@ class TournamentView(View):
             data = json.loads(request.body)
             tournament_id = int(data.get('tournament_id', 0))
             if tournament_id < 1:
-                return JsonResponse({'error': 'Invalid tournament_id'}, status=400)
+                return JsonResponse({'status': 'Invalid tournament_id'}, status=400)
             tournament = TournamentService.leave_tournament(user, tournament_id)
             return JsonResponse(tournament, safe=False)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            return JsonResponse({'status': str(e)}, status=400)
         
 @jwt_auth_required()
 def get_tournament_by_id(request, user: User, id: int):
     try:
         if id < 1:
-            return JsonResponse({'error': 'Invalid tournament_id'}, status=400)
+            return JsonResponse({'status': 'Invalid tournament_id'}, status=400)
         data = TournamentService.tournament_by_id(id)
         return JsonResponse(data, safe=False, status=200)
     except Tournament.DoesNotExist:
-        return JsonResponse({'error': 'tournament not found'}, safe=False, status=404)
+        return JsonResponse({'status': 'tournament not found'}, safe=False, status=404)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return JsonResponse({'status': str(e)}, status=400)

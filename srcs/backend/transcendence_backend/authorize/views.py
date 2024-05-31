@@ -114,9 +114,9 @@ def verify_2fa(request, user : User) -> JsonResponse:
     data = json.loads(request.body)
     code = str(data.get("2fa_code", None))
     if code == None:
-        return JsonResponse({"Error": "No code in request body"}, status=400)
+        return JsonResponse({"status": "No code in request body"}, status=400)
     if user.is_2fa_enabled == False:
-        return JsonResponse({"Error": "2FA is not enabled"}, status=400)
+        return JsonResponse({"status": "2FA is not enabled"}, status=400)
     if SecondFactorService.verify_2fa(user, code):
         jwt = JWT(settings.JWT_SECRET)
         UserService.update_last_login(user)
