@@ -251,6 +251,7 @@ class UserService:
         :return: bool
         """
         if user.friends.filter(id=friend_id).exists():
+            logger.info(f"{user.username} and {friend_id} are friends")
             return True
         return False
 

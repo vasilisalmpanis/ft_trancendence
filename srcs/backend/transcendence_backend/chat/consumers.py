@@ -146,7 +146,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     _chats = DirectMessageChatroomManager()
 
     async def connect(self):
-        logger.warn("Connecting to chat")
         if self.scope.get('auth_protocol', False):
             await self.accept("Authorization")
         else:
@@ -175,7 +174,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     }))
     
         except Exception as e:
-            logger.warn("error connecting")
             await self.send(text_data=json.dumps({
                 'status': 'error', 'message': f'Could not connect: {str(e)}'}))
             await self.close()
@@ -295,6 +293,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             
 
     async def status_update(self, event):
+        await self.scope['user'].arefresh_from_db()
         if event.get('sender_id') is None:
             await self.send(text_data=json.dumps({
                 'type': 'status.update',
@@ -305,9 +304,10 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'participants': [event['participants'] if 'participants' in event else None]
             }))
             return
-        if self.scope['user'].id == event['sender_id']:
+        if self.scope['user'].id == int(event['sender_id']):
             return
-        if not database_sync_to_async(UserService.are_users_friends)(self.scope['user'], event['sender_id']):
+        data = await database_sync_to_async(UserService.are_users_friends)(self.scope['user'], int(event['sender_id']))
+        if  data == False:
             return
         await self.send(text_data=json.dumps({
                     'type': 'status.update',
@@ -320,7 +320,6 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     async def manager_update(self, event):
         # Deletion of chat
         if 'status' in event and event['status'] == 'chat.deleted':
-            logger.warn(f"\n\n\n\nDEBUG {event}\n\n\n\n")
             await self.send(text_data=json.dumps({
                 'type': 'manager.update',
                 'status': event['status'],
@@ -461,7 +460,6 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
             room_id,
             self.channel_name
         )
-        logger.warn(f"\n\n\n\nDEBUG {self._lobbies.rooms[room_id]}\n\n\n\n")
         await self.channel_layer.group_send(
             room_id,
              {
