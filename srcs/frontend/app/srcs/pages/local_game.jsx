@@ -7,6 +7,7 @@ import Score 	from "../components/score";
 
 
 let gameRunning;
+let setWinsGlobal = null;
 
 const Pong = (props) => {
     const [gameState, setGameState] = ftReact.useState(false);
@@ -90,6 +91,7 @@ const Pong = (props) => {
 	// 	ws.send(JSON.stringify({"message": "stop", "d": me}));
 	// }
 	ftReact.useEffect(()=>{
+        setWinsGlobal = setWins;
         document.addEventListener('keydown', keyPress);
         document.addEventListener('keyup', keyRelease);
         // document.addEventListener("touchmove", touchMove);
@@ -109,7 +111,7 @@ const Pong = (props) => {
             requestAnimationFrame(gameLoop);
 	    }
         return cleanup;
-	},[wins])
+	},[wins, setWins])
     const move = () => {
         ballx = Math.cos(angle) * speed + ballx;
         bally = -Math.sin(angle) * speed + bally;
@@ -169,7 +171,7 @@ const Pong = (props) => {
 		else if ( ballx >= 99.2)
         {
 			if (pr - 1 < bally && bally < pr + 21) {
-                // Collision with right platform
+                setWinsGlobal // Collision with right platform
                 let relativeIntersectY = pr + 10 - bally;
                 let normalizedRelativeIntersectionY = (relativeIntersectY / 10); // 10 is half of the platform height
                 angle = Math.PI - normalizedRelativeIntersectionY * maxAngle;
@@ -223,9 +225,9 @@ const Pong = (props) => {
                 new bootstrap.Modal('#gameoverModal', {}).show();
             gameRunning = false;
             if (right_score > left_score)
-                setWins("Right player wins!");
+                setWinsGlobal && setWinsGlobal("Right player wins!");
             else
-                setWins("Left player wins!");
+                setWinsGlobal && setWinsGlobal("Left player wins!");
             return ;
         }
         if (gameRunning) {
@@ -265,7 +267,7 @@ const Pong = (props) => {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body" >
-                        <h3>Game Over</h3>
+                        <h3>{wins}</h3>
                     </div>
                     <div class="modal-footer justify-content-center" >
                         <button className="btn btn-primary" data-bs-dismiss="modal">Go Back to Main Menu</button>
@@ -281,7 +283,7 @@ const Pong = (props) => {
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body" >
-                        <h3>Game Over</h3>
+                        <h3>{wins}</h3>
                     </div>
                     <div class="modal-footer justify-content-center" >
                         <button className="btn btn-primary" data-bs-dismiss="modal">Go Back to Tournament</button>
