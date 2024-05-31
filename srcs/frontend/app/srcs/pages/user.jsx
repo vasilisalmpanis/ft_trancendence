@@ -173,6 +173,14 @@ const User = (props) => {
         }
         props.route(`/users`);
     }
+    const chat = async (user_id) => {
+        const res = await apiClient.post(`/chats`, {receiver_id: user_id});
+        if (res.error && res.error !== "Chat already exists") {
+            setError(res.error);
+            return;
+        }
+        props.route('/chats');
+    }
     const getData = async () => {
         let temp_user;
         let temp_stats;
@@ -229,7 +237,7 @@ const User = (props) => {
                                 <StatsLayout data={stats} />
                             </div>
                             </div>
-                                <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend} block={block}/>
+                                <UserActionsLayout user={user} me={me} add={addFriend} unfriend={unfriend} block={block} chat={chat}/>
                             </div>
                             { friends && <UsersFriendsLayout friends={friends} route={props.route} user={user.id}/>}
                         </div>
@@ -246,12 +254,12 @@ const UserActionsLayout = (props) => {
     return (<div className="d-flex flex-wrap justify-content-evenly pb-2">
                 {props.user.id !== props.me.id && props.user.friend == "NOT_SENT" && <button className="btn btn-primary" onClick={() => props.add(props.user.id)}>Add Friend</button>}
                 {props.user.id !== props.me.id && props.user.friend == "PENDING" && <button className="btn disabled">Request Sent</button>}
-                {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => {}}>Chat</button>}
+                {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-primary" onClick={() => props.chat(props.user.id)}>Chat</button>}
                 {props.user.id !== props.me.id && props.user.friend == true && <button className="btn btn-danger" onClick={() => props.unfriend(props.user.id)}>Unfriend</button>}
                 {props.user.id !== props.me.id && <button className="btn btn-danger" onClick={() => props.block(props.user.id)}>Block User</button>}
             </div>
     );
-}
+}   
 
 const UsersFriendsLayout = (props) => (
     <div className="d-flex flex-column align-items-start">

@@ -61,7 +61,7 @@ const Pong = (props) => {
 		document.removeEventListener('keydown', keyPress);
 		document.removeEventListener('keyup', keyRelease);
         document.getElementById("gameoverModal")?.removeEventListener('hide.bs.modal', hideModal);
-        document.getElementById("tournamentGameoverModal")?.removeEventListener('hide.bs.modal', hideTournamentModal);
+        document.getElementById("tournamentGameoverModal")?.removeEventListener('hide.bs.modal', hideTournamentModal);  
         gameRunning = false;
 	}
     const hideModal = () => {

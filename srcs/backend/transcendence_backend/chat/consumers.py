@@ -5,10 +5,13 @@ from threading                      import Lock
 from typing                         import Dict, TypeVar, List
 from .models                        import Chat
 from users.models                   import User
+from users.services                 import UserService
 from tournament.models              import Tournament
 from .services                      import MessageService
 import json
+import logging 
 
+logger = logging.getLogger(__name__)
 T = TypeVar('T')
 class SingletonMeta(type):
 	_instances: Dict[type[T], T] = {}
@@ -73,7 +76,7 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         if chat_id == 0:
             self.rooms[chat_id]['name'] = 'global'
         else:
-            self.rooms[chat_id]['name'] = chat.name;
+            self.rooms[chat_id]['name'] = chat.name
 
     def add_participant_to_room(self, chat_id: str, user_id: str, channel_name: str):
         """
@@ -133,13 +136,17 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
     _chats = DirectMessageChatroomManager()
 
     async def connect(self):
-        await self.accept()
+        logger.warn("Connecting to chat")
+        if self.scope.get('auth_protocol', False):
+            await self.accept("Authorization")
+        else:
+            await self.accept()
         try:
             self.chat_ids = await database_sync_to_async(self._chats.get_chat_ids)(self.scope['user'].id)
             await database_sync_to_async(self._chats.add_user)(self.scope['user'].id, self.scope['user'].username, self.channel_name, self.chat_ids)
             for chat_id in self.chat_ids:
                 await self.channel_layer.group_add(str(chat_id), self.channel_name)
-            await self.channel_layer.group_send('0', 
+            await self.channel_layer.group_send('0',
                 {
                     'type': 'status.update',
                     'status': 'connected',
@@ -148,13 +155,17 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 })
             active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
+            total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
             await self.send(text_data=json.dumps({
                     'type': 'client.update',
                     'status': 'client connected',
                     'active_friends_ids': active_friends,
                     'chat_ids': self.chat_ids,
+                    'total_unread_messages': total_unread_messages
                     }))
+    
         except Exception as e:
+            logger.warn("error connecting")
             await self.send(text_data=json.dumps({
                 'status': 'error', 'message': f'Could not connect: {str(e)}'}))
             await self.close()
@@ -183,6 +194,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         update rooms dict if chat_id for new message is not in rooms
         """
         text_data_json = json.loads(text_data)
+        # Plain Messages
         if text_data_json['type'] == 'plain.message':
             try:
                 if text_data_json['chat_id'] == "0":
@@ -197,29 +209,29 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                                     int(text_data_json['chat_id']),
                                     text_data_json['content']
                                     )
-                await self.channel_layer.group_send(text_data_json['chat_id'],
+                await self.channel_layer.group_send(str(text_data_json['chat_id']),
                     {
                         'type': 'plain.message',
-                        'chat_id': message.chat.id,
-                        'sender_id': message.sender.id,
-                        'sender_name': message.sender.username,
-                        'content': message.content,
-                        'message_id': message.id,
-                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        'message' : message
                     })
             except Exception as e:
                 await self.send(text_data=json.dumps({
                         'status': 'error', 'message': f'Could not send message: {str(e)}'}))
-        elif text_data_json['type'] == 'status_update':
-            await self.channel_layer.group_send('0',
-                    {
-                        'type': 'status.update',
-                        'status': text_data_json['status'],
-                        'timestamp': text_data_json['timestamp'],
-                        'sender_id': text_data_json['sender_id'],
-                        'sender_name': text_data_json['sender_name'],
-                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
+                
+        # Unread messages
+        elif text_data_json['type'] == 'unread.messages':
+            try:
+                total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
+                await self.send(text_data=json.dumps({
+                    'type': 'unread.messages',
+                    'total_unread_messages': total_unread_messages
+                }))
+            except Exception as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error', 'message': f'Could not get unread messages: {str(e)}'
+                }))
+
+        # Game Invites
         elif text_data_json['type'] == 'game.invite':
             await self.channel_layer.group_send(text_data_json['chat_id'],
                 {
@@ -230,9 +242,66 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'game_id': text_data_json['game_id'],
                     'timestamp': text_data_json['timestamp']
                 })
+        # Message Management
+        elif text_data_json['type'] == 'message.management':
+            try:
+                ids = text_data_json.get('ids', [])
+                chat_id = text_data_json.get('chat_id')
+                logger.warn(f"Received message management request with ids: {ids}")
+                if not chat_id or not ids or not isinstance(ids, list):
+                    await self.send(text_data=json.dumps({
+                        'status': 'error',
+                        'message': 'invalid message id list',
+                        'unprocessed_ids': ids
+                        }
+                        ))
+                    return
+                unread_messages = await database_sync_to_async(MessageService.read_messages)(self.scope['user'], ids, chat_id)
+                await self.send(text_data=json.dumps({
+                    'status': 'message.management',
+                    'unread_messages': unread_messages[0],
+                    'total_unread_messages': unread_messages[1],
+                    'chat_id': chat_id,
+                    'processed_ids': ids
+                    }))
+            except Exception as e:
+                logger.warn(f"Error processing message management request: {str(e)}")
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': f'{str(e)}'
+                    }))
+        # Active Friends
+        elif text_data_json['type'] == 'active.friends':
+            try:
+                active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
+                await self.send(text_data=json.dumps({
+                    'status': 'active.friends',
+                    'active_friends_ids': active_friends
+                }))
+            except Exception as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': f'Could not get active friends: {str(e)}'
+                }))
+                
+            
 
     async def status_update(self, event):
+        if event.get('sender_id') is None:
+            logger.warn(f"Sending status update to {event}")
+            await self.send(text_data=json.dumps({
+                'type': 'status.update',
+                'status': 'connected',
+                'timestamp': event['timestamp'],
+                'sender': event['sender'],
+                'chat_id': event['chat_id'],
+                'participants': [event['participants'] if 'participants' in event else None]
+            }))
+            return
+        logger.warn(f"Sending status update to {event}")
         if self.scope['user'].id == event['sender_id']:
+            return
+        if not database_sync_to_async(UserService.are_users_friends)(self.scope['user'], event['sender_id']):
             return
         await self.send(text_data=json.dumps({
                     'type': 'status.update',
@@ -251,17 +320,10 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         }))
 
     async def plain_message(self, event):
-        if self.scope['user'].id == event['sender_id']:
-            return
         await self.send(text_data=json.dumps({
             'type': 'plain.message',
-            'chat_id': event['chat_id'],
-            'sender_id': event['sender_id'],
-            'sender_name': event['sender_name'],
-            'content': event['content'],
-            'timestamp': event['timestamp']
+            'message': event['message']
         }))
-        await database_sync_to_async(MessageService.read_message)(self.scope['user'], event['message_id'])
 
     async def game_invite(self, event):
         if self.scope['user'].id == event['sender_id']:
@@ -294,26 +356,28 @@ class TournamentChatroomManager(metaclass=SingletonMeta):
         Returns True if room is initialized or already exists in the dict
         Returns False if tournament does not exist in the db
         """
-        if chat_id in self.rooms.keys():
+        room_id = 'tournament_' + chat_id
+        if room_id in self.rooms.keys():
             return True
         else:
             tournament = Tournament.objects.filter(id=chat_id).first()
             if tournament is None or tournament.status == 'finished':
                 return False
-            self.rooms.setdefault(chat_id, {})
-            self.rooms[chat_id]['name'] = chat_id;
+            self.rooms.setdefault(room_id, {})
+            self.rooms[room_id]['name'] = chat_id
             return True
 
     def register_user_in_room(self, chat_id: str, channel_name: str, username: str) -> bool:
         """
         Adds or updates user channel in room in manager
         """
-        if 'participants' not in self.rooms[chat_id]:
-            self.rooms[chat_id]['participants'] = []
-        for participant in self.rooms[chat_id]['participants'].copy():
+        room_id = 'tournament_' + chat_id
+        if 'participants' not in self.rooms[room_id]:
+            self.rooms[room_id]['participants'] = []
+        for participant in self.rooms[room_id]['participants'].copy():
             if participant['username'] == username:
-                self.rooms[chat_id]['participants'].remove(participant)
-        self.rooms[chat_id]['participants'].append({'channel_name': channel_name, 'username': username})
+                self.rooms[room_id]['participants'].remove(participant)
+        self.rooms[room_id]['participants'].append({'channel_name': channel_name, 'username': username})
         return True
 
     def is_tournament_in_db(self, game_id: str) -> bool:
@@ -327,21 +391,22 @@ class TournamentChatroomManager(metaclass=SingletonMeta):
             return False
         return True
 
-    def remove_room(self, chat_id: str):
+    def remove_room(self, room_id: str):
         """
         Removes chatroom from manager
         """
-        if chat_id in self.rooms.keys():
-            del self.rooms[chat_id]
+        if room_id in self.rooms.keys():
+            del self.rooms[room_id]
     
     def remove_user_from_room(self, chat_id: str, channel_name: str):
         """
         Removes user from chatroom in manager
         """
-        if chat_id in self.rooms.keys():
-            for participant in self.rooms[chat_id]['participants']:
+        room_id = 'tournament_' + chat_id
+        if room_id in self.rooms.keys():
+            for participant in self.rooms[room_id]['participants']:
                 if participant.get('channel_name') == channel_name:
-                    self.rooms[chat_id]['participants'].remove(participant)
+                    self.rooms[room_id]['participants'].remove(participant)
                     return True
         return False
 
@@ -365,19 +430,21 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
                 'status': 'error', 'message': 'User can not be added to chatroom'}))
             await self.close()
             return
+        room_id = 'tournament_' + self.chat_id
         await self.channel_layer.group_add(
-            self.chat_id,
+            room_id,
             self.channel_name
         )
+        logger.warn(f"\n\n\n\nDEBUG {self._lobbies.rooms[room_id]}\n\n\n\n")
         await self.channel_layer.group_send(
-             self.chat_id,
+            room_id,
              {
                 'type': 'status.update',
                 'status': 'connected',
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'sender': self.scope['user'].username,
                 'chat_id': self.chat_id,
-                'participants': self._lobbies.rooms[self.chat_id].get('participants'),
+                'participants': self._lobbies.rooms[room_id].get('participants'),
             }
         )
 
@@ -386,23 +453,24 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
         Removes channel from channel layer
         and removes user from chatroom in manager
         """
+        room_id = 'tournament_' + self.chat_id
         self._lobbies.remove_user_from_room(self.chat_id, self.channel_name)
         await self.channel_layer.group_discard(
-            self.chat_id,
+            room_id,
             self.channel_name
         )
         await self.channel_layer.group_send(
-            self.chat_id,
+            room_id,
             {
-                'type': 'status_update',
+                'type': 'status.update',
                 'status': 'disconnected',
                 'sender': self.scope['user'].username,
                 'chat_id': self.chat_id,
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
         )
-        if not self._lobbies.rooms[self.chat_id]['participants']:
-            await database_sync_to_async(self._lobbies.remove_room)(self.chat_id)
+        if not self._lobbies.rooms[room_id]['participants']:
+            await database_sync_to_async(self._lobbies.remove_room)(room_id)
         await self.close()
 
     async def receive(self, text_data):
@@ -413,8 +481,9 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
 
         if text_data_json['type'] == 'plain.message':
             try:
+                room_id = 'tournament_' + text_data_json['chat_id']
                 await self.channel_layer.group_send(
-                    text_data_json['chat_id'],
+                    room_id,
                     {
                         'type': text_data_json['type'],
                         'chat_id': text_data_json['chat_id'],
@@ -453,14 +522,4 @@ class TournamentChatConsumer(AsyncWebsocketConsumer):
                 'content': event['content'],
             }))
         
-    async def alert(self, event):
-        if self.scope['user'].username == event['player1'] or self.scope['user'].username == event['player2']:
-            await self.send(text_data=json.dumps({
-                'type': 'alert',
-                'status': event['status'],
-                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                'tournament_id': event['tournament_id'],
-                'player1': event['player1'],
-                'player2': event['player2'],
-            }))
 

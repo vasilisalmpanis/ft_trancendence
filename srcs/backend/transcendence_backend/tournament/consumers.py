@@ -154,6 +154,7 @@ class TournamentRunner(AsyncConsumer):
                     {
                         'type': 'send.message',
                         'status' : 'tournament_ends',
+                        'room': group,
                         'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner)}
                     }
                 )
@@ -189,6 +190,7 @@ class TournamentRunner(AsyncConsumer):
                     'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[gid]['games']]}
                 }
             )
+
 
 
 
@@ -250,15 +252,27 @@ class TournamentConsumer(AsyncWebsocketConsumer):
             )
 
     async def send_message(self, event):
-        message = event
         await self.send(json.dumps(event))
+        if ('status' in event and event['status'] == 'tournament_ends'):
+            await self.channel_layer.group_discard(event['room'], self.channel_name)
+            await self.close()
 
     async def receive(self, text_data):
         data = json.loads(text_data)
 
         if 'group' in data:
             self._groups.add(data['group'], self.scope['user'])
-        await self.send(text_data)
+            await self.send(text_data)
+        elif 'status' in data and data['status'] == 'status.update':
+            group_id = str(self.scope['tournament'].id)
+            await self.channel_layer.send(
+                'tournament_runner',
+                {
+                    'type': 'status.update',
+                    'gid': group_id,
+                    'name' : self.channel_name
+                }
+            )
 
     async def disconnect(self, close_code):
         user = self.scope['user']

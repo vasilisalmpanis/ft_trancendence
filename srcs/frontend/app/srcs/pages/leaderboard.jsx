@@ -32,8 +32,6 @@ const LeaderboardCard = (props) => {
             <td style={{  verticalAlign: 'middle' }}>{`${props.data.win_streaks}`}</td>
         </tr>
     );
-    
-    
 }
 
 const Leaderboard = (props) => {
@@ -53,6 +51,11 @@ const Leaderboard = (props) => {
             return ;
         }
         let temp = [];
+        if (data.length === 0)
+        {
+            setError("No data");
+            return ;
+        }
         for (let i = 0; i < data.length; i++)
         {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
@@ -104,9 +107,16 @@ const Leaderboard = (props) => {
                         </tbody>
                     </table>
                 </div>
-                    {!pageEnd && lbItems && lbItems.length % limit == 0 && <button className="btn btn-primary" onClick={() => {
-                        updateLeaderBoard();
-                    }}>Load more</button>}
+                    {   !pageEnd && 
+                        lbItems &&
+                        lbItems.length > 0 &&
+                        lbItems.length % limit == 0 
+                        &&  <button className="btn btn-primary" onClick={() =>
+                                {
+                                    updateLeaderBoard();
+                                }}>Load more
+                            </button>
+                    }
                     </div>
                 : error
                 ?

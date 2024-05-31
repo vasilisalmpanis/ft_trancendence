@@ -40,7 +40,7 @@ class AuthMiddleware:
         if not authorization:
             auth_protocol = headers_dict.get("sec-websocket-protocol", "").split(', ')
             authorization = auth_protocol[1] if len(auth_protocol) == 2 and auth_protocol[0] == "Authorization" else ''
-            scope["auth_protocol"] = True;
+            scope["auth_protocol"] = True
 
         if authorization:
             try:

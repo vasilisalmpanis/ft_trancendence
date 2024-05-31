@@ -10,6 +10,7 @@ from typing                     import Any, Dict, List
 from channels.layers            import get_channel_layer
 from asgiref.sync               import async_to_sync
 from stats.services             import StatService
+from chat.services              import ChatService
 import os
 import base64
 import logging
@@ -153,6 +154,7 @@ class UserService:
                                      receiver_id=user.id).delete()
         FriendRequest.objects.filter(sender_id=user.id,
                                         receiver_id=user_to_block.id).delete()
+        ChatService.delete_chat_between_users(user, user_to_block)
         return user_model_to_dict(user_to_block, me=user)
     
     @staticmethod
@@ -239,6 +241,19 @@ class UserService:
         user.last_login = datetime.now()
         user.save()
         return user
+    
+    @staticmethod
+    def are_users_friends(user: User, friend_id: int) -> bool:
+        """
+        Check if two users are friends
+        :param user: User instance
+        :param friend_id: int
+        :return: bool
+        """
+        if user.friends.filter(id=friend_id).exists():
+            return True
+        return False
+
     
 
 

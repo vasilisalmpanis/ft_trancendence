@@ -78,7 +78,7 @@ class StatService:
         """
         if limit > 100:
             raise ValueError("Limit too high")
-        if order not in ["asc", "desc"]:
+        if order.lower() not in ["asc", "desc"]:
             raise ValueError("Invalid order")
         users_not_blocked_by_me = User.objects.exclude(blocked=me).exclude(blocked_me=me)
         if order == "asc":
