@@ -37,8 +37,8 @@ class ApiClient {
     let data = await response.json();
     if (response.ok)
     {
-      if (data.message)
-        return {error: data.message};
+      // if (data.message)
+      //   return {error: data.message};
       return data;
     }
     else
@@ -78,7 +78,7 @@ class ApiClient {
       while (response.status === 401 && path !== 'auth/refresh' && path !== '2fa/verify' && path !== 'auth/verify') {
         const refresh = await this.refresh();
         console.log(path, response.status, refresh)
-        if (refresh.error === 'User not active') {
+        if (refresh.status === 'User not active') {
           this.unauthorize();
           this.route('/signin');
           return {error: 401};
@@ -93,7 +93,8 @@ class ApiClient {
       return await this.proceedResponse(response);
     } catch (error) {
       this.route('/signin');
-      return {error: "no connection"};
+      console.error(error);
+      return {error: error.message};
     }
   }
 

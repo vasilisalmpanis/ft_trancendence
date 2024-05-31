@@ -44,8 +44,10 @@ const Leaderboard = (props) => {
 
     const getLeaderboard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
-        if (data.error === 401)
+        if (data.error) {
+            setError(data.error);
             return ;
+        }
         else if (data.error === "no connection") {
             setError("No connection");
             return ;
@@ -59,6 +61,10 @@ const Leaderboard = (props) => {
         for (let i = 0; i < data.length; i++)
         {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
+            if (user.error) {
+                setError(user.error);
+                return ;
+            }
             temp.push(user);
         }
         setLbItems(data.map(player => <LeaderboardCard data={player} users={temp} route={props.route}/>));
@@ -66,8 +72,10 @@ const Leaderboard = (props) => {
     }
     const updateLeaderBoard = async () => {
         const data = await apiClient.get("/leaderboard", {order: order, limit: limit, skip: skip});
-        if (data.error === 401)
+        if (data.error) {
+            setError(data.error);
             return ;
+        }
         let temp = [];
         if (data.length === 0) {
             setPageEnd(true);
@@ -76,6 +84,10 @@ const Leaderboard = (props) => {
         for (let i = 0; i < data.length; i++)
         {
             const user = await apiClient.get(`/users/${data[i].user_id}`);
+            if (user.error) {
+                setError(user.error);
+                return ;
+            }
             temp.push(user);
         }
         setLbItems([...lbItems, ...data.map(player => <LeaderboardCard data={player} users={temp} route={props.route}/>)]);

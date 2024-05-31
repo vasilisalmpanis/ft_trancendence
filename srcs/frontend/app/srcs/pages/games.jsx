@@ -84,10 +84,10 @@ const Games = (props) => {
 		data = await apiClient.get("/games", {type: "pending"});
 		if (data.error === 401)
 			return ;
-		else if (data.error)
+		else if (data.error) {
 			setError(data.error);
-		if (data.error)
-			setError(data.error);
+			return ;
+		}
 		else if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};
