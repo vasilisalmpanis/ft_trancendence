@@ -60,7 +60,7 @@ const NavBar = (props) => {
 		}
 	}, []);
 	return (
-		<nav className="navbar navbar-expand-md bg-body-tertiary">
+		<nav className="navbar navbar-expand-md bg-body-tertiary z-3" style={{opacity: '95%'}}>
 			<div className="container-fluid">
 				<button
 					onClick={() => props.route("/")}
@@ -166,7 +166,13 @@ const NavBar = (props) => {
 									onClick={() => props.route("/me")}
 									className="rounded-circle btn me-3 ms-auto"
 								>
-									<Avatar img={props.me.avatar} size={'45rem'}/>
+									<img
+										loading="lazy"
+										width='45rem'
+										src={`https://api.${window.location.hostname}${props.me.avatar}`}
+										style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1', background: 'url(http://goo.gl/vyAs27) no-repeat scroll 0 0'}}
+										className="img-thumbnail"
+									/>
 								</button>
 							</div>
 					</div>

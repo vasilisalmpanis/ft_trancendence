@@ -149,7 +149,7 @@ const RestartTournament = (props) => (
 
 const LocalTournament = (props) => {
     const [namesInput, setNamesInput] = ftReact.useState(0);
-    const [gameState, setGameState] = ftReact.useState(history.state.gameState || {games: [], players: 0, winner: null, started: false, stragler: null});
+    const [gameState, setGameState] = ftReact.useState(history.state?.gameState || {games: [], players: 0, winner: null, started: false, stragler: null});
     const [error, setError] = ftReact.useState("");
     ftReact.useEffect(async ()=>{
         const getWinners = async (games) => {

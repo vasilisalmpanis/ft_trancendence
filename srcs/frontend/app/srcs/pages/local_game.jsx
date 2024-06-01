@@ -30,7 +30,7 @@ const Pong = (props) => {
     let angle = 45;
     let speed = 1;
     let speedIncrease = 0.05;
-    let game = history.state.gameState?.games.find(game => game.winner === null) || null;
+    let game = history.state?.gameState?.games.find(game => game.winner === null) || null;
 
 	const keyPress = (ev) => {
         switch (ev.key) {
