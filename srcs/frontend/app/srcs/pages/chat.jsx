@@ -114,7 +114,7 @@ const SelectedChat = (props) => {
                                     chat_id: props.chatSelected,
                                     action: 'create'
                                 }));
-                                props.setInvitation(true);
+                                props.setInvitation(props.chatSelected);
                             }}
                         >
                             {!props.invitation ? <h6>Invite to Game</h6> : <h6>Pending Invitation</h6>}
@@ -285,8 +285,20 @@ const Chats = (props) => {
             if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
                 updateActiveUsers(data);
             }
+            if ("status" in data && data.status === "client connected") {
+                let invitations = data.chats_with_pending_game_invites;
+                console.log(data);
+                if (Array.isArray(invitations) && invitations.length > 0) {
+                    console.log('heeeeeeeeere')
+                    setInvitation(invitations[0]);
+                }
+            }
             if ("status" in data && data.status === 'chat.created') {
                 setChats([...chats, data.chat]);
+            }
+            if ("status" in data && data.status === 'game.invite.deleted') {
+                let id = data.chat_id;
+                setInvitation(null);
             }
             if ("status" in data && data.status === 'chat.deleted') {
                 setChats(chats.filter(chat => chat.id !== data.chat_id));

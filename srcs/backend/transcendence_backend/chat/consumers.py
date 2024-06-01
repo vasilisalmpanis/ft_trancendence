@@ -143,7 +143,8 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
         """
         Adds a game invite to the chatroom
         """
-        self.rooms[chat_id].setdefault('game_invite', {})
+        if self.rooms[chat_id]['game_invite'].get('sender_id', None) is None:
+            self.rooms[chat_id].setdefault('game_invite', {})
         if self.rooms[chat_id]  and self.rooms[chat_id]['game_invite'].get('sender_id') is None:
             for participant in self.rooms[chat_id]['participants']:
                 if participant.get('user_id') == sender_id:
@@ -161,7 +162,8 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
 
             if chat_id in self.rooms:
                 game_invite = self.rooms[chat_id].get('game_invite')
-            if game_invite.get('sender_id', None) is not None:
+            sender_id = game_invite.get('sender_id', None)
+            if sender_id is not None and sender_id != user_id:
                 game_invite['chat_id'] = chat_id
                 game_invites.append(game_invite)
             # logger.warn(f"\n{self.rooms[chat_id]}\n")
@@ -321,7 +323,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
         # Game Invites
         elif text_data_json['type'] == 'game.invite':
-            # try:
+            try:
                 chat_id = text_data_json['chat_id']
                 # Accept
                 if text_data_json['action'] == 'accept':
@@ -345,15 +347,12 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
                 # Decline and Delete
                 if text_data_json['action'] == 'decline' or text_data_json['action'] == 'delete':
-                    self._chats[chat_id]['game_invite'] = {}
-                    ##### todo: send update state to frontend #####
-                    # send to group with chat_id that invite is declined
-
-
-
-
-
-
+                    self._chats.rooms[chat_id]['game_invite'] = {}
+                    await self.channel_layer.group_send(str(chat_id), {
+                        'type': 'game.invite',
+                        'action': 'deleted',
+                        'chat_id': chat_id
+                    })
 
                 # Create
                 if text_data_json['action'] == 'create':
@@ -368,22 +367,22 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                         'sender_name': self.scope['user'].username
                     })
 
-            # except ValueError as e:
-            #     await self.send(text_data=json.dumps({
-            #         'status': 'error',
-            #         'chat_id': chat_id,
-            #             'message': f'{str(e)}'
-            #         }))
-            # except User.DoesNotExist:
-            #     await self.send(text_data=json.dumps({
-            #         'status': 'error',
-            #         'message': 'User does not exist'
-            #     }))
-            # except Exception as e:
-            #     await self.send(text_data=json.dumps({
-            #         'status': 'error',
-            #         'message': f'Could not send game invite: {str(e)}'
-            #     }))
+            except ValueError as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'chat_id': chat_id,
+                        'message': f'{str(e)}'
+                    }))
+            except User.DoesNotExist:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': 'User does not exist'
+                }))
+            except Exception as e:
+                await self.send(text_data=json.dumps({
+                    'status': 'error',
+                    'message': f'Could not send game invite: {str(e)}'
+                }))
 
     async def game_invite(self, event):
         if event['action'] == 'created':
@@ -400,6 +399,11 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'status': 'game.invite.accepted',
                 'chat_id': event['chat_id'],
                 'game': event['game']
+            }))
+        if event['action'] == 'deleted':
+            await self.send(text_data=json.dumps({
+                'status': 'game.invite.deleted',
+                'chat_id': event['chat_id']
             }))
 
     async def status_update(self, event):

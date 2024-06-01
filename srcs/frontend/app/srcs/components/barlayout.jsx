@@ -200,7 +200,7 @@ const NavBar = (props) => {
 																	action: 'decline',
 																	chat_id: invitation.chat_id,
 																}));
-																props.setInvitations(invitations.filter((inv) => inv.chat_id !== invitation.chat_id));
+																setInvitations(invitations.filter((inv) => inv.chat_id !== invitation.chat_id));
 															}}
 														>
 															Decline
