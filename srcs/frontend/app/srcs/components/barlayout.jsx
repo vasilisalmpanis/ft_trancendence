@@ -10,19 +10,34 @@ const NavBar = (props) => {
 	const [collapse, setCollapse] = ftReact.useState(true);
 	const [unread, setUnread] = ftReact.useState(null);
 	const me = JSON.parse(localStorage.getItem("me"));
+	const [invitations, setInvitations] = ftReact.useState([]);
 	const [wsClient, setWsClient] = ftReact.useState( me ?
 		new WebsocketClient(
 			"wss://api.localhost/ws/chat/dm/",
 			localStorage.getItem("access_token")
 		) : null
 	);
-    ftReact.useEffect(() => {
+	ftReact.useEffect(() => {
 		if (!wsClient)
 			return ;
 		const newMessage = (ev) => {
 			const data = JSON.parse(ev.data);
-			if ('status' in data && data.status === "message.management" || data.status === "client connected")
+			if ('status' in data && data.status === "message.management" || data.status === "client connected") {
 				setUnread(data.total_unread_messages);
+				if ('chats_with_pending_game_invites' in data) {
+					let invites = data.chats_with_pending_game_invites;
+					if (Array.isArray(invites) && invites.length > 0)
+						setInvitations(invites);
+				}
+			}
+			if ('status' in data && data.status === "game.invite") {
+				setInvitations([...invitations, {sender_name: data.sender_name, sender_id: data.sender_id, chat_id: data.chat_id}]);
+			}
+			if ('status' in data && data.status === "game.invite.accepted") {
+				let game = data.game;
+				console.log(game);
+				props.route(`/games`);
+			}
 			if ('type' in data ) 
 			{
 				if (data.type === "plain.message" && data.message.sender.id !== me.id) {
@@ -38,11 +53,11 @@ const NavBar = (props) => {
 		}
 		if (prevEventListener)
 			wsClient.getWs().removeEventListener('message', prevEventListener);
-        wsClient && wsClient.getWs().addEventListener('message', newMessage);
+		wsClient && wsClient.getWs().addEventListener('message', newMessage);
 		prevEventListener = newMessage;
 		return () => {
 		};
-    }, [unread, setUnread]);
+	}, [unread, setUnread]);
 	ftReact.useEffect(() => {
 		if (wsClient) {
 			const ws = wsClient.getWs();
@@ -80,8 +95,8 @@ const NavBar = (props) => {
 							setCollapse(!collapse)
 						}}
 					>
-      					<span className="navbar-toggler-icon"></span>
-    				</button>
+	  					<span className="navbar-toggler-icon"></span>
+					</button>
 				}
 				{props.me
 				? 	<div
@@ -154,6 +169,48 @@ const NavBar = (props) => {
 						</li>
 						</ul>
 							<div className="d-flex align-items-center">
+								{invitations.length > 0 &&
+									<div className="badge rounded-pill bg-danger">
+										{
+											invitations.map((invitation) => {
+												return (
+													<div>
+														<h6>
+															{invitation.sender_name}
+														</h6>
+														<button
+															className="btn"
+															onClick={async () => {
+																const ws = wsClient.getWs();
+																ws && ws.send(JSON.stringify({
+																	type: 'game.invite',
+																	action: 'accept',
+																	chat_id: invitation.chat_id,
+																}));
+															}}
+														>
+															Accept
+														</button>
+														<button
+															className="btn"
+															onClick={async () => {
+																const ws = wsClient.getWs();
+																ws && ws.send(JSON.stringify({
+																	type: 'game.invite',
+																	action: 'decline',
+																	chat_id: invitation.chat_id,
+																}));
+																props.setInvitations(invitations.filter((inv) => inv.chat_id !== invitation.chat_id));
+															}}
+														>
+															Decline
+														</button>
+													</div>
+												)
+											})
+										}
+									</div>
+								}
 								<a
 									onClick={() => {
 										apiClient.logout();
@@ -176,7 +233,9 @@ const NavBar = (props) => {
 						}}
 						className="nav-link"
 						style={{cursor: "pointer"}}
-					>Sign In</a>
+					>
+						Sign In
+					</a>
 			}
 			</div>
 		</nav>

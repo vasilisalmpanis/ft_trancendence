@@ -123,9 +123,28 @@ class PongService:
         if Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='pending').exists() or Pong.objects.filter(Q(player1=user) | Q(player2=user)).filter(status='running').exists():
             return True
         return False
+    
+    @staticmethod
+    def create_full_game(user_id1: int, user_id2: int, max_points: int = 10) -> Dict[Any, Any]:
+        """
+        Creates a game for the users
+        @param user_id1: int
+        @param user_id2: int
+        @return: JsonResponse with game schema
+        """
+        user1 = User.objects.get(id=user_id1)
+        user2 = User.objects.get(id=user_id2)
+        if PongService.check_user_already_joined(user1) or PongService.check_user_already_joined(user2):
+            raise Exception('One of the users has a game in progress')
+        if max_points < 3 or max_points > 20:
+            raise Exception('Invalid max points')
+        game = Pong.objects.create(player1=user1, player2=user2, max_score=max_points)
+        return pong_model_to_dict(game)
+
+    
 
     @staticmethod
-    def create_game(user : User, max_points) -> Dict[Any, Any]:
+    def create_game(user : User, max_points: int) -> Dict[Any, Any]:
         """
         Creates a game for the user and assigns them as participant
         @param user: User
@@ -168,10 +187,10 @@ class PongService:
         if game.player2 is None:
             raise Exception('Game is not full')
         if game.status != 'finished' and score1 < game.max_score and score2 < game.max_score:
-            try:
-                Tournament.objects.get(games__in=[game.id])
-            except Exception as e:
-                game.delete()
+            # try:
+            #     Tournament.objects.get(games__in=[game.id])
+            # except Exception as e:
+            #     game.delete()
             return pong_model_to_dict(game)
         if game.status == 'finished':
             return pong_model_to_dict(game)

@@ -106,6 +106,19 @@ const SelectedChat = (props) => {
                         </h3>
                     </div>
                     <div className='border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
+                       <button 
+                            className={props.invitation ? 'btn btn-secondary disabled' : 'btn btn-primary'}
+                            onClick={async () => {
+                                ws && ws.send(JSON.stringify({
+                                    type: "game.invite",
+                                    chat_id: props.chatSelected,
+                                    action: 'create'
+                                }));
+                                props.setInvitation(true);
+                            }}
+                        >
+                            {!props.invitation ? <h6>Invite to Game</h6> : <h6>Pending Invitation</h6>}
+                        </button>
                         <button
                             className='btn'
                             onClick={async () => {
@@ -211,6 +224,7 @@ const Chats = (props) => {
     const [msgs, setMsgs] = ftReact.useState([]);
     const [paginator, setPaginator] = ftReact.useState({});
     const [activeFriends, setActiveFriends] = ftReact.useState(null);
+    const [invitation, setInvitation] = ftReact.useState(null);
     const me = JSON.parse(localStorage.getItem('me'));
     const limit = 10;
     ftReact.useEffect(async () => {
@@ -416,6 +430,8 @@ const Chats = (props) => {
                             setChatSelected={setChatSelected}
                             setChats={setChats}
                             chats={chats}
+                            invitation={invitation}
+                            setInvitation={setInvitation}
                         />
                     }
                 </div>
