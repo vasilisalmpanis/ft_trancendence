@@ -118,9 +118,14 @@ const Pong = (props) => {
 			else
 			{
 				running = true;
+				let access_token = localStorage.getItem("access_token");
+				if (!access_token) {
+					props.route("/signin", {from: {path: "/pong", state: {game_id: history.state.game_id}}});
+					return ;
+				}
 				ws = new WebSocket(
 					`wss://api.${window.location.hostname}/ws`,
-					["Authorization", localStorage.getItem("access_token")]
+					["Authorization", access_token]
 				);
 				ws.addEventListener('open', (ev) => {
 					ws.send(JSON.stringify({"join": history.state.game_id}));

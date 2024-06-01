@@ -11,6 +11,8 @@ import DeleteIcon from "../components/delete_icon";
 const CreateGame = (props) => {
 	const createGame = async () => {
 		const data = await apiClient.post("/games");
+		if (data.error)
+			return ;
 		await props.updateGames();
 		props.route("/pong", {game_id: data.id});
 	}
@@ -41,7 +43,7 @@ const GameCard = (props) => {
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
 					{props.data.player1.username}
-					{props.data.player1.username === me.username &&
+					{me && props.data.player1.username === me.username &&
 						<button
 							className="btn d-inline p-0 ms-auto"
 							onClick={async ()=>{
@@ -82,10 +84,10 @@ const Games = (props) => {
 		data = await apiClient.get("/games", {type: "pending"});
 		if (data.error === 401)
 			return ;
-		else if (data.error)
+		else if (data.error) {
 			setError(data.error);
-		if (data.error)
-			setError(data.error);
+			return ;
+		}
 		else if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};

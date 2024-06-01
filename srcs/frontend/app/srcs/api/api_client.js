@@ -36,11 +36,7 @@ class ApiClient {
   async proceedResponse(response) {
     let data = await response.json();
     if (response.ok)
-    {
-      if (data.message)
-        return {error: data.message};
       return data;
-    }
     else
     {
       if (data.Error)
@@ -54,7 +50,7 @@ class ApiClient {
   async sendRequest (path, method, body, query, headers = {}) {
     /* Makes request and returns reponse object with all its fields */
     const url = new URL(path, this.baseUrl);
-    const params = {
+    let params = {
       method,
       headers: {...this.headers, ...headers},
     };
@@ -77,18 +73,22 @@ class ApiClient {
       let response = await fetch(url, params);
       while (response.status === 401 && path !== 'auth/refresh' && path !== '2fa/verify' && path !== 'auth/verify') {
         const refresh = await this.refresh();
-        console.log(path, response.status, refresh)
-        if (refresh.error === 'User not active') {
+        if (refresh.error === 'User not active' || refresh.error === 'Invalid signature') {
           this.unauthorize();
           this.route('/signin');
           return {error: 401};
         }
+        params = {
+          method,
+          headers: {...this.headers, ...headers},
+        };
         response = await fetch(url, params);
+        break ; // dont know if really needed but certainly while loop is not the best solution
       }
       return await this.proceedResponse(response);
     } catch (error) {
-      this.route('/signin');
-      return {error: "no connection"};
+      // this.route('/signin');
+      return {error: error.message};
     }
   }
 
@@ -139,6 +139,10 @@ class ApiClient {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('me');
+    localStorage.removeItem('2fa');
+    if (WebsocketClient.has("wss://api.localhost/ws/chat/dm/")) {
+      new WebsocketClient("wss://api.localhost/ws/chat/dm/").close();
+    }
   }
 
   async logout () {
@@ -166,6 +170,9 @@ class ApiClient {
     }
     let test = localStorage.setItem('access_token', access_token);
     this.headers['Authorization'] = `Bearer ${access_token}`;
+    if (WebsocketClient.has("wss://api.localhost/ws/chat/dm/")) {
+      new WebsocketClient("wss://api.localhost/ws/chat/dm/").reconnect(access_token);
+    }
     return response;
   }
 

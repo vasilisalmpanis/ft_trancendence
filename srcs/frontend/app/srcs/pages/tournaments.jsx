@@ -80,7 +80,7 @@ const TournamentCard = (props) => {
 					>
 						{props.data.name}
 					</span>
-					{props.data.status !== 'closed'
+					{me && props.data.status !== 'closed'
 						?	<div>
 								<button
 									className="btn d-inline p-0"

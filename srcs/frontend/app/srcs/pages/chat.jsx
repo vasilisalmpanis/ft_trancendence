@@ -33,7 +33,11 @@ const SelectedChat = (props) => {
             return;
         const resp = await apiClient.get(`/chats/${chat_id}/messages`, {limit: limit, skip: props.paginator[chat_id] || 0});
         if (resp.error) {
-            return;
+            if (resp.error === "Chat not found") {
+                props.setChats(props.chats.filter(chat => chat.id !== chat_id));
+                props.setChatSelected(null);
+            }
+            return ;
         }
         if (resp.length < limit) {
             observer?.disconnect();
@@ -79,7 +83,8 @@ const SelectedChat = (props) => {
     }, [props.chatSelected, getOldMsgs]);
     return (
             <div className='col-8 px-0 border rounded-end d-flex flex-column justify-content-between'>
-                <div className='w-100 border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "4rem"}}>
+                <div className='d-flex flex-row'>
+                    <div className='w-100 border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
                         {user && 
                             <img
                                 loading="lazy"
@@ -99,6 +104,22 @@ const SelectedChat = (props) => {
                                 {user ? user.username : "Chat"}
                             </a>
                         </h3>
+                    </div>
+                    <div className='border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
+                        <button
+                            className='btn'
+                            onClick={async () => {
+                                const data = await apiClient.delete('/chats', {chat_id: props.chatSelected});
+                                if (data.error) {
+                                    return;
+                                }
+                                props.setChats(props.chats.filter(chat => chat.id !== props.chatSelected));
+                                props.setChatSelected(null);
+                            }}
+                        >
+                            Delete Chat
+                        </button>
+                    </div>
                 </div>
                 <div className='d-flex flex-column justify-content-between'>
                     <div
@@ -250,6 +271,14 @@ const Chats = (props) => {
             if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
                 updateActiveUsers(data);
             }
+            if ("status" in data && data.status === 'chat.created') {
+                setChats([...chats, data.chat]);
+            }
+            if ("status" in data && data.status === 'chat.deleted') {
+                setChats(chats.filter(chat => chat.id !== data.chat_id));
+                if (chatSelected === data.chat_id)
+                    setChatSelected(null);
+            }
             if ("status" in data && data.status === 'message.management') {
                 updateUnreadMessages(data);
             }
@@ -384,6 +413,9 @@ const Chats = (props) => {
                             paginator={paginator}
                             setPaginator={setPaginator}
                             route={props.route}
+                            setChatSelected={setChatSelected}
+                            setChats={setChats}
+                            chats={chats}
                         />
                     }
                 </div>

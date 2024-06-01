@@ -17,7 +17,7 @@ def get_incoming_friend_requests(request, user : User) -> JsonResponse:
     Get all incoming friend requests
     """
     if request.method != "GET":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
     try:
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))
@@ -80,7 +80,7 @@ class FriendsView(View):
 @jwt_auth_required()
 def accept_friend_request(request, user : User) -> JsonResponse:
     if request.method != "POST":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
     data = json.loads(request.body)
     request_id = data.get("request_id")
     if not request_id:
@@ -95,7 +95,7 @@ def accept_friend_request(request, user : User) -> JsonResponse:
 @jwt_auth_required()
 def decline_friend_request(request, user : User) -> JsonResponse:
     if request.method != "POST":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
     data = json.loads(request.body)
     request_id = data.get("request_id")
     if not request_id:
@@ -110,11 +110,11 @@ def decline_friend_request(request, user : User) -> JsonResponse:
 @jwt_auth_required()
 def unfriend(request, user : User) -> JsonResponse:
     if request.method != "POST":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
     data = json.loads(request.body)
     friend_id = data.get("friend_id")
     if not friend_id:
-        return JsonResponse({"Error": "Friend ID not provided"}, status=400)
+        return JsonResponse({"status": "Friend ID not provided"}, status=400)
     try:
         removed_friend = UserService.unfriend(user, friend_id)
         if removed_friend:
@@ -127,7 +127,7 @@ def unfriend(request, user : User) -> JsonResponse:
 @jwt_auth_required()
 def get_users_friends(request, user : User, id: int) -> JsonResponse:
     if request.method != "GET":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
     try:
         skip = int(request.GET.get("skip", 0))
         limit = int(request.GET.get("limit", 10))

@@ -76,7 +76,7 @@ def user_by_id_view(request, user : User, id) -> JsonResponse:
         data = UserService.get_user_by_id(user, id)
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({"Error" : "User Doesn't Exist"}, status=404)
+        return JsonResponse({"status" : "User Doesn't Exist"}, status=404)
 
 @require_http_methods(["GET"])
 @jwt_auth_required()
@@ -89,7 +89,7 @@ def user_by_username_view(request, user : User, username) -> JsonResponse:
         data = UserService.get_user_by_username(user, username)
         return JsonResponse(data, safe=False)
     except Exception as e:
-        return JsonResponse({"error" : "User Doesn't Exist"}, status=404)
+        return JsonResponse({"status" : "User Doesn't Exist"}, status=404)
 
 class AvatarForm(forms.ModelForm):
     def clean_image(self):
@@ -160,7 +160,7 @@ def get_friends(request, user : User) -> JsonResponse:
     Get all friends of currently logged in user
     """
     if request.method != "GET":
-        return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+        return JsonResponse({"status": "Wrong Request Method"}, status=400)
 
     try:
         skip = int(request.GET.get("skip", 0))
@@ -179,7 +179,7 @@ class BlockedUsersView(View):
         Get all blocked users of currently logged in user
         """
         if request.method != "GET":
-            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+            return JsonResponse({"status": "Wrong Request Method"}, status=400)
         try:
             skip = int(request.GET.get("skip", 0))
             limit = int(request.GET.get("limit", 10))
@@ -196,7 +196,7 @@ class BlockedUsersView(View):
         Deletes pending friend requests between the two users
         """
         if request.method != "POST":
-            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+            return JsonResponse({"Status": "Wrong Request Method"}, status=400)
         data = json.loads(request.body)
         user_id = data.get("user_id")
         if not user_id:
@@ -212,7 +212,7 @@ class BlockedUsersView(View):
         Unblocks a user by user_id
         """
         if request.method != "PUT":
-            return JsonResponse({"Error": "Wrong Request Method"}, status=400)
+            return JsonResponse({"status": "Wrong Request Method"}, status=400)
         data = json.loads(request.body)
         user_id = data.get("user_id")
         if not user_id:
@@ -239,7 +239,7 @@ def verify_2fa_code(request, user : User) -> JsonResponse:
     data = json.loads(request.body)
     code = str(data.get("2fa_code", None))
     if code == None:
-        return JsonResponse({"Error": "No code in request body"}, status=400)
+        return JsonResponse({"status": "No code in request body"}, status=400)
     if SecondFactorService.verify_2fa(user, code):
         SecondFactorService.enable_2fa(user)
         UserService.update_last_login(user)

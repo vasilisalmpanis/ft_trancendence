@@ -7,8 +7,10 @@ import Score 	from "../components/score";
 
 
 let gameRunning;
+let setWinsGlobal = null;
 
 const Pong = (props) => {
+    const [gameState, setGameState] = ftReact.useState(false);
     const [wins, setWins] = ftReact.useState("");
     const maxScore = 10;
     let maxAngle = 4 * Math.PI / 12;
@@ -89,6 +91,7 @@ const Pong = (props) => {
 	// 	ws.send(JSON.stringify({"message": "stop", "d": me}));
 	// }
 	ftReact.useEffect(()=>{
+        setWinsGlobal = setWins;
         document.addEventListener('keydown', keyPress);
         document.addEventListener('keyup', keyRelease);
         // document.addEventListener("touchmove", touchMove);
@@ -103,10 +106,12 @@ const Pong = (props) => {
             right_score = game.score2;
         }
         gameRunning = true;
-        if (wins === "")
+        if (wins === "" && !gameState) {
+	        setGameState(true);
             requestAnimationFrame(gameLoop);
+	    }
         return cleanup;
-	},[wins])
+	},[wins, setWins])
     const move = () => {
         ballx = Math.cos(angle) * speed + ballx;
         bally = -Math.sin(angle) * speed + bally;
@@ -166,7 +171,7 @@ const Pong = (props) => {
 		else if ( ballx >= 99.2)
         {
 			if (pr - 1 < bally && bally < pr + 21) {
-                // Collision with right platform
+                setWinsGlobal // Collision with right platform
                 let relativeIntersectY = pr + 10 - bally;
                 let normalizedRelativeIntersectionY = (relativeIntersectY / 10); // 10 is half of the platform height
                 angle = Math.PI - normalizedRelativeIntersectionY * maxAngle;
@@ -220,9 +225,9 @@ const Pong = (props) => {
                 new bootstrap.Modal('#gameoverModal', {}).show();
             gameRunning = false;
             if (right_score > left_score)
-                setWins("Right player wins!");
+                setWinsGlobal && setWinsGlobal("Right player wins!");
             else
-                setWins("Left player wins!");
+                setWinsGlobal && setWinsGlobal("Left player wins!");
             return ;
         }
         if (gameRunning) {

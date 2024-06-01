@@ -1,5 +1,5 @@
 from .models            import Chat, Message, chat_model_to_dict, message_model_to_dict
-from users.models       import User
+from users.models       import User, user_model_to_dict
 from typing             import List, Dict
 
 from channels.layers    import get_channel_layer
@@ -44,8 +44,9 @@ class ChatService:
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)('0', {
             'type': 'manager.update',
-            'status': 'chat_id {chat.id} created',
-            'sender_id': sender.id,
+            'status': 'chat.created',
+            '1' : chat_model_to_dict(chat, sender),
+            '2' : chat_model_to_dict(chat, receiver),
         })
         return chat_model_to_dict(chat, sender)
     
@@ -59,13 +60,13 @@ class ChatService:
         chat = Chat.objects.filter(id=chat_id, participants__id=user.id).first()
         if chat:
             response = chat_model_to_dict(chat, user)
-            chat.delete()
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)('0', {
+            async_to_sync(channel_layer.group_send)(str(chat.id), {
                 'type': 'manager.update',
-                'status': 'chat_id {chat_id} deleted',
-                'sender_id': user.id,
+                'status': 'chat.deleted',
+                'chat_id': chat.id,
             })
+            chat.delete()
             return response
         return {}
     
@@ -80,7 +81,7 @@ class ChatService:
         chat = Chat.objects.filter(participants__id=user1.id).filter(participants__id=user2.id).first()
         if chat:
             channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)('0', {
+            async_to_sync(channel_layer.group_send)(str(chat.id), {
                 'type': 'manager.update',
                 'status': 'chat.deleted',
                 'chat_id': chat.id,

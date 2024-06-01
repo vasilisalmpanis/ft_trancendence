@@ -46,7 +46,7 @@ const Users = (props) => {
 				setSkip(skip + limit);
 			}
 		}
-		if (!users)
+		if (!users && !error)
 			await getUsers();
 	}, [users, setUsers]);
 	ftReact.useEffect(() => {

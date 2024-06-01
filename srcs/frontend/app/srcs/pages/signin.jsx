@@ -15,6 +15,9 @@ import Alert from "../components/alert.jsx";
 
 const Signin = (props) => {
 	const [error, setError] = ftReact.useState("");
+	const [username, setUsername] = ftReact.useState("");
+	const [password, setPassword] = ftReact.useState("");
+	const [submit, setSubmit] = ftReact.useState(false);
 	if (location.search.length) {
 		const handleQuery = async () => {
 			let queryDict = new URLSearchParams(location.search);
@@ -37,38 +40,44 @@ const Signin = (props) => {
 		}
 		handleQuery();
 	}
-	const submit = async (event) => {
-		event.preventDefault();
-		const username = event.target[0].value;
-		const password = event.target[1].value;
-		const resp = await apiClient.authorize({
-			username: username,
-			password: password
-		});
-		if (resp) {
-			if (resp.error)
-				setError(resp.error);
-			else if (resp["ok"] === "true")
-				props.route("/");
-			else if (resp["ok"] === "2fa")
-			{
-				props.route("/2fa");
-				// localStorage.setItem("2fa", true);
+	ftReact.useEffect(async () => {
+		const doSubmit = async () => {
+			const resp = await apiClient.authorize({
+				username: username,
+				password: password
+			});
+			if (resp) {
+				if (resp.error)
+					setError(resp.error);
+				else if (resp["ok"] === "true")
+					props.route("/");
+				else if (resp["ok"] === "2fa")
+				{
+					props.route("/2fa");
+				}
 			}
+		};
+		if (submit) {
+			setSubmit(false);
+			await doSubmit();
 		}
-	};
+	}, [submit, setSubmit, username, password, setError]);
 	return (
 		<Layout>
 			<div>
 				<h1>{C_SIGNIN_HEADER}</h1>
 				<form
-					onSubmit={submit}
+					onSubmit={(event)=>{
+						event.preventDefault();
+						setSubmit(true)
+					}}
 					className="mt-3"
 				>
 					<div className="mb-3">
 						<input
 							placeholder={C_SIGNIN_USERNAME}
 							className="form-control"
+							onChange={(e) => setUsername(e.target.value)}
 							required
 							autoFocus
 						/>
@@ -76,6 +85,7 @@ const Signin = (props) => {
 					<div className="mb-3">
 						<input
 							placeholder={C_SIGNIN_PASS}
+							onChange={(e) => setPassword(e.target.value)}
 							type="password"
 							className="form-control"
 							required
@@ -89,7 +99,7 @@ const Signin = (props) => {
 							{C_SIGNIN_BUTTON}
 						</button>
 					</div>
-					{error && <Alert msg={error}/>}
+					{error && <Alert msg={error} />}
 				</form>
 				<div className="mb-3 mt-5">
 					<button
