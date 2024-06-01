@@ -372,6 +372,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 'chat': event['1'] if user_id == event['2']['participants']['id'] else event['2'],
             }))
 
+
     async def plain_message(self, event):
         await self.send(text_data=json.dumps({
             'type': 'plain.message',

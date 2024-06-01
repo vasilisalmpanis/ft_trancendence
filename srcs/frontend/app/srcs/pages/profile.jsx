@@ -256,8 +256,10 @@ const Profile = (props) => {
 	return (
 		<BarLayout route={props.route}>
 			{
-				me
-					? 	<div className="d-grid">
+				error 
+				? <Alert msg={error}/>
+				: me
+					?	<div className="d-grid">
 							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
 									<ProfileCard data={me}/>
@@ -266,26 +268,19 @@ const Profile = (props) => {
 									{stats && <StatsLayout stats={stats}/>}
 								</div>
 							</div>
-							{error}
-							{error 
-							? 
-							<Alert msg={error}/>
-							:
-								<div className="d-flex flex-wrap justify-content-center mt-2 gap-3">
-									<div className='card flex-grow-1'>
-										<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
-									</div>
-									<div className='card flex-grow-1'>
-										<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
-									</div>
-									<div className='card flex-grow-1' style={{overflowX: "auto"}}>
-										<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
-									</div>
+							<div className="d-flex flex-wrap justify-content-center mt-2 gap-3">
+								<div className='card flex-grow-1'>
+									<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
 								</div>
-							}
+								<div className='card flex-grow-1'>
+									<OutgoingRequests route={props.route} requests={outgoingRequests} setter={setOutgoingRequests} sent={true}/>
+								</div>
+								<div className='card flex-grow-1' style={{overflowX: "auto"}}>
+									<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
+								</div>
+							</div>
 						</div>
-					:
-						<button className="spinner-grow" role="status"></button>
+					:	<button className="spinner-grow" role="status"></button>
 			}
 		</BarLayout>
 	);

@@ -20,6 +20,12 @@ class WebsocketClient {
         this.ws.close();
     }
   }
+  reconnect (access_token) {
+    if (this.ws) {
+        this.ws.close();
+    }
+    this.ws = new WebSocket(this.endpoint, ["Authorization", access_token]);
+  }
   static has(endpoint) {
     return instances.has(endpoint);
   }
