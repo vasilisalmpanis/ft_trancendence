@@ -48,7 +48,7 @@ class PongService:
     @staticmethod
     def set_to_running(game_id: int) -> None:
         game = Pong.objects.get(id=game_id)
-        game.status = "RUNNING"
+        game.status = "running"
         game.save()
 
     @staticmethod
@@ -72,10 +72,12 @@ class PongService:
                     order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             elif type.upper() == 'PAUSED':
+                logger.warn('asking paused games')
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
                     filter(Q(status="paused") | Q(status='running')).\
                     order_by(*order_by).\
-                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]               
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]         
+                logger.warn(games)      
             else:
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
                     filter(status=type.lower()).\
