@@ -202,10 +202,10 @@ class PongService:
         if game.player2 is None:
             raise Exception('Game is not full')
         if game.status != 'finished' and score1 < game.max_score and score2 < game.max_score:
-            # try:
-            #     Tournament.objects.get(games__in=[game.id])
-            # except Exception as e:
-            #     game.delete()
+            try:
+                Tournament.objects.get(games__in=[game.id])
+            except Exception as e:
+                game.delete()
             return pong_model_to_dict(game)
         if game.status == 'finished':
             return pong_model_to_dict(game)
