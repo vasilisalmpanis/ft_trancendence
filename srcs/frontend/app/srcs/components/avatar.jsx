@@ -26,8 +26,13 @@ const Avatar = (props) => {
 		<img
 			loading="lazy"
 			width={props.size || "90%"}
-			style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
+			style={{
+				objectFit: 'cover',
+				borderRadius: '100%',
+				aspectRatio: '1 / 1',
+			}}
 			src={blob && (blob instanceof Blob ? URL.createObjectURL(blob) : blob)}
+			alt="avatar"
 			className="img-thumbnail"
 		/>
 	)

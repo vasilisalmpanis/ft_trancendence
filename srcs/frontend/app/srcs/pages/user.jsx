@@ -68,7 +68,7 @@ const GameCard = (props) => {
                 <td>
                     <div className="ml-auto">
                             <div className="d-flex flex-column align-items-center justify-content-center">
-                                <button className="btn" onClick={() => {
+                                <button className="btn w-100" onClick={() => {
                                         props.route(`/reroute?path=users&id=${props.data.player1.id}`);
                                         }}>
                                     <div>
@@ -83,7 +83,7 @@ const GameCard = (props) => {
                 <div className="ml-auto">
                             {props.data.player2 && 
                             <div className="d-flex flex-column align-items-center justify-content-center">
-                                <button className="btn" onClick={() => {
+                                <button className="btn w-100" onClick={() => {
                                             props.route(`/reroute?path=users&id=${props.data.player2.id}`);
                                             }}>
                                     <div>

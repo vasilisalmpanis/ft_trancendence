@@ -57,6 +57,9 @@ const GameCard = (props) => {
 							<DeleteIcon/>
 						</button>
 					}
+					{(!props.data.player2
+						|| props.data.player2.username === me.username
+						|| props.data.player1.username === me.username ) &&
 						<button
 							className="btn d-inline p-0 ms-auto"
 							onClick={()=>{
@@ -65,6 +68,7 @@ const GameCard = (props) => {
 						>
 							JOIN
 						</button>
+					}
 				</li>
 			</ul>
 		</div>
@@ -94,12 +98,10 @@ const Games = (props) => {
 		else if (data && (!games || (games && data.length != games.length)))
 			setGames(data);
 	};
-	if (!games && !error)
-		getGames();
-	//ftReact.useEffect(()=>{
-	//	if (!games && !error)
-	//		getGames();
-	//},[games]);
+	ftReact.useEffect(async () => {
+		if (!games && !error)
+			await getGames();
+	}, [games, setGames, error, setError]);
 	return (
 		<BarLayout route={props.route}>
 			<CreateGame route={props.route} updateGames={getGames}/>

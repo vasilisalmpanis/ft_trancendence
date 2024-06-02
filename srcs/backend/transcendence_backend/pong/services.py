@@ -30,7 +30,7 @@ def join_game(user , game_id : int):
 def pause_game(game_id: int):
     '''Pauses game'''
     game = Pong.objects.get(id=game_id)
-    if game.status == 'running':
+    if game.status == 'running' or game.status == 'pending':
         game.status = 'paused'
         game.save()
 
@@ -44,6 +44,12 @@ def resume_game(game_id: int):
 
 
 class PongService:
+
+    @staticmethod
+    def set_to_running(game_id: int) -> None:
+        game = Pong.objects.get(id=game_id)
+        game.status = "running"
+        game.save()
 
     @staticmethod
     def get_games(user : User, type : str, skip : int, limit : int, me : bool = False) -> List[Dict[Any, Any]]:
@@ -61,17 +67,24 @@ class PongService:
         if type.lower() not in ['all', 'pending', 'finished', 'running', 'paused']:
             raise Exception('Invalid type')
         if me:
-            if type == 'all':
+            if type.upper() == 'ALL':
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
                     order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
+            elif type.upper() == 'PAUSED':
+                logger.warn('asking paused games')
+                games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
+                    filter(Q(status="paused") | Q(status='running')).\
+                    order_by(*order_by).\
+                    exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]         
+                logger.warn(games)      
             else:
                 games = Pong.objects.filter(Q(player1=user) | Q(player2=user)).\
                     filter(status=type.lower()).\
                     order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
         else:
-            if type == 'all':
+            if type.upper() == 'ALL':
                 games = Pong.objects.order_by(*order_by).\
                     exclude(Q(player1__in=users_blocked_by_me) | Q(player2__in=users_blocked_by_me) | Q(player1__in=users_blocked_me) | Q(player2__in=users_blocked_me))[skip:skip+limit]
             else:

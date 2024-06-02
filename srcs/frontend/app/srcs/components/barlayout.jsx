@@ -73,11 +73,11 @@ const NavBar = (props) => {
 		}
 	}, []);
 	return (
-		<nav className="navbar navbar-expand-md bg-body-tertiary">
+		<nav className="navbar navbar-expand-md bg-body-tertiary z-3" style={{opacity: '95%'}}>
 			<div className="container-fluid">
 				<button
 					onClick={() => props.route("/")}
-					className="btn btn-outline-primary ms-2 navbar-brand text-primary"
+					className="btn rounded-3 ms-2 navbar-brand text-primary"
 				>
 					<Logo/>
 				</button>
@@ -96,7 +96,7 @@ const NavBar = (props) => {
 				{props.me
 				? 	<div
 						className={collapse ? "collapse navbar-collapse" : "collapse navbar-collapse show"}
-						>
+					>
 						<ul className="navbar-nav me-auto mb-2 mb-lg-0">
 							<li className="nav-item">
 								<a
@@ -236,14 +236,21 @@ const NavBar = (props) => {
 										apiClient.logout();
 										props.route("/signin");
 									}}
-									className="nav-link"
+									className="nav-link me-2"
 									style={{cursor: "pointer"}}
 								>Sign Out</a>
 								<button
 									onClick={() => props.route("/me")}
-									className="rounded-circle btn me-3 ms-auto"
+									className="rounded-circle btn me-3 ms-auto p-0"
 								>
-									<Avatar img={props.me.avatar} size={'45rem'}/>
+									<img
+										loading="lazy"
+										width='45rem'
+										src={`https://api.${window.location.hostname}${props.me.avatar}`}
+										alt="avatar"
+										style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
+										className="img-thumbnail"
+									/>
 								</button>
 							</div>
 					</div>
@@ -270,8 +277,9 @@ const BarLayout = (props) => {
 			<div className="h-100">
 				<NavBar route={props.route} me={me}/>
 				<div
-					style={{maxWidth: "100vw"}}
+					style={{maxWidth: "100vw", transition: 'all 0.5s'}}
 					className="
+					fade-out
 					container-md
 					text-center
 					d-flex

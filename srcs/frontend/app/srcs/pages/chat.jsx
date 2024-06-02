@@ -3,6 +3,7 @@ import { apiClient }    from '../api/api_client';
 import BarLayout        from '../components/barlayout';
 import WebsocketClient  from '../api/websocket_client';
 import Avatar           from '../components/avatar';
+import DeleteIcon from '../components/delete_icon';
 
 const units = {
     year  : 24 * 60 * 60 * 1000 * 365,
@@ -34,7 +35,7 @@ const SelectedChat = (props) => {
         const resp = await apiClient.get(`/chats/${chat_id}/messages`, {limit: limit, skip: props.paginator[chat_id] || 0});
         if (resp.error) {
             if (resp.error === "Chat not found") {
-                props.setChats(props.chats.filter(chat => chat.id !== chat_id));
+                props.setChats([...props.chats.filter(chat => chat.id !== chat_id)]);
                 props.setChatSelected(null);
             }
             return ;
@@ -82,8 +83,11 @@ const SelectedChat = (props) => {
         }
     }, [props.chatSelected, getOldMsgs]);
     return (
-            <div className='col-8 px-0 border rounded-end d-flex flex-column justify-content-between'>
-                <div className='d-flex flex-row'>
+            <div
+                className='col-10 col-sm-8 px-0 border rounded-end d-flex flex-column justify-content-between fade-out'
+                style={{ transition: 'opacity 1s' }}
+            >
+                <div className='d-flex flex-row chat-selected'>
                     <div className='w-100 border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
                         {user && 
                             <img
@@ -91,6 +95,7 @@ const SelectedChat = (props) => {
                                 width={50}
                                 style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
                                 src={`https://api.${window.location.hostname}${user.avatar}`}
+                                alt="avatar"
                                 className="img-thumbnail"
                             />
                         }
@@ -121,17 +126,17 @@ const SelectedChat = (props) => {
                             {!props.invitation ? <h6>Invite to game</h6> : <h6>Pending Invitation</h6>}
                         </button>
                         <button
-                            className='btn btn-outline-danger'
+                            className='btn rounded-circle'
                             onClick={async () => {
                                 const data = await apiClient.delete('/chats', {chat_id: props.chatSelected});
                                 if (data.error) {
                                     return;
                                 }
-                                props.setChats(props.chats.filter(chat => chat.id !== props.chatSelected));
+                                props.setChats([...props.chats.filter(chat => chat.id !== props.chatSelected)]);
                                 props.setChatSelected(null);
                             }}
                         >
-                            <h6>Delete Chat</h6>
+                            <DeleteIcon/>
                         </button>
                     </div>
                 </div>
@@ -163,7 +168,11 @@ const SelectedChat = (props) => {
                                                 )
                                                 : 'text-center w-100'
                                         }
-                                        style={{wordWrap: "break-word", maxWidth: "75%", overflowWrap: "break-word"}}
+                                        style={{
+                                            wordWrap: "break-word",
+                                            maxWidth: "75%",
+                                            overflowWrap: "break-word",
+                                        }}
                                     >
                                         <div className='d-flex flex-column gap-0'>
                                             <span className='text-break'>
@@ -263,7 +272,7 @@ const Chats = (props) => {
             if (data.status === 'connected')
                 setActiveFriends([...activeFriends, data.sender_id]);
             else if (data.status === 'disconnected')
-                setActiveFriends(activeFriends.filter(id => id !== data.sender_id))
+                setActiveFriends([...activeFriends.filter(id => id !== data.sender_id)])
         }
     };
     const updateUnreadMessages = (data) => {
@@ -303,7 +312,7 @@ const Chats = (props) => {
                 setInvitation(null);
             }
             if ("status" in data && data.status === 'chat.deleted') {
-                setChats(chats.filter(chat => chat.id !== data.chat_id));
+                setChats([...chats.filter(chat => chat.id !== data.chat_id)]);
                 if (chatSelected === data.chat_id)
                     setChatSelected(null);
             }
@@ -395,18 +404,23 @@ const Chats = (props) => {
     };
     return (
         <BarLayout route={props.route}>
-            <div className='d-grid w-100 w-md-75 w-xxl-50' style={{minHeight: "95%"}}>
+            <div className='d-grid w-100 w-md-75 w-xxl-50' style={{minHeight: "95%", transition: 'all 1s'}}>
                 <div className='row'>
-                    <div className={chatSelected ? 'col-4 px-0 border rounded-start' : 'col border rounded px-0'}>
-                        <div className='w-100 border-bottom py-3' style={{height: "4rem"}}>
-                            <h3 className='align-middle'>Chats</h3>
+                    <div
+                        className={chatSelected ? 'col-2 col-sm-4 px-0 border rounded-start' : 'col border rounded px-0'}
+                    >
+                        <div className='w-100 border-bottom py-3' style={{height: "5rem"}}>
+                            <h5 className='align-middle' style={{overflow: 'hidden'}}>Chats</h5>
                         </div>
                         {chats && chats.map((chat) => {
                             return (
                                 <div
                                     key={chat.id}
-                                    className='border-bottom'
-                                    style={{cursor: "pointer", backgroundColor: chatSelected === chat.id ? "green" : ""}}
+                                    className='border-bottom hover-shadow'
+                                    style={{
+                                        cursor: "pointer",
+                                        backgroundColor: chatSelected === chat.id ? "var(--bs-secondary-bg)" : "",
+                                    }}
                                     onClick={async () => {
                                         observer?.disconnect();
                                         observer = null;
@@ -415,19 +429,26 @@ const Chats = (props) => {
                                     }
                                     }
                                 >
-                                    <div className='d-flex flex-row justify-content-start align-items-center gap-2 p-2'>
-                                        <Avatar img={chat.participants.avatar} size={'40rem'}/>
+                                    <div className='d-flex flex-row flex-wrap justify-content-start align-items-center gap-2 p-2'>
+                                        <img
+									    	loading="lazy"
+									    	width='40rem'
+									    	src={`https://api.${window.location.hostname}${chat.participants.avatar}`}
+                                            alt="avatar"
+									    	style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
+									    	className="img-thumbnail"
+									    />
                                         {chat.participants.username}
-                                        {activeFriends && activeFriends.includes(chat.participants.id) &&
-                                            <span class="p-2 bg-success border border-light rounded-circle">
-                                                <span class="visually-hidden">Active User</span>
-                                                
+                                        {chat["unread_messages"] > 0 && 
+                                            <span className="badge rounded-pill bg-danger">
+                                                {chat["unread_messages"]}
+                                                <span className="visually-hidden">unread messages</span>
                                             </span>
                                         }
-                                        {chat["unread_messages"] > 0 && 
-                                            <span class="badge rounded-pill bg-danger">
-                                                {chat["unread_messages"]}
-                                                <span class="visually-hidden">unread messages</span>
+                                        {activeFriends && activeFriends.includes(chat.participants.id) &&
+                                            <span className="p-2 bg-success border border-light rounded-circle ms-auto">
+                                                <span className="visually-hidden">Active User</span>
+                                                
                                             </span>
                                         }
                                     </div>   

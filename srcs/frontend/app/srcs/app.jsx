@@ -35,8 +35,11 @@ const App = (props) => {
 			display: "grid",
 		}}>
 			<Router>
+				<Route fallback path="/" element={<Main/>}/>
 				<Route login path="/signin" element={<Signin/>}/>
 				<Route path="/signup" element={<Signup/>}/>
+				<Route path="/local-game" element={<LocalGame/>}/>
+				<Route path="/local-tournament" element={<LocalTournament/>}/>
 				<Route auth path="/me" element={<Profile/>}/>
 				<Route auth path="/pong" element={<Pong/>}/>
 				<Route auth path="/users" element={<Users/>}/>
@@ -48,12 +51,9 @@ const App = (props) => {
 				<Route auth path="/user-friends/{id}" element={<UserFriendsLayout/>}/>
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
 				<Route auth path="/2fa" element={<TFA/>}/>
-				<Route auth path="/local-game" element={<LocalGame/>}/>
-				<Route fallback path="/" element={<Main/>}/>
-				<Route fallback auth path="/friendrequests/sent" element={<Sent/>}/>
-				<Route fallback auth path="/friendrequests/incoming" element={<Incoming/>}/>
-				<Route fallback auth path="/local-tournament" element={<LocalTournament/>}/>
-				<Route fallback auth path="/blocked" element={<Blocked/>}/>
+				<Route auth path="/friendrequests/sent" element={<Sent/>}/>
+				<Route auth path="/friendrequests/incoming" element={<Incoming/>}/>
+				<Route auth path="/blocked" element={<Blocked/>}/>
 				<Route fallback auth path="/chats" element={<Chats/>}/>
 			</Router>
 		</div>
