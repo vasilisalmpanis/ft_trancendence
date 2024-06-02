@@ -7,6 +7,7 @@ from .services										import PongService, join_game, pause_game, resume_game
 from stats.services									import StatService
 from channels.generic.websocket						import AsyncWebsocketConsumer, AsyncConsumer
 from channels.db									import database_sync_to_async
+from autobahn.exception								import Disconnected
 import math
 import json
 import asyncio
@@ -39,8 +40,8 @@ class GroupsManager(metaclass=SingletonMeta):
 		If the group is full, returns False
 		If the same user recconects through other websockets it replaces channel_name with new channel
 		'''
-		if self.group_full(game_id, username):
-			return False
+		if self.group_full(game_id, username) and username not in [data['username'] for data in self.groups[game_id]]:
+			return "False"
 		self.groups.setdefault(game_id, [])
 		if len(self.groups[game_id]) == 0:
 			self.groups[game_id].append({channel_name : 'left', 'username': username})
@@ -49,16 +50,17 @@ class GroupsManager(metaclass=SingletonMeta):
 			for item in data:
 				if username in item.values():
 					side = 'left' if 'left' in item.values() else 'right'
+					to_remove = [key for key in item.keys() if key != 'username']
 					self.groups[game_id].remove(item)
 					self.groups[game_id].append({channel_name : side, 'username': username})
-					return True
+					return to_remove[0]
 				if 'left' in item.values():
 					self.groups[game_id].append({channel_name : 'right', 'username': username})
-					return True
+					return "True"
 				if 'right' in item.values():
 					self.groups[game_id].append({channel_name : 'left', 'username': username})
-					return True
-		return True
+					return "True"
+		return "True"
 
 	def get_group_name(self, channel_name: str) -> str:
 		for key, val in self.groups.items():
@@ -268,10 +270,11 @@ class PongRunner(AsyncConsumer):
 					self._games[gid]._resume()
 				return
 			max_score = await database_sync_to_async(PongService.get_max_score)(int(gid))
+			await database_sync_to_async(PongService.set_to_running)(int(gid))
 			self._games[gid] = PongState(left, right, max_score)
 			self._tasks[gid] = asyncio.ensure_future(self._run(gid))
 		except Exception as e:
-			return
+			logger.warn(str(e))
   
 	async def stop_game(self, message: ControlMsg) -> None:
 		try:
@@ -363,41 +366,50 @@ class PongConsumer(AsyncWebsocketConsumer):
 		self.send(json.dumps({'message': 'Connected'}))
 
 	async def update_game_state(self, message: Dict[str, str]) -> None:
-		await self.send(message['text'])
+		try:
+			await self.send(message['text'])
+		except Disconnected as e:
+			logger.warn("Please stop")
 
 	async def disconnect(self, close_code) -> None:
-		gid = self._groups.get_group_name(self.channel_name)
-		self._groups.remove_channel(self.channel_name)
-		if self._groups.group_empty(gid):
-			await self.channel_layer.send(
-				'pong_runner',
-				{
-					'type': 'stop.game',
-					'gid': gid,
-					'data': 'Both disconnected'
-				}
-			)
-			if self._groups.get_group_name(self.channel_name) != '':
-				await self.channel_layer.group_discard(gid, self.channel_name)
-		else:
-			await self.channel_layer.send(
-				'pong_runner',
-				{
-					'type': 'pause.game',
-					'gid': gid
-				}
-			)
-		await self.close()
+		try:
+			gid = self._groups.get_group_name(self.channel_name)
+			self._groups.remove_channel(self.channel_name)
+			if self._groups.group_empty(gid):
+				await self.channel_layer.send(
+					'pong_runner',
+					{
+						'type': 'stop.game',
+						'gid': gid,
+						'data': 'Both disconnected'
+					}
+				)
+				if self._groups.get_group_name(self.channel_name) != '':
+					await self.channel_layer.group_discard(gid, self.channel_name)
+			else:
+				await self.channel_layer.send(
+					'pong_runner',
+					{
+						'type': 'pause.game',
+						'gid': gid
+					}
+				)
+			await self.close()
+		except Disconnected as e:
+			logger.warn("Dont do this")
 
 	async def receive(self, text_data: str) -> None:
 		try:
 			data = json.loads(text_data)
 			if 'join' in data:
 				game_id = str(data['join'])
-				if not self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username):
+				is_added = self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username)
+				if is_added == "False":
 					await self.send(json.dumps({'error': 'Game is full'}))
 					self.close()
 					return
+				elif is_added != "True":
+					await self.channel_layer.group_discard(game_id, is_added)
 				if not await sync_to_async(join_game)(self.scope['user'], int(game_id)):
 					self._groups.remove_channel(self.channel_name)
 					await self.send(json.dumps({'Problem': 'Connecting to game'}))
