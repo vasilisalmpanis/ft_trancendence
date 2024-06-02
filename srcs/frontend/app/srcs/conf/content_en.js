@@ -1,4 +1,4 @@
-export const C_MAIN_HEADER = "Main page";
+export const C_MAIN_HEADER = "42 TRANSCENDENCE";
 export const C_MAIN_LOGIN = "Go to login";
 export const C_PROFILE_HEADER = "Profile";
 export const C_PROFILE_USERNAME = "Username";

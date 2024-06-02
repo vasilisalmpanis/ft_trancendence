@@ -133,8 +133,10 @@ const Tournaments = (props) => {
 		else if (data && (!tournaments || (tournaments && data.length != tournaments.length)))
 			setTournaments(data);
 	};
-	if (!tournaments && !error)
-		getTournaments();
+	ftReact.useEffect(async ()=>{
+		if (!tournaments && !error)
+			await getTournaments();
+	}, [tournaments, setTournaments, error, setError]);
 	return (
 		<BarLayout route={props.route}>
 

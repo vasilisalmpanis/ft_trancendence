@@ -334,6 +334,10 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
             user_id = self.scope['user'].id
             username = self.scope['user'].username
             chat_id = event['1']['id']
+            chat1 = event['1']
+            chat2 = event['2']
+            if user_id != chat1['participants']['id'] and user_id != chat2['participants']['id']:
+                return
             self.chat_ids.append(chat_id)
             await self.channel_layer.group_add(str(chat_id), self.channel_name)
             await database_sync_to_async(self._chats.add_user)(user_id, username, self.channel_name, [chat_id])

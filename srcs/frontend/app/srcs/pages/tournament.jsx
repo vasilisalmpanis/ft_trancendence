@@ -28,6 +28,7 @@ const UserCard = (props) => {
 				width={"40rem"}
 				style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
 				src={`https://api.${window.location.hostname}${props.data.avatar}`}
+				alt="avatar"
 				className="img-thumbnail"
 			/>
 			<span className="ms-1">{props.data.username}</span>

@@ -13,7 +13,7 @@ const LeaderboardCard = (props) => {
             <td style={{  verticalAlign: 'middle' }}>
                 <div className="ml-auto" style="text-align: left;">
                     <button
-                        className="btn"
+                        className="btn w-100"
                         onClick={() => {
                             props.route(`/users/${user.id}`);
                         }}
