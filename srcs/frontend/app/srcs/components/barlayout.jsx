@@ -1,7 +1,7 @@
 import { apiClient }	from "../api/api_client";
 import ftReact			from "../ft_react";
 import WebsocketClient	from "../api/websocket_client";
-import Avatar from "./avatar";
+import Avatar           from "./avatar";
 // import Layout 	from "./layout";
 
 let prevEventListener = null;
@@ -10,7 +10,8 @@ const NavBar = (props) => {
 	const [collapse, setCollapse] = ftReact.useState(true);
 	const [unread, setUnread] = ftReact.useState(null);
 	const me = JSON.parse(localStorage.getItem("me"));
-	const [invitations, setInvitations] = ftReact.useState([]);
+	const [invite, setInvite] = ftReact.useState(null);
+	const [bellOpen, setBellOpen] = ftReact.useState(false);
 	const [wsClient, setWsClient] = ftReact.useState( me ?
 		new WebsocketClient(
 			"wss://api.localhost/ws/chat/dm/",
@@ -24,20 +25,17 @@ const NavBar = (props) => {
 			const data = JSON.parse(ev.data);
 			if ('status' in data && data.status === "message.management" || data.status === "client connected") {
 				setUnread(data.total_unread_messages);
-				if ('chats_with_pending_game_invites' in data) {
-					let invites = data.chats_with_pending_game_invites;
-					if (Array.isArray(invites) && invites.length > 0)
-						setInvitations(invites);
+				if ('game_invite' in data) {
+					let invite = data.game_invite;
+					if (invite !== null && invite.sender_id != me.id)
+						setInvite(invite);
 				}
 			}
 			if ('status' in data && data.status === "game.invite") {
-				setInvitations([...invitations, {sender_name: data.sender_name, sender_id: data.sender_id, chat_id: data.chat_id}]);
+				setInvite({sender_name: data.sender_name, chat_id: data.chat_id, sender_id: data.sender_id});
 			}
-			if ('status' in data && data.status === "game.invite.accepted") {
-				let game = data.game;
-				console.log(game);
-				props.route(`/games`);
-			}
+			if ('status' in data && data.status === "game.invite.accepted")
+				props.route(`/reroute?path=games`);
 			if ('type' in data ) 
 			{
 				if (data.type === "plain.message" && data.message.sender.id !== me.id) {
@@ -48,6 +46,8 @@ const NavBar = (props) => {
 				}
 				else if (data.type === "unread.messages") {
 					setUnread(data.total_unread_messages);
+					if (data.game_invite != null && data.game_invite.sender_id != me.id)
+						setInvite(data.game_invite)
 				}
 			}
 		}
@@ -169,48 +169,110 @@ const NavBar = (props) => {
 						</li>
 						</ul>
 							<div className="d-flex align-items-center">
-								{invitations.length > 0 &&
+								{/* {invite &&
 									<div className="badge rounded-pill bg-danger">
-										{
-											invitations.map((invitation) => {
-												return (
-													<div>
-														<h6>
-															{invitation.sender_name}
-														</h6>
-														<button
-															className="btn"
-															onClick={async () => {
-																const ws = wsClient.getWs();
-																ws && ws.send(JSON.stringify({
-																	type: 'game.invite',
-																	action: 'accept',
-																	chat_id: invitation.chat_id,
-																}));
-															}}
-														>
-															Accept
-														</button>
-														<button
-															className="btn"
-															onClick={async () => {
-																const ws = wsClient.getWs();
-																ws && ws.send(JSON.stringify({
-																	type: 'game.invite',
-																	action: 'decline',
-																	chat_id: invitation.chat_id,
-																}));
-																setInvitations(invitations.filter((inv) => inv.chat_id !== invitation.chat_id));
-															}}
-														>
-															Decline
-														</button>
-													</div>
-												)
-											})
-										}
+										<div>
+											<h6>
+												{invite.sender_name}
+											</h6>
+											<button
+												className="btn"
+												onClick={async () => {
+													const ws = wsClient.getWs();
+													ws && ws.send(JSON.stringify({
+														type: 'game.invite',
+														action: 'accept',
+														chat_id: invite.chat_id,
+													}));
+												}}
+											>
+												Accept
+											</button>
+											<button
+												className="btn"
+												onClick={async () => {
+													const ws = wsClient.getWs();
+													ws && ws.send(JSON.stringify({
+														type: 'game.invite',
+														action: 'decline',
+														chat_id: invite.chat_id,
+													}));
+													setInvite(null);
+												}}
+											>
+												Decline
+											</button>
+
+										</div>
 									</div>
-								}
+								} */}
+								<button
+									className="btn me-2"
+									onClick={()=>setBellOpen(!bellOpen)}
+									id="bell-invite"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16">
+									<path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+									</svg>
+									{invite &&
+									<sup class="badge rounded-pill bg-success align-top">
+										<small>
+											1
+											<span class="visually-hidden">unread messages</span>
+										</small>
+									</sup>
+									}
+								</button>
+								<div
+									className="border rounded bg-gray p-2"
+									style={{
+										display: bellOpen ? 'block' : 'none',
+										position: 'absolute',
+										transform: 'translate(0%, 80%)',
+										zIndex: '10',
+									}}
+								>
+									{invite 
+										? <div>
+										<h6>
+											{invite.sender_name} wants to play pong
+										</h6>
+										<div className="d-flex flex-wrap gap-2 justify-content-center">
+											<button
+												className="btn btn-outline-success"
+												onClick={async () => {
+													const ws = wsClient.getWs();
+													ws && ws.send(JSON.stringify({
+														type: 'game.invite',
+														action: 'accept',
+														chat_id: invite.chat_id,
+													}));
+												}}
+											>
+												Accept
+											</button>
+											<button
+												className="btn btn-outline-danger"
+												onClick={async () => {
+													const ws = wsClient.getWs();
+													ws && ws.send(JSON.stringify({
+														type: 'game.invite',
+														action: 'decline',
+														chat_id: invite.chat_id,
+													}));
+													setInvite(null);
+													setBellOpen(false);
+												}}
+											>
+												Decline
+											</button>
+										</div>
+
+									</div>
+										: 'No Notifications'
+										
+									}
+								</div>
 								<a
 									onClick={() => {
 										apiClient.logout();

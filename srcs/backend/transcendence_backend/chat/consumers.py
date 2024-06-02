@@ -152,30 +152,27 @@ class DirectMessageChatroomManager(metaclass=SingletonMeta):
                     return
         raise ValueError("Invite already exists")
     
-    def get_game_invites(self, user_id: int, chat_ids: List[int]) -> List[Dict[str, any]]:
+    def get_game_invite(self, user_id: int, chat_ids: List[int]) ->    Dict[str, any]:
         """
         Gets all active game invites for user
         """
-        game_invites = []
+        game_invite = {}
         for chat_id in chat_ids:
-            # logger.warn("\n\n\Reached here\n")
-
             if chat_id in self.rooms:
                 game_invite = self.rooms[chat_id].get('game_invite')
             sender_id = game_invite.get('sender_id', None)
-            if sender_id is not None and sender_id != user_id:
+            if sender_id is not None:
                 game_invite['chat_id'] = chat_id
-                game_invites.append(game_invite)
-            # logger.warn(f"\n{self.rooms[chat_id]}\n")
-        return game_invites
+                return game_invite
+        return None
     
-    def user_has_pending_outgoing_invite(self, user_id: int) -> bool:
+    def user_has_pending_invite(self, user_id: int) -> bool:
         """
         Checks if user has pending outgoing game invite
         """
         for chat_id in self.rooms:
             game_invite = self.rooms[chat_id].get('game_invite')
-            if game_invite and game_invite['sender_id'] == user_id:
+            if game_invite.get('sender_id', None) is not None:
                 return True
         return False
 
@@ -204,7 +201,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                 })
             active_friends = await database_sync_to_async(self._chats.get_friends_ids)(self.scope['user'], 'online')
             total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
-            game_invites = self._chats.get_game_invites(self.scope['user'].id, self.chat_ids)
+            game_invite = self._chats.get_game_invite(self.scope['user'].id, self.chat_ids)
 
             await self.send(text_data=json.dumps({
                     'type': 'client.update',
@@ -212,7 +209,7 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                     'active_friends_ids': active_friends,
                     'chat_ids': self.chat_ids,
                     'total_unread_messages': total_unread_messages,
-                    'chats_with_pending_game_invites': game_invites
+                    'game_invite': game_invite
                     }))
     
         except Exception as e:
@@ -272,9 +269,11 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
         elif text_data_json['type'] == 'unread.messages':
             try:
                 total_unread_messages = await database_sync_to_async(MessageService.get_unread_messages_count)(self.scope['user'])
+                game_invite = self._chats.get_game_invite(self.scope['user'].id, self.chat_ids)
                 await self.send(text_data=json.dumps({
                     'type': 'unread.messages',
-                    'total_unread_messages': total_unread_messages
+                    'total_unread_messages': total_unread_messages,
+                    'game_invite' : game_invite
                 }))
             except Exception as e:
                 await self.send(text_data=json.dumps({
@@ -331,10 +330,9 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
                         raise ValueError('No game invite to accept')
                     if self._chats.rooms[chat_id]['game_invite']['sender_id'] == self.scope['user'].id:
                         raise ValueError('Cannot accept own game invite')
-                    if self._chats.user_has_pending_outgoing_invite(self.scope['user'].id):
-                        raise ValueError('Cannot accept invite because user has pending outgoing invite')
+                    # if self._chats.user_has_pending_invite(self.scope['user'].id):
+                    #     raise ValueError('Cannot accept invite because user has pending invite')
                     else:
-
                         game = await database_sync_to_async(PongService.create_full_game)(self.scope['user'].id, self._chats.rooms[chat_id]['game_invite']['sender_id'])
                         asyncio.sleep(2)
                         await self.channel_layer.group_send(str(chat_id), {
@@ -356,8 +354,11 @@ class DirectMessageChatConsumer(AsyncWebsocketConsumer):
 
                 # Create
                 if text_data_json['action'] == 'create':
-                    if self._chats.user_has_pending_outgoing_invite(self.scope['user'].id):
-                        raise ValueError('Cannot send a game invite because user already has pending outgoing invite')
+                    if self._chats.user_has_pending_invite(self.scope['user'].id):
+                        raise ValueError('Cannot send a game invite because user already has pending invite')
+                    user_is_in_game = await database_sync_to_async(PongService.check_user_already_joined)(self.scope['user'])
+                    if user_is_in_game:
+                        raise ValueError('User busy')
                     self._chats.add_game_invite(chat_id, self.scope['user'].id, self.scope['user'].username)
                     await self.channel_layer.group_send(str(chat_id), {
                         'type': 'game.invite',

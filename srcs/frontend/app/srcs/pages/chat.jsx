@@ -107,7 +107,8 @@ const SelectedChat = (props) => {
                     </div>
                     <div className='border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
                        <button 
-                            className={props.invitation ? 'btn btn-secondary disabled' : 'btn btn-primary'}
+                            className={props.invitation ? 'btn btn-outline-secondary disabled' : 'btn btn-outline-success'}
+                            style={{ minWidth: '90px' }}
                             onClick={async () => {
                                 ws && ws.send(JSON.stringify({
                                     type: "game.invite",
@@ -117,10 +118,10 @@ const SelectedChat = (props) => {
                                 props.setInvitation(props.chatSelected);
                             }}
                         >
-                            {!props.invitation ? <h6>Invite to Game</h6> : <h6>Pending Invitation</h6>}
+                            {!props.invitation ? <h6>Invite to game</h6> : <h6>Pending Invitation</h6>}
                         </button>
                         <button
-                            className='btn'
+                            className='btn btn-outline-danger'
                             onClick={async () => {
                                 const data = await apiClient.delete('/chats', {chat_id: props.chatSelected});
                                 if (data.error) {
@@ -130,7 +131,7 @@ const SelectedChat = (props) => {
                                 props.setChatSelected(null);
                             }}
                         >
-                            Delete Chat
+                            <h6>Delete Chat</h6>
                         </button>
                     </div>
                 </div>
@@ -285,19 +286,20 @@ const Chats = (props) => {
             if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
                 updateActiveUsers(data);
             }
+            if ('type' in data && data.type === "unread.messages") {
+                if (data.game_invite != null)
+                    setInvitation([data.game_invite])
+            }
             if ("status" in data && data.status === "client connected") {
-                let invitations = data.chats_with_pending_game_invites;
-                console.log(data);
-                if (Array.isArray(invitations) && invitations.length > 0) {
-                    console.log('heeeeeeeeere')
-                    setInvitation(invitations[0]);
+                let invitation = data.game_invite;
+                if (invitation) {
+                    setInvitation(invitation);
                 }
             }
             if ("status" in data && data.status === 'chat.created') {
                 setChats([...chats, data.chat]);
             }
             if ("status" in data && data.status === 'game.invite.deleted') {
-                let id = data.chat_id;
                 setInvitation(null);
             }
             if ("status" in data && data.status === 'chat.deleted') {
@@ -310,6 +312,11 @@ const Chats = (props) => {
             }
             if ("status" in data && data.status === 'active.friends') {
                 setActiveFriends(data.active_friends_ids);
+            }
+            if ('status' in data && data.status === "error")
+            {
+                if ('message' in data && data.message === 'User busy')
+                    setInvitation(null);
             }
         }
         const handleOpen = (ev) => {
