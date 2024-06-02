@@ -46,6 +46,7 @@ const Pong = (props) => {
 		if (ws && ws.readyState === WebSocket.OPEN) {
 			switch (ev.key) {
 				case 'ArrowUp':
+
 					ws.send(JSON.stringify({"message": "up", "d": me}));
 					platformDirection = "up";
 					break;
@@ -86,12 +87,14 @@ const Pong = (props) => {
 		if (currentYCoordinate > prevYCoordinate && platformDirection !== 'down')
 		{
 			platformDirection = 'down';
-			ws.send(JSON.stringify({"message": "down", "d": me}));
+            if (ws && ws.readyState === WebSocket.OPEN)
+			    ws.send(JSON.stringify({"message": "down", "d": me}));
 		}
 		else if (currentYCoordinate < prevYCoordinate && platformDirection !== 'up')
 		{
 			platformDirection = 'up';
-			ws.send(JSON.stringify({"message": "up", "d": me}));
+            if (ws && ws.readyState === WebSocket.OPEN)
+			    ws.send(JSON.stringify({"message": "up", "d": me}));
 		}
 		prevYCoordinate = currentYCoordinate;
 	}
@@ -104,7 +107,8 @@ const Pong = (props) => {
 
 	const touchEnd = (ev) => {
 		platformDirection = '';
-		ws.send(JSON.stringify({"message": "stop", "d": me}));
+        if (ws && ws.readyState === WebSocket.OPEN)
+		    ws.send(JSON.stringify({"message": "stop", "d": me}));
 	}
 	ftReact.useEffect(()=>{
 		if (!ws) {

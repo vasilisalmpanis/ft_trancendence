@@ -6,7 +6,9 @@ const ReRoutePage = (props) => {
     const [uselessState, setUselessState] = ftReact.useState(null);
     const query = window.location.search;
     const params = new URLSearchParams(query);
-    const path = "/" + params.get('path') + "/" + params.get('id');
+    let path = "/" + params.get('path');
+    if (params.get("id"))
+        path += "/" + params.get("id");
     const getState = async () => {
         const data = await apiClient.get("/healthcheck");
         if (data.error) {

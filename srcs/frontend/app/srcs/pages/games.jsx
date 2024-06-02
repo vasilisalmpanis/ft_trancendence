@@ -43,7 +43,10 @@ const GameCard = (props) => {
 			<ul className="list-group list-group-flush">
 				<li className="list-group-item d-inline-flex align-items-baseline">
 					{props.data.player1.username}
-					{me && props.data.player1.username === me.username &&
+                    {props.data.player2 && " vs "}
+                    {props.data.player2 && props.data.player2.username}
+					{((me && props.data.player1.username === me.username) ||
+                        (me && props.data.player2 && props.data.player2.username === me.username)) &&
 						<button
 							className="btn d-inline p-0 ms-auto"
 							onClick={async ()=>{

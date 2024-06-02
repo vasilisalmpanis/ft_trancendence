@@ -111,6 +111,20 @@ const SelectedChat = (props) => {
                         </h3>
                     </div>
                     <div className='border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
+                       <button 
+                            className={props.invitation ? 'btn btn-outline-secondary disabled' : 'btn btn-outline-success'}
+                            style={{ minWidth: '90px' }}
+                            onClick={async () => {
+                                ws && ws.send(JSON.stringify({
+                                    type: "game.invite",
+                                    chat_id: props.chatSelected,
+                                    action: 'create'
+                                }));
+                                props.setInvitation(props.chatSelected);
+                            }}
+                        >
+                            {!props.invitation ? <h6>Invite to game</h6> : <h6>Pending Invitation</h6>}
+                        </button>
                         <button
                             className='btn rounded-circle'
                             onClick={async () => {
@@ -220,6 +234,7 @@ const Chats = (props) => {
     const [msgs, setMsgs] = ftReact.useState([]);
     const [paginator, setPaginator] = ftReact.useState({});
     const [activeFriends, setActiveFriends] = ftReact.useState(null);
+    const [invitation, setInvitation] = ftReact.useState(null);
     const me = JSON.parse(localStorage.getItem('me'));
     const limit = 10;
     ftReact.useEffect(async () => {
@@ -280,8 +295,21 @@ const Chats = (props) => {
             if ("type" in data && (data.type === 'status.update' || data.type === 'client.update')) {
                 updateActiveUsers(data);
             }
+            if ('type' in data && data.type === "unread.messages") {
+                if (data.game_invite != null)
+                    setInvitation([data.game_invite])
+            }
+            if ("status" in data && data.status === "client connected") {
+                let invitation = data.game_invite;
+                if (invitation) {
+                    setInvitation(invitation);
+                }
+            }
             if ("status" in data && data.status === 'chat.created') {
                 setChats([...chats, data.chat]);
+            }
+            if ("status" in data && data.status === 'game.invite.deleted') {
+                setInvitation(null);
             }
             if ("status" in data && data.status === 'chat.deleted') {
                 setChats([...chats.filter(chat => chat.id !== data.chat_id)]);
@@ -293,6 +321,11 @@ const Chats = (props) => {
             }
             if ("status" in data && data.status === 'active.friends') {
                 setActiveFriends(data.active_friends_ids);
+            }
+            if ('status' in data && data.status === "error")
+            {
+                if ('message' in data && data.message === 'User busy')
+                    setInvitation(null);
             }
         }
         const handleOpen = (ev) => {
@@ -437,6 +470,8 @@ const Chats = (props) => {
                             setChatSelected={setChatSelected}
                             setChats={setChats}
                             chats={chats}
+                            invitation={invitation}
+                            setInvitation={setInvitation}
                         />
                     }
                 </div>
