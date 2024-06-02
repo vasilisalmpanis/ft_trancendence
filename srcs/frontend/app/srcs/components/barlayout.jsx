@@ -2,6 +2,7 @@ import { apiClient }	from "../api/api_client";
 import ftReact			from "../ft_react";
 import WebsocketClient	from "../api/websocket_client";
 import Avatar           from "./avatar";
+import Logo from "./logo";
 // import Layout 	from "./layout";
 
 let prevEventListener = null;
@@ -69,9 +70,6 @@ const NavBar = (props) => {
 					ws.send(JSON.stringify({type: "unread.messages"}));
 				});
 			}
-			// ws.addEventListener('close', (ev) => {
-			// 	wsClient.close();
-			// });
 		}
 	}, []);
 	return (
@@ -81,15 +79,12 @@ const NavBar = (props) => {
 					onClick={() => props.route("/")}
 					className="btn btn-outline-primary ms-2 navbar-brand text-primary"
 				>
-					PONG 42
+					<Logo/>
 				</button>
 				{props.me &&
 					<button
 						className="navbar-toggler me-2"
 						type="button"
-						// data-bs-toggle="collapse"
-						// aria-expanded="false"
-						// aria-label="Toggle navigation"
 						onClick={(ev)=>{
 							ev.preventDefault();
 							setCollapse(!collapse)
@@ -169,43 +164,6 @@ const NavBar = (props) => {
 						</li>
 						</ul>
 							<div className="d-flex align-items-center">
-								{/* {invite &&
-									<div className="badge rounded-pill bg-danger">
-										<div>
-											<h6>
-												{invite.sender_name}
-											</h6>
-											<button
-												className="btn"
-												onClick={async () => {
-													const ws = wsClient.getWs();
-													ws && ws.send(JSON.stringify({
-														type: 'game.invite',
-														action: 'accept',
-														chat_id: invite.chat_id,
-													}));
-												}}
-											>
-												Accept
-											</button>
-											<button
-												className="btn"
-												onClick={async () => {
-													const ws = wsClient.getWs();
-													ws && ws.send(JSON.stringify({
-														type: 'game.invite',
-														action: 'decline',
-														chat_id: invite.chat_id,
-													}));
-													setInvite(null);
-												}}
-											>
-												Decline
-											</button>
-
-										</div>
-									</div>
-								} */}
 								<button
 									className="btn me-2"
 									onClick={()=>setBellOpen(!bellOpen)}
