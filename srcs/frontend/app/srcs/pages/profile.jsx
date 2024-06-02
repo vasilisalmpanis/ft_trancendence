@@ -1,3 +1,4 @@
+import * as bootstrap	from 'bootstrap';
 import ftReact									from "../ft_react";
 import { apiClient }							from "../api/api_client";
 import {
@@ -13,6 +14,7 @@ import StatsLayout								from "../components/statslayout";
 import BlockedUsers								from "../components/blocked_users";
 import IncomingRequests							from "../components/incoming requests";
 import OutgoingRequests							from "../components/outgoing_requests";
+import ReRoutePage								from './reroute';
 
 let reroute_number = -1;
 
@@ -171,9 +173,20 @@ const ProfileCard = (props) => {
 									{
 										apiClient.authorize(res, null, true);
 										setTfaEnabled(true);
+										bootstrap.Modal.getInstance('#exampleModal').hide()
+										const backdrops = document.getElementsByClassName('modal-backdrop');
+										if (backdrops.length) {
+											const len = backdrops.length;
+											for (let i = 0; i < len; i++) {
+												backdrops[0]?.parentNode?.removeChild(backdrops[0]);
+											}
+										}
+										setError(null);
+										props.route(`/reroute?path=me`);
 									}
-									else if (res.error)
+									else if (res.error) {
 										setError(res.error);
+									}
 								}}
 								className="d-flex flex-row gap-3 my-3"
 							>
@@ -262,7 +275,7 @@ const Profile = (props) => {
 					?	<div className="d-grid">
 							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
-									<ProfileCard data={me}/>
+									<ProfileCard data={me} route={props.route}/>
 								</div>
 								<div className="col d-flex justify-content-center">
 									{stats && <StatsLayout stats={stats}/>}

@@ -3,7 +3,8 @@ import { apiClient }	from "../api/api_client";
 import BarLayout 		from "../components/barlayout";
 import {
 	C_PROFILE_HEADER,
-	C_PROFILE_USERNAME
+	C_PROFILE_USERNAME,
+	WS_ENDPOINT
 }						from "../conf/content_en";
 import Alert 			from "../components/alert";
 import Avatar 			from "../components/avatar";
@@ -55,7 +56,7 @@ const Users = (props) => {
 		}
 		if (prevOpenListener)
 			ws.removeEventListener('open', prevOpenListener);
-		ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
+		ws = new WebsocketClient(`${WS_ENDPOINT}/ws/chat/dm/`, localStorage.getItem("access_token")).getWs();
 		if (ws && ws.readyState === WebSocket.OPEN)
 			handleOpen();
 		else {

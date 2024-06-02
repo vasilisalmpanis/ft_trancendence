@@ -2,6 +2,7 @@ import * as bootstrap	from 'bootstrap';
 import ftReact			from "../ft_react";
 import Layout 			from "../components/layout";
 import BarLayout		from "../components/barlayout";
+import { WS_ENDPOINT } from '../conf/content_en';
 
 const Score = (props) => (
 	<div style={{
@@ -128,7 +129,7 @@ const Pong = (props) => {
 					return ;
 				}
 				ws = new WebSocket(
-					`wss://api.${window.location.hostname}/ws`,
+					`${WS_ENDPOINT}/ws`,
 					["Authorization", access_token]
 				);
 				ws.addEventListener('open', (ev) => {

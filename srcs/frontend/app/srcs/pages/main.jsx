@@ -10,7 +10,7 @@ import Avatar from "../components/avatar.jsx";
 const CreatorProfile = (props) => {
 	return (
 		<div
-			className="card p-2 text-secondary align-items-center hover-zoom"
+			className="card p-2 text-secondary align-items-center hover-zoom flex-grow-1"
 			style={{opacity: "95%"}}
 		>
 			<img
@@ -20,8 +20,11 @@ const CreatorProfile = (props) => {
 				alt={`${props.name}'s avatar`}
 			/>
 			<h4>{props.name}</h4>
+			<ul>
+				{props.roles?.map(role => <li style={{textAlign: 'left'}}>{role}</li>)}
+			</ul>
 			<a
-				className="text-secondary fw-light text-decoration-none nav-link"
+				className="text-secondary fw-light text-decoration-none nav-link mt-auto"
 				href={props.github}
 				target="_blank"
 			>
@@ -72,30 +75,35 @@ const Main = (props) => {
 					style={{opacity: '0', animation: 'fadeIn 1s forwards 2s', maxWidth: '48ch'}}
 					className="text-secondary mt-5"
 				>
-					It's a final project of 42 School core curriculum. No idea what else to write about it. Just google what is 42 Shool and what is ft_transcendence project. I'm sure you'll find enough information about it.
+					This is the final project of our core curriculum at the software development school 42 Wolfsburg. It is a full stack web application written in plain JavaScript and Django. 
+					<br/><br/>The most unique element in our implementation of this excercise is a frontend framework modeled after React, called ft_react. Feel free to check the source code for that.
+					<br/><br/>Please enjoy and contribute if you feel inspired.
 				</p>
 				<h3
 					className="text-secondary mt-5"
 					style={{opacity: '0', animation: 'fadeIn 1s forwards 2s'}}
 				>
-					Creators
+					The Creators
 				</h3>
 				<div
 					style={{opacity: '0', animation: 'fadeIn 1s forwards 2s', padding: '0 22%'}}
-					className="d-flex flex-row gap-2 flex-wrap align-items-center justify-content-center"
+					className="d-flex flex-row gap-2 flex-wrap flex-grow align-items-start justify-content-center"
 				>
 					<CreatorProfile
 						name="psimonen"
+						roles={["ft_react", "infrastructure"]}
 						avatar="https://avatars.githubusercontent.com/u/36280649"
 						github="https://github.com/rabarbra"
 						/>
 					<CreatorProfile
 						name="valmpani"
+						roles={["backend", "frontend", "cli", "infrastructure"]}
 						avatar="https://avatars.githubusercontent.com/u/90504973"
 						github="https://github.com/vasilisalmpanis"
 						/>
 					<CreatorProfile
 						name="mtrautne"
+						roles={["oauth2", "chats", "the logo"]}
 						avatar="https://avatars.githubusercontent.com/u/47814311"
 						github="https://github.com/Mowriez"
 					/>

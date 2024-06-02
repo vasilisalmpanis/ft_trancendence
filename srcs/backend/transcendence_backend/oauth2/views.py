@@ -31,10 +31,10 @@ def ft_intra_auth(request):
         'redir': redir_uri
     })
     state = signer.sign(state_json)
-    redirect_url = f'http://{request.get_host()}/oauth2/redir'
+    redirect_url = f'https://{request.get_host()}/api/oauth2/redir'
     response_type = 'code'
     auth_full_url = (
-        f'{auth_base_url}?client_id={client_id}'
+        f'{auth_base_url}?client_id={client_id}' +
         f'&redirect_uri={redirect_url}&state={state}&response_type={response_type}'
         )
     return redirect(auth_full_url)
@@ -59,7 +59,7 @@ def handle_redir(request) -> JsonResponse:
     parameters = json.dumps({
         'client_id': os.environ.get('OAUTH_UID'),
         'client_secret': os.environ.get('OAUTH_SECRET'),
-        'redirect_uri': f'http://{request.get_host()}/oauth2/redir',
+        'redirect_uri': f'https://{request.get_host()}/api/oauth2/redir',
         'code': auth_code,
         'grant_type': 'authorization_code'
         })
@@ -82,6 +82,7 @@ def handle_redir(request) -> JsonResponse:
                 if user:
                     return login_ft_oauth_user(user, redir=state_json['redir'])
                 else:
+                    return redirect(f"{state_json['redir']}?error=user exists")
                     return JsonResponse({'status': 'no user available for login with oauth2'}, status=401)
         else:
             return JsonResponse({'status': 'Failed to fetch userdata'}, status=404)
@@ -117,7 +118,7 @@ def get_or_create_user(user_data):
     :return: user object
     """
     try:
-        user = User.objects.get(Q(ft_intra_id=user_data['id']) | Q(email=user_data['email']))
+        user = User.objects.get(Q(ft_intra_id=user_data['id']))
         user = user_model_to_dict(user)
     except User.DoesNotExist:
         if not user_data['login'] or not user_data['email']:
@@ -146,6 +147,7 @@ def login_ft_oauth_user(user, redir='http://localhost:8080/signin'):
                                  expiration=datetime.now() + timedelta(days=30),
                                  isa=user.last_login,
                                  second_factor=user.is_2fa_enabled)
+    logger.warn(f"REDIR {redir}")
     return redirect(f"{redir}?access_token={access_token}&refresh_token={refresh_token}")
     #return JsonResponse({
     #                        "access_token": access_token,

@@ -3,7 +3,27 @@ import { apiClient }    from "../api/api_client";
 import BarLayout        from "../components/barlayout";
 
 const MaxPlayersForm = (props) => (
-    <div className="d-flex flex-column gap-3">
+    <form
+        onSubmit={(event)=>{
+            event.preventDefault();
+            const count = event.target[0].value;
+            if (!count || count < 3 || count > 10)
+            {
+                props.error("You cannot create tournament with less than 3 players!");
+                return ;
+            }
+            props.inputs(Array.from({length: count}, (_, i) => 
+                <input
+                    className="form-control"
+                    placeholder={`Player ${i + 1} name`}
+                    required
+                    type="text"
+                />
+            ));
+            props.error("");
+        }}
+        className="d-flex flex-column gap-3"
+    >
         <input
             className="form-control"
             placeholder="Players count"
@@ -11,37 +31,15 @@ const MaxPlayersForm = (props) => (
             min="3"
             max="10"
             required
-            onChange={(event)=>{
-                return event.target.value;
-            }}
+            autoFocus
         />
         <button
             className="btn btn-outline-primary mb-3"
-            onClick={(event)=>{
-                event.preventDefault();
-                const count = event.target.previousSibling.value;
-                if (!count || count < 3 || count > 10)
-                {
-                    props.error("You cannot create tournament with less than 3 players!");
-                    return ;
-                }
-                props.inputs(Array.from({length: count}, (_, i) => 
-                    <input
-                        className="form-control"
-                        placeholder={`Player ${i + 1} name`}
-                        required
-                        type="text"
-                        onChange={(event)=>{    
-                            return event.target.value;
-                        }}
-                    />
-                ));
-                props.error("");
-            }}
+            type='submit'
         >
             Start new tournament
         </button>
-    </div> 
+    </form> 
 )
 
 const NamesForm = (props) => (

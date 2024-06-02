@@ -1,3 +1,4 @@
+import { API_ENDPOINT, WS_ENDPOINT } from "../conf/content_en.js";
 import WebsocketClient from "./websocket_client.js";
 
 /**
@@ -49,7 +50,9 @@ class ApiClient {
 
   async sendRequest (path, method, body, query, headers = {}) {
     /* Makes request and returns reponse object with all its fields */
-    const url = new URL(path, this.baseUrl);
+    if (!path.startsWith('/'))
+      path = '/' + path;
+    const url = new URL(this.baseUrl + path);
     let params = {
       method,
       headers: {...this.headers, ...headers},
@@ -71,8 +74,11 @@ class ApiClient {
     }
     try {
       let response = await fetch(url, params);
-      while (response.status === 401 && path !== 'auth/refresh' && path !== '2fa/verify' && path !== 'auth/verify') {
+      console.log(path);
+      while (response.status === 401 && path !== '/auth/refresh' && path !== '/2fa/verify' && path !== '/auth/verify') {
         const refresh = await this.refresh();
+        if (refresh === undefined)
+          return {error: "Failed to login"}
         if (refresh.error === 'User not active' || refresh.error === 'Invalid signature') {
           this.unauthorize();
           this.route('/signin');
@@ -125,13 +131,14 @@ class ApiClient {
     localStorage.setItem('2fa', tfa);
     if (!JSON.parse(atob(access_token.split(".")[1]))["is_authenticated"])
     {
+      console.log("here")
       return {"ok": "2fa"}
     }
     const me = await this.get("/users/me");
     if (me.error)
       return me;
     localStorage.setItem("me", JSON.stringify(me));
-    new WebsocketClient("wss://api.localhost/ws/chat/dm/", access_token);
+    new WebsocketClient(`${WS_ENDPOINT}/ws/chat/dm/`, access_token);
     return {"ok": "true"};
   }
 
@@ -140,8 +147,8 @@ class ApiClient {
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('me');
     localStorage.removeItem('2fa');
-    if (WebsocketClient.has("wss://api.localhost/ws/chat/dm/")) {
-      new WebsocketClient("wss://api.localhost/ws/chat/dm/").close();
+    if (WebsocketClient.has(`${WS_ENDPOINT}/ws/chat/dm/`)) {
+      new WebsocketClient(`${WS_ENDPOINT}/ws/chat/dm/`).close();
     }
   }
 
@@ -157,7 +164,7 @@ class ApiClient {
       return ;
     }
     this.headers['Authorization'] = `Bearer ${this.refresh_token}`;
-    const response = await this.sendRequest('auth/refresh', 'GET', null, null);
+    const response = await this.sendRequest('/auth/refresh', 'GET', null, null);
     if (response.error)
     {
       return response;
@@ -170,14 +177,14 @@ class ApiClient {
     }
     let test = localStorage.setItem('access_token', access_token);
     this.headers['Authorization'] = `Bearer ${access_token}`;
-    if (WebsocketClient.has("wss://api.localhost/ws/chat/dm/")) {
-      new WebsocketClient("wss://api.localhost/ws/chat/dm/").reconnect(access_token);
+    if (WebsocketClient.has(`${WS_ENDPOINT}/ws/chat/dm/`)) {
+      new WebsocketClient(`${WS_ENDPOINT}/ws/chat/dm/`).reconnect(access_token);
     }
     return response;
   }
 
   async second_factor (code) {
-    const response = await this.sendRequest('auth/verify', 'POST', { "2fa_code" : code }, null);
+    const response = await this.sendRequest('/auth/verify', 'POST', { "2fa_code" : code }, null);
     if (response.error)
       return response;
     const access_token = response.access_token;
@@ -204,6 +211,6 @@ class ApiClient {
   }
 };
 
-export const apiClient = new ApiClient(`https://api.${window.location.hostname}`);
+export const apiClient = new ApiClient(API_ENDPOINT);
 
 export default ApiClient;
