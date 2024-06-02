@@ -10,7 +10,7 @@ import Avatar from "../components/avatar.jsx";
 const CreatorProfile = (props) => {
 	return (
 		<div
-			className="card p-2 text-secondary align-items-center"
+			className="card p-2 text-secondary align-items-center hover-zoom"
 			style={{opacity: "95%"}}
 		>
 			<img
@@ -21,7 +21,7 @@ const CreatorProfile = (props) => {
 			/>
 			<h4>{props.name}</h4>
 			<a
-				className="text-secondary fw-light text-decoration-none"
+				className="text-secondary fw-light text-decoration-none nav-link"
 				href={props.github}
 				target="_blank"
 			>
@@ -103,7 +103,7 @@ const Main = (props) => {
 				<a
 					href="https://github.com/vasilisalmpanis/ft_transcendence"
 					target="_blank"
-					className="text-secondary text-decoration-none"
+					className="text-secondary text-decoration-none nav-link"
 					style={{
 						opacity: '0', animation: 'fadeIn 1s forwards 2s',
 						marginTop: 'auto',
@@ -139,7 +139,8 @@ const Main = (props) => {
 					left: '0%',
 					opacity: '0',
 					animation: 'fadeIn 1s forwards 2s',
-					top: calcY(mouseY) + 'px'
+					top: calcY(mouseY) + 'px',
+					transition: 'all 1s',
 				}}
 				onClick={() => props.route("/local-game")}
 			>
@@ -155,7 +156,8 @@ const Main = (props) => {
 					right: '0%',
 					opacity: '0',
 					animation: 'fadeIn 1s forwards 2s',
-					top: calcY(mouseY) + 'px'
+					top: calcY(mouseY) + 'px',
+					transition: 'all 1s',
 				}}
 				onClick={() => props.route("/local-tournament")}
 			>

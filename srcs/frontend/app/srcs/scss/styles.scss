@@ -10,12 +10,19 @@ $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
   }
 }
 
+.hover-shadow {
+  &:hover {
+    box-shadow: 0 0 1rem rgba($primary, 0.3);
+  }
+}
+
 .nav-link {
   &:hover {
     text-shadow: $primary 0 0 0.5em;
     font-weight: bold;
-    zoom: 1.1;
+    zoom: 1.04;
   }
+  transition: all 0.3s;
 }
 
 @import "bootstrap/scss/variables";
@@ -43,9 +50,7 @@ $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
 @include color-mode(dark) {
   .bg-gray {
     &:hover {
-        text-shadow: $primary 0 0 0.5em;
-        font-weight: bold;
-        zoom: 1.1;
+      box-shadow: 0 0 2rem rgba($primary, 0.3);
     }
     background-color: $gray-800
   }
@@ -69,5 +74,11 @@ $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
   opacity: 1;
   @starting-style {
     opacity: 0;
+  }
+}
+
+.hover-zoom {
+  &:hover {
+    zoom: 1.1;
   }
 }

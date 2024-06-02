@@ -112,7 +112,7 @@ const SelectedChat = (props) => {
                     </div>
                     <div className='border-bottom d-flex flex-row align-items-center justify-content-start gap-3 px-3' style={{height: "5rem"}}>
                         <button
-                            className='btn'
+                            className='btn rounded-circle'
                             onClick={async () => {
                                 const data = await apiClient.delete('/chats', {chat_id: props.chatSelected});
                                 if (data.error) {
@@ -371,7 +371,7 @@ const Chats = (props) => {
     };
     return (
         <BarLayout route={props.route}>
-            <div className='d-grid w-100 w-md-75 w-xxl-50 fade-out' style={{minHeight: "95%", transition: 'all 1s'}}>
+            <div className='d-grid w-100 w-md-75 w-xxl-50' style={{minHeight: "95%", transition: 'all 1s'}}>
                 <div className='row'>
                     <div
                         className={chatSelected ? 'col-2 col-sm-4 px-0 border rounded-start' : 'col border rounded px-0'}
@@ -383,7 +383,7 @@ const Chats = (props) => {
                             return (
                                 <div
                                     key={chat.id}
-                                    className='border-bottom'
+                                    className='border-bottom hover-shadow'
                                     style={{
                                         cursor: "pointer",
                                         backgroundColor: chatSelected === chat.id ? "var(--bs-secondary-bg)" : "",
@@ -406,16 +406,16 @@ const Chats = (props) => {
 									    	className="img-thumbnail"
 									    />
                                         {chat.participants.username}
-                                        {activeFriends && activeFriends.includes(chat.participants.id) &&
-                                            <span class="p-2 bg-success border border-light rounded-circle">
-                                                <span class="visually-hidden">Active User</span>
-                                                
+                                        {chat["unread_messages"] > 0 && 
+                                            <span className="badge rounded-pill bg-danger">
+                                                {chat["unread_messages"]}
+                                                <span className="visually-hidden">unread messages</span>
                                             </span>
                                         }
-                                        {chat["unread_messages"] > 0 && 
-                                            <span class="badge rounded-pill bg-danger">
-                                                {chat["unread_messages"]}
-                                                <span class="visually-hidden">unread messages</span>
+                                        {activeFriends && activeFriends.includes(chat.participants.id) &&
+                                            <span className="p-2 bg-success border border-light rounded-circle ms-auto">
+                                                <span className="visually-hidden">Active User</span>
+                                                
                                             </span>
                                         }
                                     </div>   

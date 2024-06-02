@@ -86,7 +86,7 @@ const NavBar = (props) => {
 				{props.me
 				? 	<div
 						className={collapse ? "collapse navbar-collapse" : "collapse navbar-collapse show"}
-						>
+					>
 						<ul className="navbar-nav me-auto mb-2 mb-lg-0">
 							<li className="nav-item">
 								<a
@@ -159,12 +159,12 @@ const NavBar = (props) => {
 										apiClient.logout();
 										props.route("/signin");
 									}}
-									className="nav-link"
+									className="nav-link me-2"
 									style={{cursor: "pointer"}}
 								>Sign Out</a>
 								<button
 									onClick={() => props.route("/me")}
-									className="rounded-circle btn me-3 ms-auto"
+									className="rounded-circle btn me-3 ms-auto p-0"
 								>
 									<img
 										loading="lazy"
@@ -198,8 +198,9 @@ const BarLayout = (props) => {
 			<div className="h-100">
 				<NavBar route={props.route} me={me}/>
 				<div
-					style={{maxWidth: "100vw"}}
+					style={{maxWidth: "100vw", transition: 'all 0.5s'}}
 					className="
+					fade-out
 					container-md
 					text-center
 					d-flex

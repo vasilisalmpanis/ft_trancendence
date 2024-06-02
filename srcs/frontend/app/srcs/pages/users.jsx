@@ -12,12 +12,12 @@ import WebsocketClient from "../api/websocket_client";
 const UserCard = (props) => {
 	return (
 		<div className="border rounded mb-2 d-flex" style={{border: "solid"}}>
-			<button className="btn" onClick={() => props.route(`/users/${props.data.id}`)}>
+			<button className="btn w-100" onClick={() => props.route(`/users/${props.data.id}`)}>
 				<ul className="list-group list-group-flush">
 					<li className="list-group-item d-inline-flex justify-content-start align-items-center gap-3" >
 						<Avatar img={props.data.avatar} size={"40rem"}/>
 						<span className="text-break">  {props.data.username}</span>
-						{props.activeFriends.includes(props.data.id) && <span className="badge bg-success">Online</span>}
+						{props.activeFriends.includes(props.data.id) && <span className="badge bg-success ms-auto">Online</span>}
 					</li>
 				</ul>
 			</button>
