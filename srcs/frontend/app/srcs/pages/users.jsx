@@ -79,7 +79,7 @@ const Users = (props) => {
 				if (data.status === "connected")
 					setActiveFriends([...activeFriends, data.sender_id]);
 				else if (data.status === "disconnected")
-					setActiveFriends(activeFriends.filter(id => id !== data.sender_id));
+					setActiveFriends([...activeFriends.filter(id => id !== data.sender_id)]);
 			}
         }
 		if (ws) {

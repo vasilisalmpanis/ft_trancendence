@@ -64,3 +64,10 @@ $box-shadow: 0 .5rem 1rem rgba($primary, 0.4);
       opacity: 1;
   }
 }
+
+.fade-out {
+  opacity: 1;
+  @starting-style {
+    opacity: 0;
+  }
+}

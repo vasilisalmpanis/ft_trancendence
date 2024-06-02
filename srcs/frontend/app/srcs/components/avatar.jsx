@@ -32,6 +32,7 @@ const Avatar = (props) => {
 				aspectRatio: '1 / 1',
 			}}
 			src={blob && (blob instanceof Blob ? URL.createObjectURL(blob) : blob)}
+			alt="avatar"
 			className="img-thumbnail"
 		/>
 	)

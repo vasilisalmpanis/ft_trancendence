@@ -13,7 +13,12 @@ const CreatorProfile = (props) => {
 			className="card p-2 text-secondary align-items-center"
 			style={{opacity: "95%"}}
 		>
-			<img width="60px" style={{borderRadius: "100%"}} src={props.avatar}/>
+			<img
+				width="60px"
+				style={{borderRadius: "100%"}}
+				src={props.avatar}
+				alt={`${props.name}'s avatar`}
+			/>
 			<h4>{props.name}</h4>
 			<a
 				className="text-secondary fw-light text-decoration-none"
