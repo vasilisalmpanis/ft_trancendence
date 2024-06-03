@@ -3,6 +3,7 @@ import ftReact			from "../ft_react";
 import WebsocketClient	from "../api/websocket_client";
 import Avatar           from "./avatar";
 import Logo from "./logo";
+import { API_ENDPOINT, WS_ENDPOINT } from "../conf/content_en";
 // import Layout 	from "./layout";
 
 let prevEventListener = null;
@@ -15,7 +16,7 @@ const NavBar = (props) => {
 	const [bellOpen, setBellOpen] = ftReact.useState(false);
 	const [wsClient, setWsClient] = ftReact.useState( me ?
 		new WebsocketClient(
-			"wss://api.localhost/ws/chat/dm/",
+			`${WS_ENDPOINT}/ws/chat/dm/`,
 			localStorage.getItem("access_token")
 		) : null
 	);
@@ -81,6 +82,72 @@ const NavBar = (props) => {
 				>
 					<Logo/>
 				</button>
+				<button
+					className="btn ms-0 me-auto rounded-circle"
+					onClick={()=>setBellOpen(!bellOpen)}
+					id="bell-invite"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16">
+						<path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
+					</svg>
+					{invite &&
+					<sup class="badge rounded-pill bg-success align-top">
+						<small>
+							1
+							<span class="visually-hidden">unread messages</span>
+						</small>
+					</sup>
+					}
+				</button>
+				<div
+					className="border rounded bg-gray p-2"
+					style={{
+						display: bellOpen ? 'block' : 'none',
+						position: 'absolute',
+						transform: 'translate(100%, 90%)',
+						zIndex: '10',
+					}}
+				>
+					{invite 
+						? <div>
+						<h6>
+							{invite.sender_name} wants to play pong
+						</h6>
+						<div className="d-flex flex-wrap gap-2 justify-content-center">
+							<button
+								className="btn btn-outline-success"
+								onClick={async () => {
+									const ws = wsClient.getWs();
+									ws && ws.send(JSON.stringify({
+										type: 'game.invite',
+										action: 'accept',
+										chat_id: invite.chat_id,
+									}));
+								}}
+							>
+								Accept
+							</button>
+							<button
+								className="btn btn-outline-danger"
+								onClick={async () => {
+									const ws = wsClient.getWs();
+									ws && ws.send(JSON.stringify({
+										type: 'game.invite',
+										action: 'decline',
+										chat_id: invite.chat_id,
+									}));
+									setInvite(null);
+									setBellOpen(false);
+								}}
+							>
+								Decline
+							</button>
+						</div>
+					</div>
+						: 'No Notifications'
+						
+					}
+				</div>
 				{props.me &&
 					<button
 						className="navbar-toggler me-2"
@@ -164,73 +231,6 @@ const NavBar = (props) => {
 						</li>
 						</ul>
 							<div className="d-flex align-items-center">
-								<button
-									className="btn me-2"
-									onClick={()=>setBellOpen(!bellOpen)}
-									id="bell-invite"
-								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bell" viewBox="0 0 16 16">
-									<path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2M8 1.918l-.797.161A4 4 0 0 0 4 6c0 .628-.134 2.197-.459 3.742-.16.767-.376 1.566-.663 2.258h10.244c-.287-.692-.502-1.49-.663-2.258C12.134 8.197 12 6.628 12 6a4 4 0 0 0-3.203-3.92zM14.22 12c.223.447.481.801.78 1H1c.299-.199.557-.553.78-1C2.68 10.2 3 6.88 3 6c0-2.42 1.72-4.44 4.005-4.901a1 1 0 1 1 1.99 0A5 5 0 0 1 13 6c0 .88.32 4.2 1.22 6"/>
-									</svg>
-									{invite &&
-									<sup class="badge rounded-pill bg-success align-top">
-										<small>
-											1
-											<span class="visually-hidden">unread messages</span>
-										</small>
-									</sup>
-									}
-								</button>
-								<div
-									className="border rounded bg-gray p-2"
-									style={{
-										display: bellOpen ? 'block' : 'none',
-										position: 'absolute',
-										transform: 'translate(0%, 80%)',
-										zIndex: '10',
-									}}
-								>
-									{invite 
-										? <div>
-										<h6>
-											{invite.sender_name} wants to play pong
-										</h6>
-										<div className="d-flex flex-wrap gap-2 justify-content-center">
-											<button
-												className="btn btn-outline-success"
-												onClick={async () => {
-													const ws = wsClient.getWs();
-													ws && ws.send(JSON.stringify({
-														type: 'game.invite',
-														action: 'accept',
-														chat_id: invite.chat_id,
-													}));
-												}}
-											>
-												Accept
-											</button>
-											<button
-												className="btn btn-outline-danger"
-												onClick={async () => {
-													const ws = wsClient.getWs();
-													ws && ws.send(JSON.stringify({
-														type: 'game.invite',
-														action: 'decline',
-														chat_id: invite.chat_id,
-													}));
-													setInvite(null);
-													setBellOpen(false);
-												}}
-											>
-												Decline
-											</button>
-										</div>
-
-									</div>
-										: 'No Notifications'
-										
-									}
-								</div>
 								<a
 									onClick={() => {
 										apiClient.logout();
@@ -246,7 +246,7 @@ const NavBar = (props) => {
 									<img
 										loading="lazy"
 										width='45rem'
-										src={`https://api.${window.location.hostname}${props.me.avatar}`}
+										src={`${API_ENDPOINT}${props.me.avatar}`}
 										alt="avatar"
 										style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
 										className="img-thumbnail"

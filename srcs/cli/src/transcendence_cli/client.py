@@ -3,6 +3,7 @@ from typing             import Dict, Union, List, Any, Tuple
 from transcendence_cli  import utils
 import http.client      as http
 import json
+import ssl
 
 
 class Response:
@@ -33,6 +34,7 @@ class Response:
         return f"Response(status={self.status}, reason={self.reason}, body={self.body})"
 
 
+unverified_context = ssl._create_unverified_context()
 
 class NetworkClient(metaclass=utils.SingletonMeta):
         headers : Dict[str, str]
@@ -51,7 +53,7 @@ class NetworkClient(metaclass=utils.SingletonMeta):
             self.validate_method(method)
             if method == "POST" or method == "PUT" or method == "PATCH" and body:
                 self.headers["Content-Type"] = "application/json"
-            connection = http.HTTPConnection("localhost", 8000)
+            connection = http.HTTPSConnection("localhost", context=unverified_context)
             try:
                 connection.request(method, path, body, headers=self.headers)
                 response = Response(connection.getresponse())
@@ -60,8 +62,8 @@ class NetworkClient(metaclass=utils.SingletonMeta):
                     response = self.request(path, method, body)
                 self.headers.pop("Content-Type", None)
                 return response
-            except http.HTTPException as e:
-                print(f"HTTP exception: {e}")
+            except http.HTTPSException as e:
+                print(f"HTTPS exception: {e}")
             except Exception as e:
                 print(f"Exception: {e}")
             finally:
@@ -69,7 +71,7 @@ class NetworkClient(metaclass=utils.SingletonMeta):
             return Response(None)
     
         def authenticate(self, username: str, password: str) -> Response:
-            response = self.request("/auth", "POST", json.dumps({"username": username,
+            response = self.request("/api/auth", "POST", json.dumps({"username": username,
                                                                  "password": password}))
             if response.status == 200:
                 self.access_token = response.body["access_token"]
@@ -78,14 +80,14 @@ class NetworkClient(metaclass=utils.SingletonMeta):
             return response
         
         def logout(self) -> None:
-            response = self.request("/logout", "POST")
+            response = self.request("/api/logout", "POST")
             if response.status == 200:
                 self.access_token = None
                 self.refresh_token = None
                 self.headers.pop("Authorization", None)
         
         def refresh(self) -> None:
-            response = self.request("/auth/refresh", "GET")
+            response = self.request("/api/auth/refresh", "GET")
             if response.status == 200:
                 self.access_token = response.body["access_token"]
                 self.headers["Authorization"] = f"Bearer {self.access_token}"
@@ -95,7 +97,7 @@ class NetworkClient(metaclass=utils.SingletonMeta):
                 self.headers.pop("Authorization", None)
 
         def verify_2fa(self, code: str) -> Response:
-            response = self.request("/auth/verify", "POST", json.dumps({"2fa_code": code}))
+            response = self.request("/api/auth/verify", "POST", json.dumps({"2fa_code": code}))
             if response.status == 200:
                 self.access_token = response.body["access_token"]
                 self.refresh_token = response.body["refresh_token"]

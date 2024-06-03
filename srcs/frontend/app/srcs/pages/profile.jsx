@@ -1,3 +1,4 @@
+import * as bootstrap	from 'bootstrap';
 import ftReact									from "../ft_react";
 import { apiClient }							from "../api/api_client";
 import {
@@ -13,6 +14,7 @@ import StatsLayout								from "../components/statslayout";
 import BlockedUsers								from "../components/blocked_users";
 import IncomingRequests							from "../components/incoming requests";
 import OutgoingRequests							from "../components/outgoing_requests";
+import ReRoutePage								from './reroute';
 
 let reroute_number = -1;
 
@@ -20,6 +22,7 @@ const ProfileCard = (props) => {
 	const [img, setImg] = ftReact.useState(props.data.avatar);
 	const [tfa, setTfa] = ftReact.useState("");
 	const [error, setError] = ftReact.useState("");
+	const [imgUpdated, setImgUpdated] = ftReact.useState(false);
 	const [tfaEnabled, setTfaEnabled] = ftReact.useState(localStorage.getItem('2fa') === 'true');
 	const updateMe = async () => {
 		if (img && img instanceof Blob) {
@@ -49,8 +52,10 @@ const ProfileCard = (props) => {
 							)
 							if (resp.error)
 								setError(resp.error)
-							else
-								localStorage.setItem("me", JSON.stringify(resp))
+							else {
+								localStorage.setItem("me", JSON.stringify(resp));
+								setImgUpdated(false);
+							}
 						}}
 						className="d-flex flex-column gap-3"
 						enctype="multipart/form-data"
@@ -89,12 +94,13 @@ const ProfileCard = (props) => {
 								onChange={(event)=>{
     								if (event.target.files[0]) {
 										setImg(event.target.files[0]);
+										setImgUpdated(true);
     								}
 								}}
 							/>
 						</span>
 						</div>
-						<button type="submit" className="btn btn-outline-primary">Save</button>
+						<button type="submit" className={imgUpdated ? "btn btn-outline-primary" : "btn btn-outline-primary disabled"}>Save avatar</button>
 					</form>
 				</li>
 				<li className="list-group-item">
@@ -171,9 +177,20 @@ const ProfileCard = (props) => {
 									{
 										apiClient.authorize(res, null, true);
 										setTfaEnabled(true);
+										bootstrap.Modal.getInstance('#exampleModal').hide()
+										const backdrops = document.getElementsByClassName('modal-backdrop');
+										if (backdrops.length) {
+											const len = backdrops.length;
+											for (let i = 0; i < len; i++) {
+												backdrops[0]?.parentNode?.removeChild(backdrops[0]);
+											}
+										}
+										setError(null);
+										props.route(`/reroute?path=me`);
 									}
-									else if (res.error)
+									else if (res.error) {
 										setError(res.error);
+									}
 								}}
 								className="d-flex flex-row gap-3 my-3"
 							>
@@ -256,19 +273,56 @@ const Profile = (props) => {
 	return (
 		<BarLayout route={props.route}>
 			{
-				error 
-				? <Alert msg={error}/>
-				: me
+				me
 					?	<div className="d-grid">
-							<div className="row border rounded align-items-center text-center mb-3" style={{borderStyle: "solid"}}>
+							<div className="row border rounded align-items-end text-center mb-3" style={{borderStyle: "solid"}}>
 								<div className="col d-flex justify-content-center">
-									<ProfileCard data={me}/>
+									<ProfileCard data={me} route={props.route}/>
 								</div>
-								<div className="col d-flex justify-content-center">
-									{stats && <StatsLayout stats={stats}/>}
+								<div className='col d-flex flex-column gap-5 justify-content-between p-2'>
+									<div className="col d-flex justify-content-center">
+										{stats && <StatsLayout stats={stats}/>}
+									</div>
+									<form
+										className='d-flex flex-column gap-3 justify-content-center px-3'
+										style={{minWidth: '8rem'}}
+										onSubmit={async (ev)=>{
+											ev.preventDefault();
+											const username = ev.target[0].value;
+											const pass = ev.target[1].value;
+											if (!username && !pass) {
+												setError("please enter at least something");
+												return ;
+											}
+											let data = {};
+											if (username)
+												data.username = username;
+											if (pass)
+												data.password = pass;
+											const resp = await apiClient.post('/users/me', data);
+											if (resp.error)
+												setError(resp.error);
+											else {
+												localStorage.setItem("me", JSON.stringify(resp));
+												props.route("/reroute?path=me");
+											}
+										}}
+									>
+										<input
+											placeholder='new username'
+											className="form-control"
+											type='text'
+										/>
+										<input
+											placeholder='new password'
+											className="form-control"
+											type='password'
+										/>
+										<button className='btn btn-outline-primary'>Save</button>
+									</form>
 								</div>
 							</div>
-							<div className="d-flex flex-wrap justify-content-center mt-2 gap-3">
+							<div className="d-flex flex-wrap justify-content-center mt-2 gap-3 mb-2">
 								<div className='card flex-grow-1'>
 									<IncomingRequests route={props.route} requests={incomingRequests} setter={setIncomingRequests} sent={false}/>
 								</div>
@@ -279,6 +333,7 @@ const Profile = (props) => {
 									<BlockedUsers route={props.route} users={blockedUsers} setter={setBlockedUsers}/>
 								</div>
 							</div>
+							{error && <Alert msg={error}/>}
 						</div>
 					:	<button className="spinner-grow" role="status"></button>
 			}

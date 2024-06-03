@@ -18,28 +18,35 @@ const Signin = (props) => {
 	const [username, setUsername] = ftReact.useState("");
 	const [password, setPassword] = ftReact.useState("");
 	const [submit, setSubmit] = ftReact.useState(false);
-	if (location.search.length) {
-		const handleQuery = async () => {
-			let queryDict = new URLSearchParams(location.search);
-			if (queryDict.has("access_token")) {
-				const res = await apiClient.authorize({
-					access_token: queryDict.get("access_token"),
-					refresh_token: queryDict.get("refresh_token")
-				});
-				if (res.error)
-					setError(res.error);
-				else {
-					queryDict.delete("access_token");
-					queryDict.delete("refresh_token");
-					if (res["ok"] === "true")
-						props.route("/");
-					else if (res["ok"] === "2fa")
-						props.route("/2fa");
+	ftReact.useEffect(async () => {
+		if (location.search.length) {
+			const handleQuery = async () => {
+				let queryDict = new URLSearchParams(location.search);
+				if (queryDict.has("error")) {
+					const msg = queryDict.get("error");
+					queryDict.delete("error");
+					setError(msg);
+				}
+				if (queryDict.has("access_token")) {
+					const res = await apiClient.authorize({
+						access_token: queryDict.get("access_token"),
+						refresh_token: queryDict.get("refresh_token")
+					});
+					if (res.error)
+						setError(res.error);
+					else {
+						queryDict.delete("access_token");
+						queryDict.delete("refresh_token");
+						if (res["ok"] === "true")
+							props.route("/");
+						else if (res["ok"] === "2fa")
+							props.route("/2fa");
+					}
 				}
 			}
+			await handleQuery();
 		}
-		handleQuery();
-	}
+	}, []);
 	ftReact.useEffect(async () => {
 		const doSubmit = async () => {
 			const resp = await apiClient.authorize({

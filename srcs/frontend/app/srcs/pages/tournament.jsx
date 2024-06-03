@@ -1,8 +1,10 @@
 import * as bootstrap	from 'bootstrap';
+import * as bundle      from 'bootstrap/dist/js/bootstrap.bundle';
 import ftReact			from "../ft_react";
 import Avatar			from "../components/avatar";
 import BarLayout		from "../components/barlayout";
 import { apiClient } from '../api/api_client';
+import { API_ENDPOINT, WS_ENDPOINT } from '../conf/content_en';
 
 const GameCard = (props) => {
 	const me = props.me;
@@ -27,7 +29,7 @@ const UserCard = (props) => {
 				loading="lazy"
 				width={"40rem"}
 				style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
-				src={`https://api.${window.location.hostname}${props.data.avatar}`}
+				src={`${API_ENDPOINT}${props.data.avatar}`}
 				alt="avatar"
 				className="img-thumbnail"
 			/>
@@ -169,6 +171,7 @@ const Tournament = (props) => {
 		tws = null;
 		tchws && tchws.close();
 		tchws = null;
+		bootstrap.Modal.getInstance(document.getElementById("winnerModal"))?.hide();
 	};
 	const updateMsgs = (msg) => {
 		setMsgs([...msgs, {content: msg, sender: 'me'}]);
@@ -180,7 +183,7 @@ const Tournament = (props) => {
 	ftReact.useEffect(()=>{
 		if (!tws) {
 			tws = new WebSocket(
-				`wss://api.${window.location.hostname}/tournament`,
+				`${WS_ENDPOINT}/tournament`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		};
@@ -221,7 +224,7 @@ const Tournament = (props) => {
 		}
 		if (!tchws) {
 			tchws = new WebSocket(
-				`wss://api.${window.location.hostname}/ws/chat/tournament/${id}/`,
+				`${WS_ENDPOINT}/ws/chat/tournament/${id}/`,
 				["Authorization", localStorage.getItem("access_token")]
 			);
 		}

@@ -1,3 +1,4 @@
+import { API_ENDPOINT } from "../conf/content_en";
 import ftReact		from "../ft_react";
 
 const b64toBlob = (base64) => 
@@ -17,7 +18,7 @@ const Avatar = (props) => {
 			if (props.img.startsWith("data"))
 				await fetchBlob(props.img);
 			else if (props.img.startsWith("/"))
-				setBlob(`https://api.${window.location.hostname}${props.img}`)
+				setBlob(`${API_ENDPOINT}${props.img}`)
 		}
 		else if (props.img && props.img instanceof Blob && (blob !== props.img))
 			setBlob(props.img);

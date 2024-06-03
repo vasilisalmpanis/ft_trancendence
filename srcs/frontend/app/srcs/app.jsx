@@ -1,6 +1,5 @@
 import * as bootstrap	from 'bootstrap';
 import './scss/styles.scss';
-// import './styles/styles.css';
 import ftReact				from "./ft_react";
 import {Router, Route}		from "./router";
 import Main 				from './pages/main';
@@ -50,7 +49,7 @@ const App = (props) => {
 				<Route auth path="/leaderboard" element={<Leaderboard/>}/>
 				<Route auth path="/user-friends/{id}" element={<UserFriendsLayout/>}/>
 				<Route auth path="/reroute" element={<ReRoutePage/>}/>
-				<Route auth path="/2fa" element={<TFA/>}/>
+				<Route path="/2fa" element={<TFA/>}/>
 				<Route auth path="/friendrequests/sent" element={<Sent/>}/>
 				<Route auth path="/friendrequests/incoming" element={<Incoming/>}/>
 				<Route auth path="/blocked" element={<Blocked/>}/>

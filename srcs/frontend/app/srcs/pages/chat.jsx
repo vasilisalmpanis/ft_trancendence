@@ -4,6 +4,7 @@ import BarLayout        from '../components/barlayout';
 import WebsocketClient  from '../api/websocket_client';
 import Avatar           from '../components/avatar';
 import DeleteIcon from '../components/delete_icon';
+import { API_ENDPOINT, WS_ENDPOINT } from '../conf/content_en';
 
 const units = {
     year  : 24 * 60 * 60 * 1000 * 365,
@@ -94,7 +95,7 @@ const SelectedChat = (props) => {
                                 loading="lazy"
                                 width={50}
                                 style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
-                                src={`https://api.${window.location.hostname}${user.avatar}`}
+                                src={`${API_ENDPOINT}${user.avatar}`}
                                 alt="avatar"
                                 className="img-thumbnail"
                             />
@@ -331,7 +332,7 @@ const Chats = (props) => {
         const handleOpen = (ev) => {
             !activeFriends && ws.send(JSON.stringify({type: "active.friends"}));
         }
-        ws = new WebsocketClient("wss://api.localhost/ws/chat/dm/", localStorage.getItem("access_token")).getWs();
+        ws = new WebsocketClient(`${WS_ENDPOINT}/ws/chat/dm/`, localStorage.getItem("access_token")).getWs();
         if (ws.readyState === WebSocket.OPEN)
            handleOpen();
         else {
@@ -433,7 +434,7 @@ const Chats = (props) => {
                                         <img
 									    	loading="lazy"
 									    	width='40rem'
-									    	src={`https://api.${window.location.hostname}${chat.participants.avatar}`}
+									    	src={`${API_ENDPOINT}${chat.participants.avatar}`}
                                             alt="avatar"
 									    	style={{objectFit: 'cover', borderRadius: '100%', aspectRatio: '1 / 1'}}
 									    	className="img-thumbnail"

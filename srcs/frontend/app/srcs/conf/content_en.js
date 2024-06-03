@@ -8,8 +8,10 @@ export const C_SIGNIN_USERNAME = "username";
 export const C_SIGNIN_PASS = "password";
 export const C_SIGNIN_SIGNUP = "Create account";
 export const C_SIGNIN_INTRA = "Sign In with 42 Intra";
-export const C_SIGNIN_INTRA_ENDPOINT = `${window.location.protocol}//api.${window.location.hostname}/oauth2/42intra?redir=${window.location.origin}/signin`;
 export const C_SIGNUP_HEADER = "Create account";
 export const C_SIGNUP_EMAIL = "email";
 export const C_SIGNUP_BUTTON = "Sign Up";
 export const C_SIGNUP_SIGNIN = "Go to Sign In";
+export const WS_ENDPOINT = `wss://${window.location.hostname}/api`
+export const API_ENDPOINT = `https://${window.location.hostname}/api`
+export const C_SIGNIN_INTRA_ENDPOINT = `${API_ENDPOINT}/oauth2/42intra?redir=${window.location.origin}/signin`;
