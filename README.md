@@ -34,25 +34,19 @@ Follow these instructions to get your copy of the project up and running on your
     REDIS_PORT=6379            # Redis port
     ```
 
-3. Put a SSL certificate and key (localhost.crt, localhost.key) into the `srcs/frontend` directory. Run the following command in the root directory of the application to generate new certificates and move them in the correct directory:
-    ```bash
-    openssl req -x509 -newkey rsa:4096 -sha256 -days 3650 -nodes -keyout localhost.key -out localhost.crt
-    cp localhost.key localhost.crt srcs/frontend/
-    ```
-
-4. Run the application from the srcs directory with the following command:
+3. Run the application from the srcs directory with the following command:
     ```bash
     docker-compose up
     ```
 
-5. Endpoints:
+4. Endpoints:
     * http://localhost - Frontend
     * http://localhost:8000/healthcheck - Backend
 
-6. To make the OAuth work, you need to create an OAuth application on the 42 Intra platform. Set the redirect URI to `https://localhost/api/oauth2/redir` and add the generated UID and SECRET of the application to the .env file.
+5. To make the OAuth work, you need to create an OAuth application on the 42 Intra platform. Set the redirect URI to `https://localhost/api/oauth2/redir` and add the generated UID and SECRET of the application to the .env file.
 
 ## CLI client extensive documentation:
-To install the CLI client, you need python3.10 or higher installed on your machine. We use poetry to manage the dependencies of the cli application.<br/><br/>
+To install the CLI client, you need python3.10 or higher installed on your machine. We use poetry to manage the dependencies of the cli application.<br/>
 1. Run the following commands from the cli directory to install the CLI client on your machine:
     ```bash
     pip3 install poetry
