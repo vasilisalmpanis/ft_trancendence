@@ -48,7 +48,6 @@ Follow these instructions to get your copy of the project up and running on your
     docker-compose up
     ```
 
-5. R
 5. Endpoints:
     * http://localhost - Frontend
     * http://localhost:5050 - PGAdmin. Username and password - from .env file
