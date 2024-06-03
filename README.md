@@ -29,9 +29,12 @@ Follow these instructions to get your copy of the project up and running on your
     OAUTH_UID=uid       # uid of your Oauth application from 42 Intra
     OAUTH_SECRET=secret # temporary secret of your Oauth application from 42 Intra
     OAUTH_STATE=solid   #
-    RANDOM_OAUTH_USER_PASSWORD=randompassword12345thisisnotimportant # ?
+    RANDOM_OAUTH_USER_PASSWORD=randompassword12345thisisnotimportant # a password for users created by Oauth which is never used
     PGADMIN_EMAIL=example@gmail.com # Email for PGAdmin web interface
     PGADMIN_PASSWORD=12345          # Password for PGAdmin web interface
+    REDIS_HOST=redis            # Redis hostname
+    REDIS_PORT=6379            # Redis port
+
     ```
 
 3. Put SSL certificate and key (localhost.crt, localhost.key) into srcs/frontend directory. You can generate them this way:
@@ -44,6 +47,7 @@ Follow these instructions to get your copy of the project up and running on your
     ```bash
     docker-compose up
     ```
+
 5. Endpoints:
     * http://localhost - Frontend
     * http://localhost:5050 - PGAdmin. Username and password - from .env file
