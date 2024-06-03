@@ -1,6 +1,5 @@
 import * as bootstrap	from 'bootstrap';
 import './scss/styles.scss';
-// import './styles/styles.css';
 import ftReact				from "./ft_react";
 import {Router, Route}		from "./router";
 import Main 				from './pages/main';

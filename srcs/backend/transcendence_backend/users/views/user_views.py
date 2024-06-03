@@ -151,7 +151,10 @@ class CurrentUserView(View):
         username = data.get("username", None)
         password = data.get("password", None)
         email = data.get("email", None)
-        updated_user = UserService.update_user(user, username, password, email)
+        try:
+            updated_user = UserService.update_user(user, username, password, email)
+        except Exception as e:
+            return JsonResponse({'status': f"{str(e)}"},status=400, safe=False)
         return JsonResponse(updated_user, status=200, safe=False)
 
 @jwt_auth_required()

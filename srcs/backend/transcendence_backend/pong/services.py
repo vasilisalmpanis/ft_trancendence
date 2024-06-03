@@ -21,6 +21,7 @@ def join_game(user , game_id : int):
     if game.player2 is not None:
         return False
     if user_games.filter(status='pending').exists() or user_games.filter(status='running').exists():
+        logger.warn('User already in game')
         return False
     game.player2 = user
     game.status = 'running'

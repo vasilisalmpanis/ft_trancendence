@@ -301,6 +301,15 @@ class PongRunner(AsyncConsumer):
 									'text': json.dumps({"status": "Game over"}),
 								}
 							)
+				await self.channel_layer.send(
+					'tournament_runner',
+					{
+						'type': 'game.finished',
+						'gid': gid,
+						'data' : result,
+						'winner' : winner
+					}
+				)
 			if gid in self._games:
 				self._tasks[gid].cancel()
 				del self._tasks[gid]

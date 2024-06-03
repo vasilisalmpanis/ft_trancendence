@@ -3,8 +3,6 @@ import { apiClient }    from "../api/api_client";
 import BarLayout        from "../components/barlayout";
 import Alert            from "../components/alert";
 import Avatar           from "../components/avatar";
-import                  '../styles/styles.css';
-
 
 const LeaderboardCard = (props) => {
     let user = props.users.filter(user => user["id"] === props.data.user_id)[0];
