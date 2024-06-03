@@ -74,7 +74,6 @@ class ApiClient {
     }
     try {
       let response = await fetch(url, params);
-      console.log(path);
       while (response.status === 401 && path !== '/auth/refresh' && path !== '/2fa/verify' && path !== '/auth/verify') {
         const refresh = await this.refresh();
         if (refresh === undefined)
@@ -130,10 +129,7 @@ class ApiClient {
     localStorage.setItem('refresh_token', refresh_token);
     localStorage.setItem('2fa', tfa);
     if (!JSON.parse(atob(access_token.split(".")[1]))["is_authenticated"])
-    {
-      console.log("here")
       return {"ok": "2fa"}
-    }
     const me = await this.get("/users/me");
     if (me.error)
       return me;
