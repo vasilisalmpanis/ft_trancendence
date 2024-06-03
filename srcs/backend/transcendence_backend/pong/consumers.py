@@ -1,10 +1,10 @@
 from threading										import Lock
 from logging										import Logger
-import time
 from typing											import Literal, Dict, List, TypeVar, TypedDict, NotRequired, Any
 from asgiref.sync									import sync_to_async
 from .services										import PongService, join_game, pause_game, resume_game
 from stats.services									import StatService
+from users.models									import User
 from channels.generic.websocket						import AsyncWebsocketConsumer, AsyncConsumer
 from channels.db									import database_sync_to_async
 from autobahn.exception								import Disconnected
@@ -34,17 +34,19 @@ class GroupsManager(metaclass=SingletonMeta):
 
 	groups: Dict[str, List[Dict[str,str]]] = {}
 
-	def add_channel(self, game_id: str, channel_name: str, username: str, group_size: int = 2) -> bool:
+	def add_channel(self, game_id: str, channel_name: str, user: User, group_size: int = 2) -> bool:
 		'''
 		Adds channel to the group of the game
 		If the group is full, returns False
 		If the same user recconects through other websockets it replaces channel_name with new channel
 		'''
+		username = user.username
+		user_id = user.id
 		if self.group_full(game_id, username) and username not in [data['username'] for data in self.groups[game_id]]:
 			return "False"
 		self.groups.setdefault(game_id, [])
 		if len(self.groups[game_id]) == 0:
-			self.groups[game_id].append({channel_name : 'left', 'username': username})
+			self.groups[game_id].append({channel_name : 'left', 'username': username, 'id': user_id})
 		else:
 			data = self.groups[game_id]
 			for item in data:
@@ -52,13 +54,13 @@ class GroupsManager(metaclass=SingletonMeta):
 					side = 'left' if 'left' in item.values() else 'right'
 					to_remove = [key for key in item.keys() if key != 'username']
 					self.groups[game_id].remove(item)
-					self.groups[game_id].append({channel_name : side, 'username': username})
+					self.groups[game_id].append({channel_name : side, 'username': username, 'id': user_id})
 					return to_remove[0]
 				if 'left' in item.values():
-					self.groups[game_id].append({channel_name : 'right', 'username': username})
+					self.groups[game_id].append({channel_name : 'right', 'username': username, 'id': user_id})
 					return "True"
 				if 'right' in item.values():
-					self.groups[game_id].append({channel_name : 'left', 'username': username})
+					self.groups[game_id].append({channel_name : 'left', 'username': username, 'id': user_id})
 					return "True"
 		return "True"
 
@@ -263,8 +265,8 @@ class PongRunner(AsyncConsumer):
 		try:
 			gid = message['gid']
 			data = json.loads(message.get('data', None))
-			left = data[0]['username']
-			right = data[1]['username']
+			left = data[0]['id']
+			right = data[1]['id']
 			if self._games.get(gid, None) is not None:
 				if self._games[gid]._paused:
 					self._games[gid]._resume()
@@ -299,21 +301,12 @@ class PongRunner(AsyncConsumer):
 									'text': json.dumps({"status": "Game over"}),
 								}
 							)
-				await self.channel_layer.send(
-					'tournament_runner',
-					{
-						'type': 'game.finished',
-						'gid': gid,
-						'data' : result,
-						'winner' : winner
-					}
-				)
 			if gid in self._games:
 				self._tasks[gid].cancel()
 				del self._tasks[gid]
 				del self._games[gid]
-				self.channel_layer
 		except Exception as e:
+			logger.warn(f"{str(e)}")
 			return
 
 	async def update_platform(self, data: ControlMsg) -> None:
@@ -403,7 +396,7 @@ class PongConsumer(AsyncWebsocketConsumer):
 			data = json.loads(text_data)
 			if 'join' in data:
 				game_id = str(data['join'])
-				is_added = self._groups.add_channel(game_id, self.channel_name, self.scope['user'].username)
+				is_added = self._groups.add_channel(game_id, self.channel_name, self.scope['user'])
 				if is_added == "False":
 					await self.send(json.dumps({'error': 'Game is full'}))
 					self.close()

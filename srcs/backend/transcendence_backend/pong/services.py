@@ -196,6 +196,7 @@ class PongService:
         if result is not None:
             score1 = result['s1']
             score2 = result['s2']
+        left = User.objects.get(id=result['left'])
         game = Pong.objects.filter(id=game_id).first()
         if game is None:
             raise Exception('Game not found')
@@ -209,8 +210,12 @@ class PongService:
             return pong_model_to_dict(game)
         if game.status == 'finished':
             return pong_model_to_dict(game)
-        game.score1 = score1
-        game.score2 = score2
+        if game.player1 == left:
+            game.score1 = score1
+            game.score2 = score2
+        else:
+            game.score1 = score2
+            game.score2 = score1
         game.status = 'finished'
         game.save()
         if score1 > score2:

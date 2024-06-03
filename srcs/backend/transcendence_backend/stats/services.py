@@ -2,13 +2,11 @@ from math import log
 from operator import le
 from re import S
 from typing import Dict, List
-from venv import logger
 from users.models import User
 from stats.models import Stats, stats_model_to_dict
 import json
 import logging
 
-logger  = logging.getLogger(__name__)
 class StatService:
     @staticmethod
     def set_stats(user_1: str, user_2: str, score_1: int, score_2: int):
@@ -19,8 +17,8 @@ class StatService:
         :param score_1: Score of the first user
         :param score_2: Score of the second user
         """
-        user1 = User.objects.get(username=user_1)
-        user2 = User.objects.get(username=user_2)
+        user1 = User.objects.get(id=user_1)
+        user2 = User.objects.get(id=user_2)
         stats1 = user1.stats
         stats2 = user2.stats
         stats1.games_played += 1

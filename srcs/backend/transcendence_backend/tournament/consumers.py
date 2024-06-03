@@ -27,7 +27,8 @@ def finish_tournament(tournamement_id: int, winner: User):
     tournament.status = 'closed'
     tournament.save()
 
-def get_winner(game: Pong):
+def get_winner(game_id: int) -> User:
+    game = Pong.objects.get(id=game_id)
     if game.score1 > game.score2:
         return game.player1
     return game.player2
@@ -143,40 +144,44 @@ class TournamentRunner(AsyncConsumer):
 
 
     async def game_finished(self, message):
-        game_id = int(message['gid'])
-        for group in self._tournaments:
-            # If there is only one game in this round and no strangler its was the last round
-            if len(self._tournaments[group]['games']) == 1 and self._tournaments[group]['stragler'] == None:
-                winner = await database_sync_to_async(get_winner)(self._tournaments[group]['games'][0])
-                await database_sync_to_async(finish_tournament)(int(group.removeprefix('t_')), winner)
-                await self.channel_layer.group_send(
-                    group,
-                    {
-                        'type': 'send.message',
-                        'status' : 'tournament_ends',
-                        'room': group,
-                        'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner)}
-                    }
-                )
-                self._tournaments.pop(group)
-                return
-            
-            # we go to the next round. Create new games and send them to the group
-            all_users = await database_sync_to_async(get_winners)(self._tournaments[group]['games'])
-            if all_users:
-                if self._tournaments[group]['stragler']:
-                    all_users.insert(0, self._tournaments[group]['stragler'])
-                pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
-                self._tournaments[group]['games'] = await self.create_games(group.removeprefix('t_'), pairs)
-                await self.channel_layer.group_send(
-                    group,
-                    {
-                        'type': 'send.message',
-                        'status' : 'next_round',
-                        'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[group]['games']]},
-                        'stragler' : user_model_to_dict(self._tournaments[group]['stragler']) if 'stragler' in self._tournaments[group] else None,
-                    }
-                )
+        try:
+            game_id = int(message['gid'])
+            for group in self._tournaments:
+                # If there is only one game in this round and no strangler its was the last round
+                if len(self._tournaments[group]['games']) == 1 and self._tournaments[group]['stragler'] == None:
+                    winner = await database_sync_to_async(get_winner)(game_id)
+                    await database_sync_to_async(finish_tournament)(int(group.removeprefix('t_')), winner)
+                    await self.channel_layer.group_send(
+                        group,
+                        {
+                            'type': 'send.message',
+                            'status' : 'tournament_ends',
+                            'room': group,
+                            'message': {'winner': await database_sync_to_async(user_model_to_dict)(winner)}
+                        }
+                    )
+                    self._tournaments.pop(group)
+                    return
+                
+                # we go to the next round. Create new games and send them to the group
+                all_users = await database_sync_to_async(get_winners)(self._tournaments[group]['games'])
+                if all_users:
+                    if self._tournaments[group]['stragler']:
+                        all_users.insert(0, self._tournaments[group]['stragler'])
+                    pairs = [all_users[i:i+2] for i in range(0, len(all_users), 2)]
+                    self._tournaments[group]['games'] = await self.create_games(group.removeprefix('t_'), pairs)
+                    await self.channel_layer.group_send(
+                        group,
+                        {
+                            'type': 'send.message',
+                            'status' : 'next_round',
+                            'message': {'games': [pong_model_to_dict(game) for game in self._tournaments[group]['games']]},
+                            'stragler' : user_model_to_dict(self._tournaments[group]['stragler']) if 'stragler' in self._tournaments[group] else None,
+                        }
+                    )
+        except Exception as e:
+            logger.error(e)
+            return
 
     async def status_update(self, event):
         gid = 't_' + event['gid']
