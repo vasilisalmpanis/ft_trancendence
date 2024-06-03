@@ -1,4 +1,5 @@
 import * as bootstrap	from 'bootstrap';
+import * as bundle      from 'bootstrap/dist/js/bootstrap.bundle';
 import ftReact			from "../ft_react";
 import Avatar			from "../components/avatar";
 import BarLayout		from "../components/barlayout";
@@ -170,6 +171,7 @@ const Tournament = (props) => {
 		tws = null;
 		tchws && tchws.close();
 		tchws = null;
+		bootstrap.Modal.getInstance(document.getElementById("winnerModal"))?.hide();
 	};
 	const updateMsgs = (msg) => {
 		setMsgs([...msgs, {content: msg, sender: 'me'}]);

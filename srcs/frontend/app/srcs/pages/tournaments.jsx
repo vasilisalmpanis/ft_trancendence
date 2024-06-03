@@ -80,7 +80,7 @@ const TournamentCard = (props) => {
 					>
 						{props.data.name}
 					</span>
-					{me && props.data.status !== 'closed'
+					{me && props.data.status !== 'closed' && (props.data.player_ids.includes(me.id) || props.data.player_ids.length != props.data.max_players)
 						?	<div>
 								<button
 									className="btn d-inline p-0"
@@ -93,14 +93,15 @@ const TournamentCard = (props) => {
 										}
 										props.route(`/tournaments/${props.data.id}`);
 									}}
-								>
+								>	
 									{props.data.player_ids.includes(me.id) ? "ENTER" : "JOIN"}
 								</button>
 								{props.data.player_ids.includes(me.id) &&
+								props.data.status === 'open' &&
 									<button
 										className="btn d-inline p-0 ms-1"
 										onClick={async ()=>{
-											await apiClient.delete("/tournaments", {tournament_id: props.data.id});
+											const data = await apiClient.delete("/tournaments", {tournament_id: props.data.id});
 											await props.updateTournaments();
 										}}
 									>
@@ -130,8 +131,8 @@ const Tournaments = (props) => {
 		let data = await apiClient.get("/tournaments");
 		if (data.error)
 			setError(data.error);
-		else if (data && (!tournaments || (tournaments && data.length != tournaments.length)))
-			setTournaments(data);
+		else if (data)
+			setTournaments([...data]);
 	};
 	ftReact.useEffect(async ()=>{
 		if (!tournaments && !error)
@@ -144,7 +145,11 @@ const Tournaments = (props) => {
 			<CreateTournament route={props.route} updateTournaments={getTournaments}/>
 			{
 				tournaments
-					? tournaments.map(tournament => <TournamentCard route={props.route} data={tournament} updateTournaments={getTournaments}/>)
+					? tournaments.map(tournament => <TournamentCard route={props.route} 
+																	data={tournament} 
+																	updateTournaments={getTournaments} 
+																	setTournaments={setTournaments}
+													/>)
 					: error
 						? <Alert msg={error}/>
 						: (
