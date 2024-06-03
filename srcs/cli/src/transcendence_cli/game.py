@@ -1,5 +1,6 @@
 from transcendence_cli      import client
 from websockets.sync.client import connect
+import ssl
 import asyncio
 import curses
 import json
@@ -26,7 +27,7 @@ class Game:
         self.key = None
         try:
             # self.ws = connect("ws://local.42wolfsburg.de:8000/ws", subprotocols=["Authorization", self.client.access_token])
-            self.ws = connect("ws://localhost:8000/ws", additional_headers=[("Authorization", f"Bearer {self.client.access_token}")])
+            self.ws = connect("wss://localhost/api/ws", additional_headers=[("Authorization", f"Bearer {self.client.access_token}")], ssl_context=ssl._create_unverified_context())
             self.ws.send(json.dumps({"join": self.game_id}))
             # self.waiting_room()
         except Exception as e:
@@ -55,7 +56,7 @@ class Game:
             self.key = self.stdscr.getch()
             if self.key == ord('q'):
                 self.ws.close()
-                self.client.request("DELETE", "/games", body={"game_id" : self.game_id})
+                self.client.request("DELETE", "/api/games", body={"game_id" : self.game_id})
                 self.running = False
                 raise Exception("Game Closed")
 

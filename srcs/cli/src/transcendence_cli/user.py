@@ -11,7 +11,7 @@ def change_username(stdscr):
         return
     client = cl.NetworkClient()
     status = utils.Singleton()
-    response = client.request("/users/me", "POST", body=json.dumps({"username": new_username}))
+    response = client.request("/api/users/me", "POST", body=json.dumps({"username": new_username}))
     if response.status == 401:
         status.state = utils.UNAUTHORIZED
         message(stdscr, ACCESS_EXPIRED)
@@ -30,7 +30,7 @@ def change_password(stdscr):
         return
     client = cl.NetworkClient()
     status = utils.Singleton()
-    response = client.request("/users/me", "POST", body=json.dumps({"password": password}))
+    response = client.request("/api/users/me", "POST", body=json.dumps({"password": password}))
     if response.status == 401:
         status.state = utils.UNAUTHORIZED
         message(stdscr, ACCESS_EXPIRED)
@@ -48,7 +48,7 @@ def change_email(stdscr):
         return
     client = cl.NetworkClient()
     status = utils.Singleton()
-    response = client.request("/users/me", "POST", body=json.dumps({"email": email}))
+    response = client.request("/api/users/me", "POST", body=json.dumps({"email": email}))
     if response.status == 401:
         status.state = utils.UNAUTHORIZED
         message(stdscr, ACCESS_EXPIRED)
@@ -63,7 +63,7 @@ def delete_account(stdscr):
     '''Changes username of currently logged in user'''
     client = cl.NetworkClient()
     status = utils.Singleton()
-    response = client.request(path="/users/me", method="DELETE")
+    response = client.request(path="/api/users/me", method="DELETE")
     if response.status == 401:
         status.state = utils.UNAUTHORIZED
         message(stdscr, ACCESS_EXPIRED)
@@ -84,7 +84,7 @@ def create_account(stdscr):
         email = utils.get_input(stdscr, "Enter an email: ")
     except Exception as e:
         return
-    response = client.request("/users", "POST", body=json.dumps({"username": username,
+    response = client.request("/api/users", "POST", body=json.dumps({"username": username,
                                                                  "password": password,
                                                                  "email": email}))
     if response.status == 401:

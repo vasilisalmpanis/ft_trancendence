@@ -1,5 +1,5 @@
 from .client                    import NetworkClient, Response
-from transcendence_cli          import game as pong
+from transcendence_cli.game     import Game
 from transcendence_cli          import user
 from transcendence_cli          import utils
 from transcendence_cli.messages import *
@@ -44,13 +44,13 @@ def main_menu(stdscr: object) -> None:
                 {"label": "Account Settings", "action": account_settings},
                 {"label": "Logout", "action": user.logout}
             ]
-            games = client.request("/games?type=running&me=True", "GET").body
+            games = client.request("/api/games?type=running&me=True", "GET").body
             if len(games) > 0:
                 game_id = games[0]['id']
                 start_game(stdscr, game_id)
                 continue
             else:
-                games = client.request("/games?type=paused&me=True", "GET").body
+                games = client.request("/api/games?type=paused&me=True", "GET").body
                 if len(games) > 0:
                     game_id = games[0]['id']
                     start_game(stdscr, game_id)
@@ -85,7 +85,7 @@ def authenticate(stdscr: object) -> None:
         username = utils.get_input(stdscr, "Enter your username: ")
         password = utils.get_input(stdscr, "Enter your password: ", password=True)
         response = client.authenticate(username, password)
-        response = client.request("/users/me", "GET")
+        response = client.request("/api/users/me", "GET")
         status.state = response.status == 200
         if status.state != utils.AUTHORIZED:
             stdscr.clear()
@@ -125,7 +125,7 @@ def start_game(stdcsr: object, game_id: int) -> None:
     :param stdcsr: object
     :param game_id: int
     """
-    game = pong.Game(stdcsr, game_id)
+    game = Game(stdcsr, game_id)
     game.run()
     stdcsr.nodelay(0)
 
@@ -136,7 +136,7 @@ def create_game(stdcsr: object) -> None:
     """
     client = NetworkClient()
     state = utils.Singleton()
-    response = client.request("/games", "POST")
+    response = client.request("/api/games", "POST")
     if response.status == 401:
         state.state = utils.UNAUTHORIZED
         message(stdcsr, UNAUTHORIZED)
@@ -155,7 +155,7 @@ def play_game(stdcsr: object) -> None:
     """
     client = NetworkClient()
     status = utils.Singleton()
-    response = client.request("/games?type=pending", "GET")
+    response = client.request("/api/games?type=pending", "GET")
     if response.status == 401:
         status.state = utils.UNAUTHORIZED
         message(stdcsr, ACCESS_EXPIRED)
@@ -165,7 +165,7 @@ def play_game(stdcsr: object) -> None:
         return
     games = response.body
     if len(games) == 0:
-        response = client.request("/games?type=paused&me=True", "GET")
+        response = client.request("/api/games?type=paused&me=True", "GET")
         if response.status == 401:
             status.state = utils.UNAUTHORIZED
             message(stdcsr, ACCESS_EXPIRED)
