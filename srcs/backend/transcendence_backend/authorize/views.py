@@ -51,9 +51,9 @@ def login_user(request) -> JsonResponse:
     if username == None or password == None:
         return JsonResponse({"status": "Username or Password were not given"}, status=400)
     user = authenticate(username=username, password=password)
-    if user.ft_intra_id != None:
-        return JsonResponse({"status": "Sign in with Intra"}, status=401)
     if user != None:
+        if user.ft_intra_id != None:
+            return JsonResponse({"status": "Sign in with Intra"}, status=401)
         jwt = JWT(settings.JWT_SECRET)
         user.is_user_active = True
         UserService.update_last_login(user)

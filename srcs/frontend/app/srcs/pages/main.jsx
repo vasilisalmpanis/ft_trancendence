@@ -91,7 +91,7 @@ const Main = (props) => {
 				>
 					<CreatorProfile
 						name="psimonen"
-						roles={["ft_react", "infrastructure"]}
+						roles={["ft_react", "infrastructure", "frontend", "backend"]}
 						avatar="https://avatars.githubusercontent.com/u/36280649"
 						github="https://github.com/rabarbra"
 						/>
